@@ -22,9 +22,9 @@ export const RatingsPage = () => {
     fetchRatings();
   }, []);
 
-  const totalReviews = data?.totalReviews || 12;
-  const avgRating = data?.avgRating || '4.9';
-  const starCounts = data?.starCounts || { 5: 10, 4: 2, 3: 0, 2: 0, 1: 0 };
+  const totalReviews = data?.totalReviews || (data?.ratings?.length || 0);
+  const avgRating = data?.avgRating || '5.0';
+  const starCounts = data?.starCounts || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
   const ratingsList = data?.ratings || [];
 
   return (
@@ -90,47 +90,55 @@ export const RatingsPage = () => {
       </div>
 
       {/* Review Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-        {ratingsList.map((r) => (
-          <div
-            key={r._id}
-            style={{
-              backgroundColor: 'var(--surface)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--line)',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <StarRating rating={r.stars} size={18} />
-                <Badge variant="gold" size="small">{r.packageTier.toUpperCase()}</Badge>
-              </div>
-
-              <p style={{ fontSize: '15px', color: 'var(--ink)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '20px' }}>
-                "{r.review}"
-              </p>
-            </div>
-
-            <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {ratingsList.length === 0 ? (
+        <div style={{ textAlign: 'center', backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', maxWidth: '600px', margin: '0 auto' }}>
+          <p style={{ color: 'var(--ink-soft)', fontSize: '15px' }}>No client reviews have been published yet.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+          {ratingsList.map((r) => (
+            <div
+              key={r._id}
+              style={{
+                backgroundColor: 'var(--surface)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--line)',
+                padding: '28px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
               <div>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)', display: 'block' }}>
-                  {r.clientName}
-                </span>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>
-                  {r.editingStyle}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <StarRating rating={r.stars || 5} size={18} />
+                  <Badge variant="gold" size="small">
+                    {(r.packageTier || 'VERIFIED EDIT').toUpperCase()}
+                  </Badge>
+                </div>
+
+                <p style={{ fontSize: '15px', color: 'var(--ink)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '20px' }}>
+                  "{r.review || 'Excellent video editing service.'}"
+                </p>
+              </div>
+
+              <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)', display: 'block' }}>
+                    {r.clientName || 'Verified Client'}
+                  </span>
+                  <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>
+                    {r.editingStyle || 'Custom Edit'}
+                  </span>
+                </div>
+                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>
+                  {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Recent'}
                 </span>
               </div>
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>
-                {new Date(r.createdAt).toLocaleDateString()}
-              </span>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
