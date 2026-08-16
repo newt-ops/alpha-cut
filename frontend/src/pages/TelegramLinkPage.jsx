@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
-import { IconCheck, IconZap, IconExternalLink } from '@icons/icons';
+import { IconZap, IconExternalLink } from '@icons/icons';
 
 export const TelegramLinkPage = () => {
   const { user, generateTelegramCode, generateTelegramToken, checkAuthStatus } = useAuth();
@@ -14,9 +14,13 @@ export const TelegramLinkPage = () => {
   const [code, setCode] = useState('');
   const [deepLinkUrl, setDeepLinkUrl] = useState('');
   const [loading, setLoading] = useState(true);
+  const hasFetchedRef = useRef(false);
 
-  // Generate initial code & deep-link token
+  // Generate initial code & deep-link token EXACTLY ONCE on mount
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
     const fetchLinkData = async () => {
       try {
         setLoading(true);
@@ -34,7 +38,7 @@ export const TelegramLinkPage = () => {
     fetchLinkData();
   }, [generateTelegramCode, generateTelegramToken, toast]);
 
-  // Status check poll
+  // Status check poll every 4 seconds
   useEffect(() => {
     const interval = setInterval(async () => {
       const updatedUser = await checkAuthStatus();
@@ -82,7 +86,7 @@ export const TelegramLinkPage = () => {
           <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
             Click below to open the bot in Telegram with an automatic single-use link token.
           </p>
-          <a href={deepLinkUrl} target="_blank" rel="noopener noreferrer">
+          <a href={deepLinkUrl || '#'} target="_blank" rel="noopener noreferrer">
             <Button variant="primary" fullWidth size="large" iconRight={IconExternalLink} isLoading={loading}>
               Connect via Telegram
             </Button>
@@ -129,7 +133,7 @@ export const TelegramLinkPage = () => {
             /link {code || '......'}
           </div>
           <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>
-            Code expires in 10 minutes
+            Code is valid for 1 hour
           </span>
         </div>
 

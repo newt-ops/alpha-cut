@@ -36,7 +36,7 @@ router.post('/link/code', requireAuth, async (req, res, next) => {
     await PendingLink.updateMany({ userId, type: 'code', used: false }, { used: true });
 
     const rawCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // Valid for 1 hour
 
     const pending = await PendingLink.create({
       userId,
@@ -62,7 +62,7 @@ router.post('/link/token', requireAuth, async (req, res, next) => {
     await PendingLink.updateMany({ userId, type: 'deep_link', used: false }, { used: true });
 
     const token = crypto.randomBytes(16).toString('hex');
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // Valid for 1 hour
 
     await PendingLink.create({
       userId,

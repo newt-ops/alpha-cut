@@ -49,7 +49,6 @@ export const AuthProvider = ({ children }) => {
     async (endpoint, options = {}) => {
       let token = accessToken;
 
-      // If no access token in state, try silent refresh first
       if (!token) {
         token = await refreshSession();
       }
@@ -72,7 +71,6 @@ export const AuthProvider = ({ children }) => {
         credentials: 'include',
       });
 
-      // If 401 Unauthorized, attempt 1 silent token refresh and retry
       if (res.status === 401) {
         const newToken = await refreshSession();
         if (newToken) {
@@ -168,15 +166,15 @@ export const AuthProvider = ({ children }) => {
     setUnverifiedEmail(null);
   };
 
-  const generateTelegramCode = async () => {
+  const generateTelegramCode = useCallback(async () => {
     return await apiFetch('/api/telegram/link/code', { method: 'POST' });
-  };
+  }, [apiFetch]);
 
-  const generateTelegramToken = async () => {
+  const generateTelegramToken = useCallback(async () => {
     return await apiFetch('/api/telegram/link/token', { method: 'POST' });
-  };
+  }, [apiFetch]);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       const data = await apiFetch('/api/auth/me');
       setUser(data.user);
@@ -184,7 +182,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       return null;
     }
-  };
+  }, [apiFetch]);
 
   return (
     <AuthContext.Provider
