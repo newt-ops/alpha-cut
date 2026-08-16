@@ -3,7 +3,7 @@ import { config } from '../config/env.js';
 import { User } from '../models/User.js';
 import { PendingLink } from '../models/PendingLink.js';
 import { Project } from '../models/Project.js';
-import { EDITING_STYLES } from '../../frontend/src/data/editingStyles.js';
+import { EDITING_STYLES } from '../constants/editingStyles.js';
 
 export const bot = config.telegramBotToken ? new Telegraf(config.telegramBotToken) : null;
 
@@ -150,16 +150,8 @@ if (bot) {
     try {
       await ctx.answerCbQuery();
       let responseText = `<b>Alpha Cut — Signature Editing Styles:</b>\n\n`;
-      const styles = EDITING_STYLES || [
-        { name: 'Viral Animation Breakdowns', pacing: 'High Pacing (0.8s cuts)' },
-        { name: 'Cinematic Short-Film', pacing: 'Dynamic Film Pacing' },
-        { name: 'SaaS Animations', pacing: 'Clean Product Flow' },
-        { name: 'David Jota Hook Style', pacing: 'Explosive 3s Retention Hook' },
-        { name: 'Ali Abdaal Storytelling', pacing: 'Educational Typography' },
-      ];
-
-      styles.forEach((s, i) => {
-        responseText += `${i + 1}. <b>${s.name}</b>\n   Pacing: ${s.pacing || 'Retention-focused'}\n\n`;
+      EDITING_STYLES.forEach((s, i) => {
+        responseText += `${i + 1}. <b>${s.name}</b>\n   Pacing: ${s.pacing}\n\n`;
       });
 
       responseText += `Explore interactive previews on our site: https://alpha-cut-nine.vercel.app/editing-styles`;
