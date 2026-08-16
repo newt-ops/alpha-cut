@@ -34,7 +34,6 @@ if (bot) {
       const chatId = ctx.chat.id.toString();
 
       if (payload) {
-        // 1-to-1 unique check: Check if this Telegram account is already linked to another user
         const existingBoundUser = await User.findOne({ telegramChatId: chatId });
 
         const pending = await PendingLink.findOne({
@@ -55,7 +54,7 @@ if (bot) {
 
         if (existingBoundUser && existingBoundUser._id.toString() !== user._id.toString()) {
           return ctx.reply(
-            `Link Rejected: This Telegram account is already linked to another client account (${existingBoundUser.email}). A Telegram account can only be bound to one user profile.`
+            `Link Rejected: This Telegram account is already linked to another client account (${existingBoundUser.email}).`
           );
         }
 
@@ -81,12 +80,16 @@ if (bot) {
       }
 
       ctx.reply(
-        `<b>Welcome to Alpha Cut Agency Bot.</b>\n\nAlpha Cut is a high-impact video editing agency specializing in retention-driven short-form, viral breakdowns, and cinematic storytelling.\n\n<b>To connect your account:</b>\n1. Register or Log In on our web platform using the link below.\n2. Click "Connect via Telegram" in your dashboard, OR send your 6-digit code using <code>/link <code></code>.`,
+        `<b>Welcome to Alpha Cut Agency Bot.</b>\n\nAlpha Cut is a high-impact video editing agency specializing in retention-driven short-form, viral breakdowns, and cinematic storytelling.\n\n<b>To connect your account:</b>\n1. Register or Log In on our web platform using the link below.\n2. Click "Connect via Telegram" in your dashboard, OR send your 6-digit code using <code>/link 123456</code>.`,
         { parse_mode: 'HTML', ...getUnlinkedMenu() }
       );
     } catch (err) {
       console.error('Telegram start error:', err.message);
-      ctx.reply('An error occurred while starting the bot.');
+      try {
+        ctx.reply('Welcome to Alpha Cut Agency Bot. Please visit https://alpha-cut-nine.vercel.app to log in or link your account.');
+      } catch (e) {
+        // Suppress
+      }
     }
   });
 
@@ -138,7 +141,11 @@ if (bot) {
       );
     } catch (err) {
       console.error('Telegram link error:', err.message);
-      ctx.reply('An error occurred while linking your account.');
+      try {
+        ctx.reply('An error occurred while processing your request.');
+      } catch (e) {
+        // Suppress
+      }
     }
   });
 
@@ -176,7 +183,11 @@ if (bot) {
       ctx.reply(responseText, { parse_mode: 'HTML', ...getLinkedMenu() });
     } catch (err) {
       console.error('Telegram projects action error:', err.message);
-      ctx.reply('Failed to fetch projects.');
+      try {
+        ctx.reply('Failed to fetch projects.');
+      } catch (e) {
+        // Suppress
+      }
     }
   });
 
@@ -208,7 +219,11 @@ if (bot) {
 
       ctx.reply(responseText, { parse_mode: 'HTML', ...getLinkedMenu() });
     } catch (err) {
-      ctx.reply('Failed to fetch proposals.');
+      try {
+        ctx.reply('Failed to fetch proposals.');
+      } catch (e) {
+        // Suppress
+      }
     }
   });
 
@@ -225,7 +240,11 @@ if (bot) {
 
       ctx.reply(responseText, { parse_mode: 'HTML', ...getLinkedMenu() });
     } catch (err) {
-      ctx.reply('Failed to fetch styles list.');
+      try {
+        ctx.reply('Failed to fetch styles list.');
+      } catch (e) {
+        // Suppress
+      }
     }
   });
 
@@ -246,7 +265,11 @@ if (bot) {
 
       ctx.reply(responseText, { parse_mode: 'HTML', ...getLinkedMenu() });
     } catch (err) {
-      ctx.reply('Failed to fetch rates.');
+      try {
+        ctx.reply('Failed to fetch rates.');
+      } catch (e) {
+        // Suppress
+      }
     }
   });
 
@@ -262,7 +285,11 @@ if (bot) {
 
       ctx.reply(responseText, { parse_mode: 'HTML', ...getLinkedMenu() });
     } catch (err) {
-      ctx.reply('Failed to fetch contact details.');
+      try {
+        ctx.reply('Failed to fetch contact details.');
+      } catch (e) {
+        // Suppress
+      }
     }
   });
 }

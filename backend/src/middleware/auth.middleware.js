@@ -34,7 +34,8 @@ export const requireAdmin = (req, res, next) => {
 
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 150,
+  max: 300,
+  validate: { xForwardedForHeader: false },
   skip: (req) => {
     // Exclude silent background polling endpoints from rate limits
     return req.path === '/me' || req.path === '/refresh';

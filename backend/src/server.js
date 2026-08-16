@@ -24,6 +24,9 @@ validateEnv();
 
 const app = express();
 
+// Trust reverse proxy (Render / Vercel / Nginx load balancers)
+app.set('trust proxy', 1);
+
 // Helmet CSP & Security Headers
 app.use(
   helmet({
@@ -69,9 +72,10 @@ app.use(csrfProtection);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { success: false, message: 'Too many requests, please try again later.' },
 });
 
