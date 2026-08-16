@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
-import { IconSparkles } from '@icons/icons';
+import { IconGoogle } from '@icons/icons';
 
 export const LoginPage = () => {
   const { loginWithGoogle, isAuthenticated, user } = useAuth();
@@ -68,10 +68,10 @@ export const LoginPage = () => {
       >
         <div style={{ marginBottom: '24px' }}>
           <Button
-            variant="primary"
+            variant="google"
             fullWidth
             size="large"
-            iconRight={IconSparkles}
+            iconLeft={IconGoogle}
             isLoading={isLoading}
             onClick={handleGoogleClick}
           >

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
-import { IconSparkles } from '@icons/icons';
+import { IconGoogle } from '@icons/icons';
 
 export const SignupPage = () => {
   const { loginWithGoogle } = useAuth();
@@ -57,10 +56,10 @@ export const SignupPage = () => {
       >
         <div style={{ marginBottom: '24px' }}>
           <Button
-            variant="primary"
+            variant="google"
             fullWidth
             size="large"
-            iconRight={IconSparkles}
+            iconLeft={IconGoogle}
             isLoading={isLoading}
             onClick={handleGoogleClick}
           >

@@ -13,13 +13,14 @@ export const Button = ({
   className = '',
   type = 'button',
   fullWidth = false,
+  style = {},
   ...props
 }) => {
   const baseStyles = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px',
+    gap: '12px',
     borderRadius: 'var(--radius-md)',
     fontFamily: 'var(--font-body)',
     fontWeight: 600,
@@ -37,7 +38,7 @@ export const Button = ({
   const sizeStyles = {
     small: { padding: '8px 16px', fontSize: '13px' },
     medium: { padding: '12px 24px', fontSize: '15px' },
-    large: { padding: '16px 32px', fontSize: '17px' },
+    large: { padding: '14px 28px', fontSize: '16px' },
   };
 
   const variantStyles = {
@@ -55,17 +56,25 @@ export const Button = ({
       backgroundColor: 'transparent',
       color: 'var(--ink-soft)',
     },
+    google: {
+      backgroundColor: 'var(--surface)',
+      color: 'var(--ink)',
+      border: '1px solid var(--line)',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+      fontWeight: 600,
+    },
   };
 
   const currentStyles = {
     ...baseStyles,
     ...sizeStyles[size],
     ...variantStyles[variant],
+    ...style,
   };
 
   return (
     <motion.button
-      whileHover={!isDisabled && !isLoading ? { scale: 1.02 } : {}}
+      whileHover={!isDisabled && !isLoading ? { scale: 1.02, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)' } : {}}
       whileTap={!isDisabled && !isLoading ? { scale: 0.98 } : {}}
       type={type}
       onClick={isDisabled || isLoading ? undefined : onClick}
@@ -87,13 +96,13 @@ export const Button = ({
           >
             <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
           </svg>
-          Loading...
+          Connecting...
         </span>
       ) : (
         <>
-          {IconLeft && <IconLeft size={size === 'small' ? 16 : 18} />}
+          {IconLeft && <IconLeft size={size === 'small' ? 18 : 20} />}
           <span>{children}</span>
-          {IconRight && <IconRight size={size === 'small' ? 16 : 18} />}
+          {IconRight && <IconRight size={size === 'small' ? 18 : 20} />}
         </>
       )}
       <style>{`
