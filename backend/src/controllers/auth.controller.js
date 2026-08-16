@@ -238,7 +238,6 @@ export const forgotPassword = async (req, res, next) => {
     const { email } = req.body;
     const user = await User.findOne({ email: email.toLowerCase() });
 
-    // Always respond success to prevent user email enumeration
     if (!user || user.authProvider === 'google') {
       return res.status(200).json({
         success: true,
@@ -282,6 +281,49 @@ export const resetPassword = async (req, res, next) => {
     await user.save();
 
     res.status(200).json({ success: true, message: 'Password reset successfully. You can now log in.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name, oldPassword, newPassword, avatarUrl } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (name && name.trim().length >= 2) {
+      user.name = name.trim();
+    }
+
+    if (avatarUrl) {
+      user.avatarUrl = avatarUrl;
+    }
+
+    if (newPassword) {
+      if (!user.passwordHash) {
+        return res.status(400).json({ success: false, message: 'Google accounts cannot change password directly.' });
+      }
+      if (!oldPassword) {
+        return res.status(400).json({ success: false, message: 'Current password is required to set a new password.' });
+      }
+      const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
+      if (!isMatch) {
+        return res.status(400).json({ success: false, message: 'Incorrect current password.' });
+      }
+      user.passwordHash = await bcrypt.hash(newPassword, 12);
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully!',
+      user,
+    });
   } catch (err) {
     next(err);
   }

@@ -34,7 +34,11 @@ export const requireAdmin = (req, res, next) => {
 
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 150,
+  skip: (req) => {
+    // Exclude silent background polling endpoints from rate limits
+    return req.path === '/me' || req.path === '/refresh';
+  },
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many authentication attempts, please try again later.' },

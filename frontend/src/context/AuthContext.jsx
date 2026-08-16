@@ -155,6 +155,17 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  const updateProfile = async (profileData) => {
+    const data = await apiFetch('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
+    if (data.user) {
+      setUser(data.user);
+    }
+    return data;
+  };
+
   const logout = async () => {
     try {
       await apiFetch('/api/auth/logout', { method: 'POST' });
@@ -199,6 +210,7 @@ export const AuthProvider = ({ children }) => {
         loginWithGoogle,
         verifyEmail,
         resendVerification,
+        updateProfile,
         logout,
         generateTelegramCode,
         generateTelegramToken,

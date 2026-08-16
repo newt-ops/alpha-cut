@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 import { config } from '../config/env.js';
 
 const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
+const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || 'Alpha Cut <onboarding@resend.dev>';
 
 export const sendVerificationEmail = async ({ toEmail, name, code }) => {
   const subject = 'Alpha Cut — Verify Your Email Address';
@@ -20,11 +21,11 @@ export const sendVerificationEmail = async ({ toEmail, name, code }) => {
       </head>
       <body>
         <div class="card">
-          <div class="title">Alpha Cut</div>
+          <div class="title">Alpha Cut Agency</div>
           <p>Hello ${name},</p>
-          <p>Welcome to Alpha Cut. Enter the following 6-digit code to verify your account:</p>
+          <p>Welcome to Alpha Cut. Enter the following 6-digit code to verify your email address:</p>
           <div class="code-box">${code}</div>
-          <p>This verification code will expire in 15 minutes.</p>
+          <p>This verification code is valid for 15 minutes.</p>
           <div class="footer">
             Alpha Cut Agency &bull; Developed by aymen10.netlify.app
           </div>
@@ -40,15 +41,16 @@ export const sendVerificationEmail = async ({ toEmail, name, code }) => {
 
   try {
     const data = await resend.emails.send({
-      from: 'Alpha Cut <verify@alphacut.agency>',
+      from: SENDER_EMAIL,
       to: [toEmail],
       subject,
       html: htmlContent,
     });
+    console.log(`[RESEND SUCCESS] Sent verification email to ${toEmail}`);
     return { success: true, data };
   } catch (err) {
     console.error('Resend email error:', err.message);
-    console.log(`[DEV FALLBACK CODE] ${toEmail}: ${code}`);
+    console.log(`[RESEND FALLBACK OTP CODE] ${toEmail}: ${code}`);
     return { success: false, error: err.message, fallbackCode: code };
   }
 };

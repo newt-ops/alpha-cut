@@ -7,6 +7,7 @@ import {
   resendVerification,
   forgotPassword,
   resetPassword,
+  updateProfile,
   refreshToken,
   logout,
   getMe,
@@ -32,6 +33,7 @@ router.post('/verify-email', validateRequest(verifyEmailSchema), verifyEmail);
 router.post('/resend-verification', resendVerification);
 router.post('/forgot-password', validateRequest(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', validateRequest(resetPasswordSchema), resetPassword);
+router.put('/profile', requireAuth, updateProfile);
 router.post('/refresh', refreshToken);
 router.post('/logout', logout);
 router.get('/me', requireAuth, getMe);

@@ -6,11 +6,12 @@ import { AuthProvider } from '@context/AuthContext';
 import { Navbar } from '@components/layout/Navbar';
 import { Footer } from '@components/layout/Footer';
 import { PageWrapper } from '@components/layout/PageWrapper';
+import { ErrorBoundary } from '@components/layout/ErrorBoundary';
 import { RequireAuth } from '@components/auth/RequireAuth';
 import { RequireAdmin } from '@components/auth/RequireAdmin';
 import { Skeleton } from '@components/ui/Skeleton';
 
-// Lazy-loaded route components for production code-splitting
+// Lazy-loaded route components
 const HomePage = lazy(() => import('@pages/HomePage').then((m) => ({ default: m.HomePage })));
 const EditingStylesPage = lazy(() => import('@pages/EditingStylesPage').then((m) => ({ default: m.EditingStylesPage })));
 const PortfolioPage = lazy(() => import('@pages/PortfolioPage').then((m) => ({ default: m.PortfolioPage })));
@@ -42,54 +43,56 @@ export function App() {
           <Router>
             <Navbar />
             <PageWrapper>
-              <Suspense fallback={<RouteFallback />}>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/editing-styles" element={<EditingStylesPage />} />
-                  <Route path="/portfolio" element={<PortfolioPage />} />
-                  <Route path="/packages" element={<PackagesPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/ratings" element={<RatingsPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
-                  <Route path="/verify-email" element={<VerifyEmailPage />} />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <ErrorBoundary>
+                <Suspense fallback={<RouteFallback />}>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/editing-styles" element={<EditingStylesPage />} />
+                    <Route path="/portfolio" element={<PortfolioPage />} />
+                    <Route path="/packages" element={<PackagesPage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/ratings" element={<RatingsPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signup" element={<SignupPage />} />
+                    <Route path="/verify-email" element={<VerifyEmailPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-                  {/* Onboarding & Client Protected Routes */}
-                  <Route
-                    path="/telegram-link"
-                    element={
-                      <RequireAuth>
-                        <TelegramLinkPage />
-                      </RequireAuth>
-                    }
-                  />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <RequireAuth>
-                        <DashboardPage />
-                      </RequireAuth>
-                    }
-                  />
+                    {/* Onboarding & Client Protected Routes */}
+                    <Route
+                      path="/telegram-link"
+                      element={
+                        <RequireAuth>
+                          <TelegramLinkPage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <RequireAuth>
+                          <DashboardPage />
+                        </RequireAuth>
+                      }
+                    />
 
-                  {/* Admin Protected Route */}
-                  <Route
-                    path="/admin"
-                    element={
-                      <RequireAdmin>
-                        <AdminPage />
-                      </RequireAdmin>
-                    }
-                  />
+                    {/* Admin Protected Route */}
+                    <Route
+                      path="/admin"
+                      element={
+                        <RequireAdmin>
+                          <AdminPage />
+                        </RequireAdmin>
+                      }
+                    />
 
-                  {/* QA Sandbox (Dev Mode Only) */}
-                  {import.meta.env.DEV && (
-                    <Route path="/dev/components" element={<DevComponentsPage />} />
-                  )}
-                </Routes>
-              </Suspense>
+                    {/* QA Sandbox (Dev Mode Only) */}
+                    {import.meta.env.DEV && (
+                      <Route path="/dev/components" element={<DevComponentsPage />} />
+                    )}
+                  </Routes>
+                </Suspense>
+              </ErrorBoundary>
             </PageWrapper>
             <Footer />
           </Router>

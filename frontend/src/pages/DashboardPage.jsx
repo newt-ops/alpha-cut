@@ -12,7 +12,7 @@ import { useToast } from '@components/ui/Toast';
 import { IconCheck, IconClose, IconExternalLink, IconSparkles, IconUser, IconZap, IconStar, IconFileText } from '@icons/icons';
 
 export const DashboardPage = () => {
-  const { user, apiFetch, generateTelegramToken } = useAuth();
+  const { user, apiFetch, updateProfile, generateTelegramToken } = useAuth();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -30,6 +30,15 @@ export const DashboardPage = () => {
 
   // Profile Form state
   const [profileName, setProfileName] = useState(user?.name || '');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  useEffect(() => {
+    if (user?.name) {
+      setProfileName(user.name);
+    }
+  }, [user]);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -149,6 +158,28 @@ export const DashboardPage = () => {
       toast({ message: err.message, type: 'error' });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingProfile(true);
+      const res = await updateProfile({
+        name: profileName,
+        oldPassword: oldPassword || undefined,
+        newPassword: newPassword || undefined,
+      });
+
+      if (res.success) {
+        toast({ message: 'Profile updated successfully!', type: 'success' });
+        setOldPassword('');
+        setNewPassword('');
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -383,7 +414,8 @@ export const DashboardPage = () => {
       {/* ACCOUNT PROFILE TAB */}
       {activeTab === 'profile' && (
         <div style={{ maxWidth: '600px', margin: '0 auto', display: 'grid', gap: '32px' }}>
-          <div
+          <form
+            onSubmit={handleSaveProfile}
             style={{
               backgroundColor: 'var(--surface)',
               borderRadius: 'var(--radius-lg)',
@@ -394,16 +426,35 @@ export const DashboardPage = () => {
             <h3 className="font-display" style={{ fontSize: '20px', marginBottom: '20px' }}>
               Account Settings
             </h3>
-            <Input label="Full Name" value={profileName} onChange={(e) => setProfileName(e.target.value)} />
+            <Input label="Full Name" value={profileName} onChange={(e) => setProfileName(e.target.value)} required />
             <Input label="Email Address" value={user?.email || ''} disabled helperText="Email address cannot be changed." />
 
-            <div style={{ marginTop: '20px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
-                Profile Avatar Upload (Cloudinary)
-              </label>
-              <Dropzone label="Upload custom profile photo" sublabel="Supports PNG, JPG (up to 5MB)" />
+            {user?.authProvider === 'local' && (
+              <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--line)' }}>
+                <h4 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '12px' }}>Change Password (Optional)</h4>
+                <Input
+                  label="Current Password"
+                  type="password"
+                  placeholder="••••••••••••"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                />
+                <Input
+                  label="New Password"
+                  type="password"
+                  placeholder="Minimum 8 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div style={{ marginTop: '24px' }}>
+              <Button type="submit" variant="primary" fullWidth isLoading={savingProfile} iconRight={IconCheck}>
+                Save Profile Changes
+              </Button>
             </div>
-          </div>
+          </form>
 
           <div
             style={{
