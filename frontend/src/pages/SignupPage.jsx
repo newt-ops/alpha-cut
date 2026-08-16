@@ -18,6 +18,28 @@ export const SignupPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const handleGoogleClick = () => {
+    if (window.google && window.google.accounts) {
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy_google_client_id',
+        callback: async (response) => {
+          try {
+            setIsLoading(true);
+            await loginWithGoogle(response.credential);
+            toast({ message: 'Welcome!', type: 'success' });
+          } catch (err) {
+            toast({ message: err.message || 'Google sign-in failed', type: 'error' });
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      });
+      window.google.accounts.id.prompt();
+    } else {
+      toast({ message: 'Google Sign-In is initializing, please wait a moment...', type: 'info' });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !email || !password) {
@@ -130,17 +152,7 @@ export const SignupPage = () => {
           <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--line)' }} />
         </div>
 
-        <Button
-          variant="secondary"
-          fullWidth
-          onClick={() => {
-            if (window.google && window.google.accounts) {
-              window.google.accounts.id.prompt();
-            } else {
-              toast({ message: 'Google Sign-In is initializing...', type: 'info' });
-            }
-          }}
-        >
+        <Button variant="secondary" fullWidth onClick={handleGoogleClick}>
           Continue with Google
         </Button>
 

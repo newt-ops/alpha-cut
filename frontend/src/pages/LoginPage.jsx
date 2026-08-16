@@ -26,9 +26,7 @@ export const LoginPage = () => {
     }
   }, [isAuthenticated, navigate, from]);
 
-  // Google OAuth button initialization
-  useEffect(() => {
-    /* global google */
+  const handleGoogleClick = () => {
     if (window.google && window.google.accounts) {
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy_google_client_id',
@@ -44,8 +42,11 @@ export const LoginPage = () => {
           }
         },
       });
+      window.google.accounts.id.prompt();
+    } else {
+      toast({ message: 'Google Sign-In is initializing, please wait a moment...', type: 'info' });
     }
-  }, [loginWithGoogle, toast]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -128,6 +129,12 @@ export const LoginPage = () => {
             required
           />
 
+          <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+            <Link to="/forgot-password" style={{ fontSize: '13px', color: 'var(--accent-gold)', fontWeight: 500 }}>
+              Forgot password?
+            </Link>
+          </div>
+
           <Button type="submit" variant="primary" fullWidth isLoading={isLoading} iconRight={IconArrowRight}>
             Log In
           </Button>
@@ -149,17 +156,7 @@ export const LoginPage = () => {
         </div>
 
         {/* Google OAuth Button */}
-        <Button
-          variant="secondary"
-          fullWidth
-          onClick={() => {
-            if (window.google && window.google.accounts) {
-              window.google.accounts.id.prompt();
-            } else {
-              toast({ message: 'Google Sign-In is initializing...', type: 'info' });
-            }
-          }}
-        >
+        <Button variant="secondary" fullWidth onClick={handleGoogleClick}>
           Continue with Google
         </Button>
 
