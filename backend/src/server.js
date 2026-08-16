@@ -34,7 +34,7 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https://*.googleusercontent.com'],
-        connectSrc: ["'self'", 'https://accounts.google.com', 'https://api.cloudinary.com'],
+        connectSrc: ["'self'", 'https://accounts.google.com', 'https://api.cloudinary.com', 'https://alpha-cut.onrender.com'],
         frameSrc: ["'self'", 'https://accounts.google.com'],
       },
     },
@@ -42,9 +42,22 @@ app.use(
   })
 );
 
+const allowedOrigins = [
+  config.clientUrl,
+  'https://alpha-cut-nine.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [config.clientUrl, 'http://localhost:5173', 'http://localhost:3000'],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Permissive for production deployment flexibility
+      }
+    },
     credentials: true,
   })
 );
