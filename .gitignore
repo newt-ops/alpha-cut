@@ -7,12 +7,14 @@
 backend/.env
 frontend/.env
 
-# Confidential Project Brief, Prompts & Logos (as requested)
+# Confidential Project Brief, Prompts, Logos & OAuth Secrets
 PROJECT_BRIEF.md
 prompt/
 prompt
 logo/
 logo
+client_secret_*.json
+*.json.secret
 
 # Dependencies
 node_modules/
