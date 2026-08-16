@@ -185,6 +185,14 @@ export const AuthProvider = ({ children }) => {
     return await apiFetch('/api/telegram/link/token', { method: 'POST' });
   }, [apiFetch]);
 
+  const unlinkTelegram = useCallback(async () => {
+    const data = await apiFetch('/api/telegram/unlink', { method: 'POST' });
+    if (data.user) {
+      setUser(data.user);
+    }
+    return data;
+  }, [apiFetch]);
+
   const checkAuthStatus = useCallback(async () => {
     try {
       const data = await apiFetch('/api/auth/me');
@@ -214,6 +222,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         generateTelegramCode,
         generateTelegramToken,
+        unlinkTelegram,
         checkAuthStatus,
       }}
     >

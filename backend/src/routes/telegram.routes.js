@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { bot } from '../services/telegram.service.js';
 import { PendingLink } from '../models/PendingLink.js';
+import { User } from '../models/User.js';
 import { config } from '../config/env.js';
 
 const router = express.Router();
@@ -78,6 +79,28 @@ router.post('/link/token', requireAuth, async (req, res, next) => {
       success: true,
       deepLinkUrl,
       expiresAt,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Unlink / Disconnect Telegram Account
+router.post('/unlink', requireAuth, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User account not found' });
+    }
+
+    user.telegramChatId = null;
+    user.telegramLinkedAt = null;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Telegram account disconnected successfully. You can now link to another account.',
+      user,
     });
   } catch (err) {
     next(err);

@@ -15,6 +15,7 @@ const getLinkedMenu = () => {
     [Markup.button.callback('Signature Editing Styles', 'styles_list')],
     [Markup.button.callback('Packages & Rates', 'rates_info')],
     [Markup.button.callback('Contact Agency', 'agency_contact')],
+    [Markup.button.callback('Disconnect Account', 'unlink_account')],
   ]);
 };
 
@@ -27,7 +28,7 @@ const getUnlinkedMenu = () => {
 };
 
 if (bot) {
-  // Command /start (Handles both plain /start and deep-link /start <token>)
+  // Command /start
   bot.command('start', async (ctx) => {
     try {
       const payload = ctx.message.text.split(' ')[1];
@@ -54,7 +55,7 @@ if (bot) {
 
         if (existingBoundUser && existingBoundUser._id.toString() !== user._id.toString()) {
           return ctx.reply(
-            `Link Rejected: This Telegram account is already linked to another client account (${existingBoundUser.email}).`
+            `Link Rejected: This Telegram account is already linked to another client account (${existingBoundUser.email}). Please disconnect it first.`
           );
         }
 
@@ -66,7 +67,7 @@ if (bot) {
         await pending.save();
 
         return ctx.reply(
-          `<b>Account Linked Successfully!</b>\n\nWelcome <b>${user.name}</b>. Your Telegram account is now connected to Alpha Cut.\n\nYou will receive real-time status updates when proposals are issued or project milestones advance.`,
+          `<b>Account Linked Successfully!</b>\n\nWelcome <b>${user.name}</b>. Your Telegram account is now connected to Alpha Cut.`,
           { parse_mode: 'HTML', ...getLinkedMenu() }
         );
       }
@@ -87,9 +88,7 @@ if (bot) {
       console.error('Telegram start error:', err.message);
       try {
         ctx.reply('Welcome to Alpha Cut Agency Bot. Please visit https://alpha-cut-nine.vercel.app to log in or link your account.');
-      } catch (e) {
-        // Suppress
-      }
+      } catch (e) {}
     }
   });
 
@@ -124,7 +123,7 @@ if (bot) {
 
       if (existingBoundUser && existingBoundUser._id.toString() !== user._id.toString()) {
         return ctx.reply(
-          `Link Rejected: This Telegram account is already linked to another client account (${existingBoundUser.email}).`
+          `Link Rejected: This Telegram account is already linked to another client account (${existingBoundUser.email}). Please disconnect it first.`
         );
       }
 
@@ -142,11 +141,38 @@ if (bot) {
     } catch (err) {
       console.error('Telegram link error:', err.message);
       try {
-        ctx.reply('An error occurred while processing your request.');
-      } catch (e) {
-        // Suppress
-      }
+        ctx.reply('An error occurred while linking your account.');
+      } catch (e) {}
     }
+  });
+
+  // Command /unlink or Action: Disconnect Account
+  const handleUnlink = async (ctx) => {
+    try {
+      const chatId = ctx.chat.id.toString();
+      const user = await User.findOne({ telegramChatId: chatId });
+
+      if (!user) {
+        return ctx.reply('This Telegram account is not currently linked to any profile.', getUnlinkedMenu());
+      }
+
+      user.telegramChatId = null;
+      user.telegramLinkedAt = null;
+      await user.save();
+
+      ctx.reply('<b>Account Disconnected.</b>\n\nYour Telegram account has been unlinked. You can now link it to another client profile at any time.', { parse_mode: 'HTML', ...getUnlinkedMenu() });
+    } catch (err) {
+      console.error('Telegram unlink error:', err.message);
+      try {
+        ctx.reply('Failed to disconnect account.');
+      } catch (e) {}
+    }
+  };
+
+  bot.command('unlink', handleUnlink);
+  bot.action('unlink_account', async (ctx) => {
+    await ctx.answerCbQuery();
+    await handleUnlink(ctx);
   });
 
   // Action: My Active Projects
@@ -185,9 +211,7 @@ if (bot) {
       console.error('Telegram projects action error:', err.message);
       try {
         ctx.reply('Failed to fetch projects.');
-      } catch (e) {
-        // Suppress
-      }
+      } catch (e) {}
     }
   });
 
@@ -221,9 +245,7 @@ if (bot) {
     } catch (err) {
       try {
         ctx.reply('Failed to fetch proposals.');
-      } catch (e) {
-        // Suppress
-      }
+      } catch (e) {}
     }
   });
 
@@ -242,9 +264,7 @@ if (bot) {
     } catch (err) {
       try {
         ctx.reply('Failed to fetch styles list.');
-      } catch (e) {
-        // Suppress
-      }
+      } catch (e) {}
     }
   });
 
@@ -267,9 +287,7 @@ if (bot) {
     } catch (err) {
       try {
         ctx.reply('Failed to fetch rates.');
-      } catch (e) {
-        // Suppress
-      }
+      } catch (e) {}
     }
   });
 
@@ -287,9 +305,7 @@ if (bot) {
     } catch (err) {
       try {
         ctx.reply('Failed to fetch contact details.');
-      } catch (e) {
-        // Suppress
-      }
+      } catch (e) {}
     }
   });
 }

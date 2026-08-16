@@ -2,21 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
-import { IconArrowRight, IconLock, IconUser } from '@icons/icons';
+import { IconSparkles } from '@icons/icons';
 
 export const LoginPage = () => {
-  const { login, loginWithGoogle, isAuthenticated, user, setUnverifiedEmail } = useAuth();
+  const { loginWithGoogle, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const from = location.state?.from?.pathname || (user?.role === 'admin' ? '/admin' : '/dashboard');
 
@@ -29,7 +25,7 @@ export const LoginPage = () => {
   const handleGoogleClick = () => {
     if (window.google && window.google.accounts) {
       window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy_google_client_id',
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '592216295265-6n5uqjepnlvn45nbto2o4chvf3q1cen9.apps.googleusercontent.com',
         callback: async (response) => {
           try {
             setIsLoading(true);
@@ -48,38 +44,15 @@ export const LoginPage = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email || !password) {
-      setError('Please enter both email and password.');
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError('');
-      await login(email, password);
-      toast({ message: 'Logged in successfully!', type: 'success' });
-    } catch (err) {
-      setError(err.message);
-      if (err.message.includes('verify your email')) {
-        setUnverifiedEmail(email);
-        setTimeout(() => navigate('/verify-email'), 1500);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div style={{ padding: '40px 0', maxWidth: '440px', margin: '0 auto' }} className="login-page">
+    <div style={{ padding: '60px 0', maxWidth: '440px', margin: '0 auto' }} className="login-page">
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <Badge variant="gold">Client & Admin Access</Badge>
         <h1 className="font-display" style={{ fontSize: '32px', marginTop: '12px' }}>
-          Log In to Alpha Cut
+          Welcome to Alpha Cut
         </h1>
-        <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '6px' }}>
-          Access your video project proposals, deliverables, and agency dashboard.
+        <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '8px', lineHeight: 1.6 }}>
+          Log in with your Google account to access your proposals, deliverables, and project workspace.
         </p>
       </div>
 
@@ -88,83 +61,26 @@ export const LoginPage = () => {
           backgroundColor: 'var(--surface)',
           borderRadius: 'var(--radius-lg)',
           border: '1px solid var(--line)',
-          padding: '36px 28px',
+          padding: '40px 28px',
           boxShadow: 'var(--shadow)',
+          textAlign: 'center',
         }}
       >
-        <form onSubmit={handleSubmit}>
-          {error && (
-            <div
-              style={{
-                backgroundColor: 'rgba(229, 62, 62, 0.1)',
-                border: '1px solid #E53E3E',
-                color: '#E53E3E',
-                padding: '12px 16px',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '13px',
-                marginBottom: '20px',
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          <Input
-            label="Email Address"
-            type="email"
-            placeholder="client@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            icon={IconUser}
-            required
-          />
-
-          <Input
-            label="Password"
-            type="password"
-            placeholder="••••••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            icon={IconLock}
-            required
-          />
-
-          <div style={{ textAlign: 'right', marginBottom: '20px' }}>
-            <Link to="/forgot-password" style={{ fontSize: '13px', color: 'var(--accent-gold)', fontWeight: 500 }}>
-              Forgot password?
-            </Link>
-          </div>
-
-          <Button type="submit" variant="primary" fullWidth isLoading={isLoading} iconRight={IconArrowRight}>
-            Log In
+        <div style={{ marginBottom: '24px' }}>
+          <Button
+            variant="primary"
+            fullWidth
+            size="large"
+            iconRight={IconSparkles}
+            isLoading={isLoading}
+            onClick={handleGoogleClick}
+          >
+            Continue with Google
           </Button>
-        </form>
-
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            margin: '24px 0',
-            color: 'var(--ink-soft)',
-            fontSize: '12px',
-          }}
-        >
-          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--line)' }} />
-          <span>OR</span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--line)' }} />
         </div>
 
-        {/* Google OAuth Button */}
-        <Button variant="secondary" fullWidth onClick={handleGoogleClick}>
-          Continue with Google
-        </Button>
-
-        <p style={{ marginTop: '24px', textAlign: 'center', fontSize: '14px', color: 'var(--ink-soft)' }}>
-          Don't have an account?{' '}
-          <Link to="/signup" style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
-            Sign Up
-          </Link>
+        <p style={{ fontSize: '12px', color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+          Instant, secure 1-click access via Google OAuth.
         </p>
       </div>
     </div>

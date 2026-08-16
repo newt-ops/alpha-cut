@@ -12,7 +12,7 @@ import { useToast } from '@components/ui/Toast';
 import { IconCheck, IconClose, IconExternalLink, IconSparkles, IconUser, IconZap, IconStar, IconFileText } from '@icons/icons';
 
 export const DashboardPage = () => {
-  const { user, apiFetch, updateProfile, generateTelegramToken } = useAuth();
+  const { user, apiFetch, updateProfile, generateTelegramToken, unlinkTelegram } = useAuth();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -35,6 +35,7 @@ export const DashboardPage = () => {
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [unlinkingTelegram, setUnlinkingTelegram] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -215,6 +216,18 @@ export const DashboardPage = () => {
       toast({ message: err.message, type: 'error' });
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleUnlinkTelegram = async () => {
+    try {
+      setUnlinkingTelegram(true);
+      await unlinkTelegram();
+      toast({ message: 'Telegram account disconnected! You can now link to another account.', type: 'info' });
+    } catch (err) {
+      toast({ message: err.message || 'Failed to disconnect Telegram', type: 'error' });
+    } finally {
+      setUnlinkingTelegram(false);
     }
   };
 
@@ -528,7 +541,15 @@ export const DashboardPage = () => {
             <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '20px' }}>
               Status: {user?.telegramChatId ? <Badge variant="success">CONNECTED</Badge> : <Badge variant="maroon">DISCONNECTED</Badge>}
             </p>
-            {!user?.telegramChatId && (
+            {user?.telegramChatId ? (
+              <Button
+                variant="secondary"
+                isLoading={unlinkingTelegram}
+                onClick={handleUnlinkTelegram}
+              >
+                Disconnect Telegram Account
+              </Button>
+            ) : (
               <Button
                 variant="primary"
                 onClick={async () => {
