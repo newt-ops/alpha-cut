@@ -7,7 +7,7 @@ import { config } from '../config/env.js';
 
 const router = express.Router();
 
-router.post('/webhook/:secret', (req, res) => {
+router.post('/webhook/:secret', async (req, res) => {
   const { secret } = req.params;
   const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET || 'secret';
 
@@ -16,7 +16,14 @@ router.post('/webhook/:secret', (req, res) => {
   }
 
   if (bot) {
-    bot.handleUpdate(req.body, res);
+    try {
+      await bot.handleUpdate(req.body, res);
+    } catch (err) {
+      console.error('Telegram handleUpdate error:', err.message);
+      if (!res.headersSent) {
+        res.status(200).send('OK');
+      }
+    }
   } else {
     res.status(200).send('Bot not configured');
   }
