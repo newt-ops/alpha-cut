@@ -10,8 +10,50 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [unverifiedEmail, setUnverifiedEmail] = useState(null);
 
+  // Silent session refresh
+  const refreshSession = useCallback(async () => {
+    try {
+      const fullUrl = `${API_BASE}/api/auth/refresh`;
+      const res = await fetch(fullUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'include',
+      });
+
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        setAccessToken(data.accessToken);
+        setUser(data.user);
+        return data.accessToken;
+      }
+    } catch (err) {
+      // Session refresh failed
+    }
+    return null;
+  }, []);
+
+  // Silent refresh on boot
+  useEffect(() => {
+    const bootRefresh = async () => {
+      await refreshSession();
+      setLoading(false);
+    };
+    bootRefresh();
+  }, [refreshSession]);
+
   const apiFetch = useCallback(
     async (endpoint, options = {}) => {
+      let token = accessToken;
+
+      // If no access token in state, try silent refresh first
+      if (!token) {
+        token = await refreshSession();
+      }
+
       const fullUrl = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
 
       const headers = {
@@ -20,19 +62,32 @@ export const AuthProvider = ({ children }) => {
         ...(options.headers || {}),
       };
 
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const res = await fetch(fullUrl, {
+      let res = await fetch(fullUrl, {
         ...options,
         headers,
         credentials: 'include',
       });
 
+      // If 401 Unauthorized, attempt 1 silent token refresh and retry
+      if (res.status === 401) {
+        const newToken = await refreshSession();
+        if (newToken) {
+          headers['Authorization'] = `Bearer ${newToken}`;
+          res = await fetch(fullUrl, {
+            ...options,
+            headers,
+            credentials: 'include',
+          });
+        }
+      }
+
       const contentType = res.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Server returned non-JSON response (${res.status})`);
+        throw new Error(`Server returned status ${res.status}`);
       }
 
       const data = await res.json();
@@ -41,37 +96,8 @@ export const AuthProvider = ({ children }) => {
       }
       return data;
     },
-    [accessToken]
+    [accessToken, refreshSession]
   );
-
-  // Silent session refresh on boot
-  useEffect(() => {
-    const silentRefresh = async () => {
-      try {
-        const fullUrl = `${API_BASE}/api/auth/refresh`;
-        const res = await fetch(fullUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-          },
-          credentials: 'include',
-        });
-        const contentType = res.headers.get('content-type');
-        if (res.ok && contentType && contentType.includes('application/json')) {
-          const data = await res.json();
-          setAccessToken(data.accessToken);
-          setUser(data.user);
-        }
-      } catch (err) {
-        // No active session
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    silentRefresh();
-  }, []);
 
   const login = async (email, password) => {
     try {
@@ -151,7 +177,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const checkAuthStatus = async () => {
-    if (!accessToken) return null;
     try {
       const data = await apiFetch('/api/auth/me');
       setUser(data.user);
@@ -170,6 +195,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,
         unverifiedEmail,
         setUnverifiedEmail,
+        apiFetch,
         login,
         signup,
         loginWithGoogle,

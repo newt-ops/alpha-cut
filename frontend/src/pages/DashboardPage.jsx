@@ -9,11 +9,10 @@ import { Dropzone } from '@components/ui/Dropzone';
 import { Tabs } from '@components/ui/Tabs';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
-import { customFetch } from '../utils/api';
 import { IconCheck, IconClose, IconExternalLink, IconSparkles, IconUser, IconZap, IconStar, IconFileText } from '@icons/icons';
 
 export const DashboardPage = () => {
-  const { user, generateTelegramToken, checkAuthStatus } = useAuth();
+  const { user, apiFetch, generateTelegramToken } = useAuth();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -31,15 +30,13 @@ export const DashboardPage = () => {
 
   // Profile Form state
   const [profileName, setProfileName] = useState(user?.name || '');
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
 
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       const [projRes, notifRes] = await Promise.all([
-        customFetch('/api/projects'),
-        customFetch('/api/notifications'),
+        apiFetch('/api/projects'),
+        apiFetch('/api/notifications'),
       ]);
 
       if (projRes.success) setProjects(projRes.projects);
@@ -49,7 +46,7 @@ export const DashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [apiFetch, toast]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -81,7 +78,7 @@ export const DashboardPage = () => {
   const handleAcceptProposal = async (projectId) => {
     try {
       setSubmitting(true);
-      const res = await customFetch(`/api/projects/${projectId}/accept`, { method: 'POST' });
+      const res = await apiFetch(`/api/projects/${projectId}/accept`, { method: 'POST' });
       if (res.success) {
         toast({ message: 'Proposal accepted! Project is now in progress.', type: 'success' });
         fetchDashboardData();
@@ -97,7 +94,7 @@ export const DashboardPage = () => {
     if (!selectedProject) return;
     try {
       setSubmitting(true);
-      const res = await customFetch(`/api/projects/${selectedProject._id}/decline`, { method: 'POST' });
+      const res = await apiFetch(`/api/projects/${selectedProject._id}/decline`, { method: 'POST' });
       if (res.success) {
         toast({ message: 'Proposal declined.', type: 'info' });
         setDeclineModalOpen(false);
@@ -113,7 +110,7 @@ export const DashboardPage = () => {
   const handleApproveDelivery = async (projectId) => {
     try {
       setSubmitting(true);
-      const res = await customFetch(`/api/projects/${projectId}/approve`, { method: 'POST' });
+      const res = await apiFetch(`/api/projects/${projectId}/approve`, { method: 'POST' });
       if (res.success) {
         toast({ message: 'Delivery approved! Rating is now unlocked.', type: 'success' });
         fetchDashboardData();
@@ -134,7 +131,7 @@ export const DashboardPage = () => {
     }
     try {
       setSubmitting(true);
-      const res = await customFetch('/api/ratings', {
+      const res = await apiFetch('/api/ratings', {
         method: 'POST',
         body: JSON.stringify({
           projectId: selectedProject._id,

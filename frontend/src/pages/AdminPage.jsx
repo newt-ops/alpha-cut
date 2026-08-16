@@ -9,11 +9,12 @@ import { DatePicker } from '@components/ui/DatePicker';
 import { Dropzone } from '@components/ui/Dropzone';
 import { StarRating } from '@components/ui/StarRating';
 import { EDITING_STYLES } from '../data/editingStyles';
+import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
-import { customFetch } from '../utils/api';
 import { IconCheck, IconSearch, IconUser, IconDollar, IconShield, IconSparkles, IconUpload, IconExternalLink } from '@icons/icons';
 
 export const AdminPage = () => {
+  const { apiFetch } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -46,9 +47,9 @@ export const AdminPage = () => {
     try {
       setLoading(true);
       const [statsRes, projRes, ratRes] = await Promise.all([
-        customFetch('/api/admin/stats'),
-        customFetch('/api/admin/projects'),
-        customFetch('/api/ratings'),
+        apiFetch('/api/admin/stats'),
+        apiFetch('/api/admin/projects'),
+        apiFetch('/api/ratings'),
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
@@ -59,7 +60,7 @@ export const AdminPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [apiFetch, toast]);
 
   useEffect(() => {
     fetchAdminData();
@@ -73,7 +74,7 @@ export const AdminPage = () => {
     }
     const timer = setTimeout(async () => {
       try {
-        const res = await customFetch(`/api/admin/users/search?email=${encodeURIComponent(clientSearchText)}`);
+        const res = await apiFetch(`/api/admin/users/search?email=${encodeURIComponent(clientSearchText)}`);
         if (res.success) setSearchResults(res.users);
       } catch (err) {
         // Search error
@@ -81,7 +82,7 @@ export const AdminPage = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [clientSearchText]);
+  }, [clientSearchText, apiFetch]);
 
   // Submit Proposal
   const handleCreateProposal = async (e) => {
@@ -97,7 +98,7 @@ export const AdminPage = () => {
 
     try {
       setSubmittingProposal(true);
-      const res = await customFetch('/api/admin/projects', {
+      const res = await apiFetch('/api/admin/projects', {
         method: 'POST',
         body: JSON.stringify({
           clientEmail: selectedClient.email,
@@ -134,7 +135,7 @@ export const AdminPage = () => {
       return;
     }
     try {
-      const res = await customFetch(`/api/admin/projects/${selectedProjectForDeliver._id}/deliver`, {
+      const res = await apiFetch(`/api/admin/projects/${selectedProjectForDeliver._id}/deliver`, {
         method: 'POST',
         body: JSON.stringify({ deliverableUrl }),
       });
@@ -153,7 +154,7 @@ export const AdminPage = () => {
   // Toggle Hide Rating
   const handleToggleHideRating = async (ratingId) => {
     try {
-      const res = await customFetch(`/api/ratings/${ratingId}/hide`, { method: 'POST' });
+      const res = await apiFetch(`/api/ratings/${ratingId}/hide`, { method: 'POST' });
       if (res.success) {
         toast({ message: 'Rating visibility updated.', type: 'info' });
         fetchAdminData();
