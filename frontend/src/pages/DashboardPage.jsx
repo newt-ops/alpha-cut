@@ -9,6 +9,7 @@ import { Dropzone } from '@components/ui/Dropzone';
 import { Tabs } from '@components/ui/Tabs';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
+import { customFetch } from '../utils/api';
 import { IconCheck, IconClose, IconExternalLink, IconSparkles, IconUser, IconZap, IconStar, IconFileText } from '@icons/icons';
 
 export const DashboardPage = () => {
@@ -32,14 +33,13 @@ export const DashboardPage = () => {
   const [profileName, setProfileName] = useState(user?.name || '');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [telegramLinkUrl, setTelegramLinkUrl] = useState('');
 
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       const [projRes, notifRes] = await Promise.all([
-        fetch('/api/projects', { credentials: 'include' }).then((r) => r.json()),
-        fetch('/api/notifications', { credentials: 'include' }).then((r) => r.json()),
+        customFetch('/api/projects'),
+        customFetch('/api/notifications'),
       ]);
 
       if (projRes.success) setProjects(projRes.projects);
@@ -81,16 +81,10 @@ export const DashboardPage = () => {
   const handleAcceptProposal = async (projectId) => {
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/projects/${projectId}/accept`, {
-        method: 'POST',
-        credentials: 'include',
-      }).then((r) => r.json());
-
+      const res = await customFetch(`/api/projects/${projectId}/accept`, { method: 'POST' });
       if (res.success) {
         toast({ message: 'Proposal accepted! Project is now in progress.', type: 'success' });
         fetchDashboardData();
-      } else {
-        toast({ message: res.message, type: 'error' });
       }
     } catch (err) {
       toast({ message: err.message, type: 'error' });
@@ -103,17 +97,11 @@ export const DashboardPage = () => {
     if (!selectedProject) return;
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/projects/${selectedProject._id}/decline`, {
-        method: 'POST',
-        credentials: 'include',
-      }).then((r) => r.json());
-
+      const res = await customFetch(`/api/projects/${selectedProject._id}/decline`, { method: 'POST' });
       if (res.success) {
         toast({ message: 'Proposal declined.', type: 'info' });
         setDeclineModalOpen(false);
         fetchDashboardData();
-      } else {
-        toast({ message: res.message, type: 'error' });
       }
     } catch (err) {
       toast({ message: err.message, type: 'error' });
@@ -125,20 +113,12 @@ export const DashboardPage = () => {
   const handleApproveDelivery = async (projectId) => {
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/projects/${projectId}/approve`, {
-        method: 'POST',
-        credentials: 'include',
-      }).then((r) => r.json());
-
+      const res = await customFetch(`/api/projects/${projectId}/approve`, { method: 'POST' });
       if (res.success) {
         toast({ message: 'Delivery approved! Rating is now unlocked.', type: 'success' });
         fetchDashboardData();
-        // Automatically open rating flow
-        const updatedProj = res.project;
-        setSelectedProject(updatedProj);
+        setSelectedProject(res.project);
         setRateModalOpen(true);
-      } else {
-        toast({ message: res.message, type: 'error' });
       }
     } catch (err) {
       toast({ message: err.message, type: 'error' });
@@ -154,23 +134,19 @@ export const DashboardPage = () => {
     }
     try {
       setSubmitting(true);
-      const res = await fetch('/api/ratings', {
+      const res = await customFetch('/api/ratings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           projectId: selectedProject._id,
           stars: ratingStars,
           review: reviewText,
         }),
-      }).then((r) => r.json());
+      });
 
       if (res.success) {
         toast({ message: 'Thank you for your rating & review!', type: 'success' });
         setRateModalOpen(false);
         fetchDashboardData();
-      } else {
-        toast({ message: res.message, type: 'error' });
       }
     } catch (err) {
       toast({ message: err.message, type: 'error' });
@@ -410,7 +386,6 @@ export const DashboardPage = () => {
       {/* ACCOUNT PROFILE TAB */}
       {activeTab === 'profile' && (
         <div style={{ maxWidth: '600px', margin: '0 auto', display: 'grid', gap: '32px' }}>
-          {/* Avatar & Profile Information */}
           <div
             style={{
               backgroundColor: 'var(--surface)',
@@ -433,7 +408,6 @@ export const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Telegram Connection Card */}
           <div
             style={{
               backgroundColor: 'var(--surface)',

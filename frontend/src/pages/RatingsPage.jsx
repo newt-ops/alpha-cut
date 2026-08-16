@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@components/ui/Badge';
 import { StarRating } from '@components/ui/StarRating';
+import { customFetch } from '../utils/api';
 import { IconStar } from '@icons/icons';
 
 export const RatingsPage = () => {
@@ -10,7 +11,7 @@ export const RatingsPage = () => {
   useEffect(() => {
     const fetchRatings = async () => {
       try {
-        const res = await fetch('/api/ratings').then((r) => r.json());
+        const res = await customFetch('/api/ratings');
         if (res.success) setData(res);
       } catch (err) {
         // Fallback

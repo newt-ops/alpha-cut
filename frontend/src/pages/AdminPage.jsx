@@ -10,6 +10,7 @@ import { Dropzone } from '@components/ui/Dropzone';
 import { StarRating } from '@components/ui/StarRating';
 import { EDITING_STYLES } from '../data/editingStyles';
 import { useToast } from '@components/ui/Toast';
+import { customFetch } from '../utils/api';
 import { IconCheck, IconSearch, IconUser, IconDollar, IconShield, IconSparkles, IconUpload, IconExternalLink } from '@icons/icons';
 
 export const AdminPage = () => {
@@ -45,9 +46,9 @@ export const AdminPage = () => {
     try {
       setLoading(true);
       const [statsRes, projRes, ratRes] = await Promise.all([
-        fetch('/api/admin/stats', { credentials: 'include' }).then((r) => r.json()),
-        fetch('/api/admin/projects', { credentials: 'include' }).then((r) => r.json()),
-        fetch('/api/ratings', { credentials: 'include' }).then((r) => r.json()),
+        customFetch('/api/admin/stats'),
+        customFetch('/api/admin/projects'),
+        customFetch('/api/ratings'),
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
@@ -72,9 +73,7 @@ export const AdminPage = () => {
     }
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/admin/users/search?email=${encodeURIComponent(clientSearchText)}`, {
-          credentials: 'include',
-        }).then((r) => r.json());
+        const res = await customFetch(`/api/admin/users/search?email=${encodeURIComponent(clientSearchText)}`);
         if (res.success) setSearchResults(res.users);
       } catch (err) {
         // Search error
@@ -98,10 +97,8 @@ export const AdminPage = () => {
 
     try {
       setSubmittingProposal(true);
-      const res = await fetch('/api/admin/projects', {
+      const res = await customFetch('/api/admin/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           clientEmail: selectedClient.email,
           editingStyle,
@@ -113,7 +110,7 @@ export const AdminPage = () => {
           deadline,
           notes,
         }),
-      }).then((r) => r.json());
+      });
 
       if (res.success) {
         toast({ message: `Proposal created and sent to ${selectedClient.name}!`, type: 'success' });
@@ -122,8 +119,6 @@ export const AdminPage = () => {
         setReferenceBrief('');
         setNotes('');
         fetchAdminData();
-      } else {
-        toast({ message: res.message, type: 'error' });
       }
     } catch (err) {
       toast({ message: err.message, type: 'error' });
@@ -139,20 +134,16 @@ export const AdminPage = () => {
       return;
     }
     try {
-      const res = await fetch(`/api/admin/projects/${selectedProjectForDeliver._id}/deliver`, {
+      const res = await customFetch(`/api/admin/projects/${selectedProjectForDeliver._id}/deliver`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ deliverableUrl }),
-      }).then((r) => r.json());
+      });
 
       if (res.success) {
         toast({ message: 'Work marked as delivered! Client notified.', type: 'success' });
         setDeliverModalOpen(false);
         setDeliverableUrl('');
         fetchAdminData();
-      } else {
-        toast({ message: res.message, type: 'error' });
       }
     } catch (err) {
       toast({ message: err.message, type: 'error' });
@@ -162,11 +153,7 @@ export const AdminPage = () => {
   // Toggle Hide Rating
   const handleToggleHideRating = async (ratingId) => {
     try {
-      const res = await fetch(`/api/ratings/${ratingId}/hide`, {
-        method: 'POST',
-        credentials: 'include',
-      }).then((r) => r.json());
-
+      const res = await customFetch(`/api/ratings/${ratingId}/hide`, { method: 'POST' });
       if (res.success) {
         toast({ message: 'Rating visibility updated.', type: 'info' });
         fetchAdminData();

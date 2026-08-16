@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 const AuthContext = createContext(null);
 
+const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
@@ -10,6 +12,8 @@ export const AuthProvider = ({ children }) => {
 
   const apiFetch = useCallback(
     async (endpoint, options = {}) => {
+      const fullUrl = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+
       const headers = {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
@@ -20,11 +24,16 @@ export const AuthProvider = ({ children }) => {
         headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
-      const res = await fetch(endpoint, {
+      const res = await fetch(fullUrl, {
         ...options,
         headers,
         credentials: 'include',
       });
+
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Server returned non-JSON response (${res.status})`);
+      }
 
       const data = await res.json();
       if (!res.ok) {
@@ -39,7 +48,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const silentRefresh = async () => {
       try {
-        const res = await fetch('/api/auth/refresh', {
+        const fullUrl = `${API_BASE}/api/auth/refresh`;
+        const res = await fetch(fullUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -47,7 +57,8 @@ export const AuthProvider = ({ children }) => {
           },
           credentials: 'include',
         });
-        if (res.ok) {
+        const contentType = res.headers.get('content-type');
+        if (res.ok && contentType && contentType.includes('application/json')) {
           const data = await res.json();
           setAccessToken(data.accessToken);
           setUser(data.user);

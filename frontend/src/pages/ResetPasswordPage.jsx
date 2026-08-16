@@ -4,6 +4,7 @@ import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { useToast } from '@components/ui/Toast';
+import { customFetch } from '../utils/api';
 import { IconCheck, IconLock } from '@icons/icons';
 
 export const ResetPasswordPage = () => {
@@ -31,20 +32,14 @@ export const ResetPasswordPage = () => {
     try {
       setIsLoading(true);
       setError('');
-      const res = await fetch('/api/auth/reset-password', {
+      const res = await customFetch('/api/auth/reset-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
         body: JSON.stringify({ email, code, newPassword }),
-      }).then((r) => r.json());
+      });
 
       if (res.success) {
         toast({ message: res.message, type: 'success' });
         navigate('/login');
-      } else {
-        setError(res.message);
       }
     } catch (err) {
       setError(err.message);

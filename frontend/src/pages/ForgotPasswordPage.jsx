@@ -4,6 +4,7 @@ import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { useToast } from '@components/ui/Toast';
+import { customFetch } from '../utils/api';
 import { IconArrowRight, IconUser } from '@icons/icons';
 
 export const ForgotPasswordPage = () => {
@@ -20,14 +21,10 @@ export const ForgotPasswordPage = () => {
 
     try {
       setIsLoading(true);
-      const res = await fetch('/api/auth/forgot-password', {
+      const res = await customFetch('/api/auth/forgot-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
         body: JSON.stringify({ email }),
-      }).then((r) => r.json());
+      });
 
       setMessage(res.message);
       toast({ message: res.message, type: 'info' });
