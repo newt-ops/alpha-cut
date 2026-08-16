@@ -13,10 +13,6 @@ const ratingSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    clientName: {
-      type: String,
-      required: true,
-    },
     stars: {
       type: Number,
       required: true,
@@ -26,16 +22,14 @@ const ratingSchema = new mongoose.Schema(
     review: {
       type: String,
       required: true,
-    },
-    editingStyle: {
-      type: String,
-      required: true,
-    },
-    packageTier: {
-      type: String,
-      required: true,
+      trim: true,
+      maxlength: 1000,
     },
     hidden: {
+      type: Boolean,
+      default: false,
+    },
+    featured: {
       type: Boolean,
       default: false,
     },

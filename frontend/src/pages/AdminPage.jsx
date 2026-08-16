@@ -1,24 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { AdminLayout } from '@components/layout/AdminLayout';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { Input, Textarea } from '@components/ui/Input';
 import { Select } from '@components/ui/Select';
 import { Modal } from '@components/ui/Modal';
-import { Tabs } from '@components/ui/Tabs';
 import { DatePicker } from '@components/ui/DatePicker';
-import { Dropzone } from '@components/ui/Dropzone';
 import { StarRating } from '@components/ui/StarRating';
 import { EDITING_STYLES } from '../data/editingStyles';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
-import { IconCheck, IconSearch, IconUser, IconDollar, IconShield, IconSparkles, IconUpload, IconExternalLink } from '@icons/icons';
+import {
+  IconSearch,
+  IconUser,
+  IconDollar,
+  IconShield,
+  IconSparkles,
+  IconUpload,
+  IconExternalLink,
+  IconCheck,
+  IconStar,
+  IconFileText,
+} from '@icons/icons';
 
 export const AdminPage = () => {
   const { apiFetch } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Stats State
+  // Stats & Data State
   const [stats, setStats] = useState(null);
   const [projects, setProjects] = useState([]);
   const [ratings, setRatings] = useState([]);
@@ -38,10 +48,9 @@ export const AdminPage = () => {
   const [notes, setNotes] = useState('');
   const [submittingProposal, setSubmittingProposal] = useState(false);
 
-  // Mark Delivered Modal State
-  const [deliverModalOpen, setDeliverModalOpen] = useState(false);
-  const [selectedProjectForDeliver, setSelectedProjectForDeliver] = useState(null);
-  const [deliverableUrl, setDeliverableUrl] = useState('');
+  // Detail Modal State
+  const [selectedProjectForDetail, setSelectedProjectForDetail] = useState(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   const fetchAdminData = useCallback(async () => {
     try {
@@ -120,6 +129,7 @@ export const AdminPage = () => {
         setReferenceBrief('');
         setNotes('');
         fetchAdminData();
+        setActiveTab('board');
       }
     } catch (err) {
       toast({ message: err.message, type: 'error' });
@@ -128,22 +138,15 @@ export const AdminPage = () => {
     }
   };
 
-  // Mark Delivered
-  const handleMarkDelivered = async () => {
-    if (!selectedProjectForDeliver || !deliverableUrl) {
-      toast({ message: 'Please enter a valid deliverable URL.', type: 'error' });
-      return;
-    }
+  // Mark Delivered (Pure Progress Tracking - No Deliverable URL required)
+  const handleMarkDelivered = async (projectId) => {
     try {
-      const res = await apiFetch(`/api/admin/projects/${selectedProjectForDeliver._id}/deliver`, {
-        method: 'POST',
-        body: JSON.stringify({ deliverableUrl }),
-      });
-
+      const res = await apiFetch(`/api/admin/projects/${projectId}/deliver`, { method: 'POST' });
       if (res.success) {
-        toast({ message: 'Work marked as delivered! Client notified.', type: 'success' });
-        setDeliverModalOpen(false);
-        setDeliverableUrl('');
+        toast({ message: 'Project status updated to DELIVERED. Client notified.', type: 'success' });
+        if (selectedProjectForDetail && selectedProjectForDetail._id === projectId) {
+          setSelectedProjectForDetail(res.project);
+        }
         fetchAdminData();
       }
     } catch (err) {
@@ -164,42 +167,51 @@ export const AdminPage = () => {
     }
   };
 
-  const adminTabs = [
-    { id: 'overview', label: 'Admin Dashboard' },
-    { id: 'proposal', label: '+ New Proposal' },
-    { id: 'board', label: 'Project Board' },
-    { id: 'moderation', label: 'Ratings Moderation' },
-  ];
+  // Toggle Feature Rating (Featured on Home Page)
+  const handleToggleFeatureRating = async (ratingId) => {
+    try {
+      const res = await apiFetch(`/api/ratings/${ratingId}/feature`, { method: 'POST' });
+      if (res.success) {
+        toast({ message: 'Rating featured status updated.', type: 'success' });
+        fetchAdminData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    }
+  };
+
+  const getStatusBadgeVariant = (status) => {
+    switch (status) {
+      case 'proposal_sent': return 'gold';
+      case 'in_progress': return 'maroon';
+      case 'delivered': return 'surface';
+      case 'completed': return 'success';
+      case 'declined': return 'maroon';
+      default: return 'surface';
+    }
+  };
 
   return (
-    <div style={{ padding: '20px 0 60px 0' }} className="admin-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <Badge variant="maroon">Agency Control Panel</Badge>
-          <h1 className="font-display" style={{ fontSize: '32px', marginTop: '8px' }}>
-            Alpha Cut Admin Workspace
-          </h1>
-        </div>
-        <Tabs tabs={adminTabs} activeTab={activeTab} onChange={setActiveTab} />
-      </div>
-
-      {/* OVERVIEW TAB */}
+    <AdminLayout activeTab={activeTab} onChangeTab={setActiveTab}>
+      {/* OVERVIEW / ANALYTICS TAB */}
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gap: '32px' }}>
           {/* Revenue Stat Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>REVENUE (ETB)</span>
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>DELIVERED REVENUE (ETB)</span>
               <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '4px', color: 'var(--ink)' }}>
                 {stats?.revenueETB?.toLocaleString() || 0} ETB
               </h3>
+              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>Booked from delivered & completed edits</p>
             </div>
 
             <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>REVENUE (USD)</span>
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>DELIVERED REVENUE (USD)</span>
               <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '4px', color: 'var(--ink)' }}>
                 ${stats?.revenueUSD?.toLocaleString() || 0} USD
               </h3>
+              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>Booked from delivered & completed edits</p>
             </div>
 
             <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
@@ -207,39 +219,41 @@ export const AdminPage = () => {
               <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '4px', color: 'var(--ink)' }}>
                 {stats?.clientCount || 0}
               </h3>
+              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>Total client user accounts</p>
             </div>
 
             <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>AVERAGE RATING</span>
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>PROPOSAL ACCEPTANCE RATE</span>
               <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '4px', color: 'var(--ink)' }}>
-                {stats?.avgRating || '5.0'} ★
+                {stats?.conversionRate || '0%'}
               </h3>
+              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>Accepted vs total proposals sent</p>
             </div>
           </div>
 
           {/* Project Status Breakdown */}
           <div style={{ backgroundColor: 'var(--surface)', padding: '28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-            <h3 className="font-display" style={{ fontSize: '20px', marginBottom: '16px' }}>Project Status Breakdown</h3>
+            <h3 className="font-display" style={{ fontSize: '20px', marginBottom: '16px' }}>Project Lifecycle Status Breakdown</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
               <Badge variant="gold">Proposals Sent: {stats?.statusCounts?.proposal_sent || 0}</Badge>
               <Badge variant="maroon">In Progress: {stats?.statusCounts?.in_progress || 0}</Badge>
               <Badge variant="surface">Work Delivered: {stats?.statusCounts?.delivered || 0}</Badge>
-              <Badge variant="success">Completed: {stats?.statusCounts?.completed || 0}</Badge>
+              <Badge variant="success">Completed & Approved: {stats?.statusCounts?.completed || 0}</Badge>
+              <Badge variant="maroon">Declined: {stats?.statusCounts?.declined || 0}</Badge>
             </div>
           </div>
         </div>
       )}
 
-      {/* NEW PROPOSAL FORM TAB */}
+      {/* CREATE PROPOSAL FORM TAB */}
       {activeTab === 'proposal' && (
         <div style={{ maxWidth: '640px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 30px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '20px' }}>Create New Client Proposal</h2>
+          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '20px' }}>Issue New Client Proposal</h2>
 
           <form onSubmit={handleCreateProposal}>
-            {/* Registered Client Email Typeahead Search */}
             <div style={{ position: 'relative', marginBottom: '20px' }}>
               <Input
-                label="Client Registered Email (Required)"
+                label="Registered Client Email (Required)"
                 placeholder="Search registered client email..."
                 value={clientSearchText}
                 onChange={(e) => {
@@ -250,7 +264,6 @@ export const AdminPage = () => {
                 required
               />
 
-              {/* Typeahead Results */}
               {searchResults.length > 0 && !selectedClient && (
                 <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, backgroundColor: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow)', maxHeight: '180px', overflowY: 'auto' }}>
                   {searchResults.map((user) => (
@@ -322,8 +335,8 @@ export const AdminPage = () => {
             />
 
             <Textarea
-              label="Reference / Brief Notes"
-              placeholder="Paste raw video link or instructions..."
+              label="Reference / Brief Notes (External Drive / Instructions)"
+              placeholder="Enter external Google Drive or project brief notes..."
               value={referenceBrief}
               onChange={(e) => setReferenceBrief(e.target.value)}
             />
@@ -337,32 +350,59 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* PROJECT BOARD TAB */}
+      {/* PROJECT BOARD TAB WITH DETAIL VIEW MODAL */}
       {activeTab === 'board' && (
         <div style={{ display: 'grid', gap: '20px' }}>
-          <h2 className="font-display" style={{ fontSize: '24px' }}>All Client Projects</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 className="font-display" style={{ fontSize: '24px' }}>All Client Projects & Proposals</h2>
+            <span style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>Click any card to inspect full details</span>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
             {projects.map((proj) => (
-              <div key={proj._id} style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <Badge variant={proj.status === 'completed' ? 'success' : 'gold'}>{proj.status.toUpperCase()}</Badge>
-                  <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--accent-gold)' }}>{proj.price} {proj.currency}</span>
+              <div
+                key={proj._id}
+                onClick={() => {
+                  setSelectedProjectForDetail(proj);
+                  setDetailModalOpen(true);
+                }}
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  padding: '24px',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--line)',
+                  cursor: 'pointer',
+                  transition: 'transform var(--transition-fast), border-color var(--transition-fast)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <Badge variant={getStatusBadgeVariant(proj.status)}>
+                    {proj.status.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-gold)' }}>
+                    {proj.price} {proj.currency}
+                  </span>
                 </div>
-                <h3 className="font-display" style={{ fontSize: '18px' }}>{proj.editingStyle}</h3>
-                <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px' }}>Client: {proj.clientName} ({proj.clientEmail})</p>
 
-                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
+                <h3 className="font-display" style={{ fontSize: '18px', marginBottom: '4px' }}>
+                  {proj.editingStyle}
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
+                  Client: {proj.clientName} ({proj.clientEmail})
+                </p>
+
+                <div style={{ fontSize: '12px', color: 'var(--ink-soft)', borderTop: '1px solid var(--line)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Deadline: {new Date(proj.deadline).toLocaleDateString()}</span>
                   {proj.status === 'in_progress' && (
                     <Button
                       variant="primary"
-                      fullWidth
-                      iconRight={IconUpload}
-                      onClick={() => {
-                        setSelectedProjectForDeliver(proj);
-                        setDeliverModalOpen(true);
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkDelivered(proj._id);
                       }}
                     >
-                      Mark Work Delivered
+                      Mark Delivered
                     </Button>
                   )}
                 </div>
@@ -372,44 +412,124 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* RATINGS MODERATION TAB */}
+      {/* RATINGS & MODERATION TAB */}
       {activeTab === 'moderation' && (
         <div style={{ display: 'grid', gap: '20px' }}>
           <h2 className="font-display" style={{ fontSize: '24px' }}>Client Reviews & Moderation</h2>
           <div style={{ display: 'grid', gap: '16px' }}>
             {ratings.map((r) => (
-              <div key={r._id} style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div
+                key={r._id}
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  padding: '20px 24px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--line)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '16px',
+                }}
+              >
                 <div>
-                  <StarRating rating={r.stars} size={16} />
-                  <p style={{ fontSize: '14px', marginTop: '6px', fontStyle: 'italic' }}>"{r.review}"</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                    <StarRating rating={r.stars} size={16} />
+                    {r.featured && <Badge variant="gold">FEATURED ON HOME</Badge>}
+                    {r.hidden && <Badge variant="maroon">HIDDEN</Badge>}
+                  </div>
+                  <p style={{ fontSize: '14px', fontStyle: 'italic', marginBottom: '4px' }}>"{r.review}"</p>
                   <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>— {r.clientName} ({r.editingStyle})</span>
                 </div>
-                <Button variant="secondary" size="small" onClick={() => handleToggleHideRating(r._id)}>
-                  {r.hidden ? 'Unhide' : 'Hide'}
-                </Button>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <Button variant="secondary" size="small" onClick={() => handleToggleFeatureRating(r._id)}>
+                    {r.featured ? 'Unfeature' : 'Mark Featured'}
+                  </Button>
+                  <Button variant="secondary" size="small" onClick={() => handleToggleHideRating(r._id)}>
+                    {r.hidden ? 'Unhide' : 'Hide Review'}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Mark Delivered Modal */}
-      <Modal isOpen={deliverModalOpen} onClose={() => setDeliverModalOpen(false)} title="Attach Deliverable & Deliver">
-        <Input
-          label="Deliverable Video / Cloudinary Link"
-          placeholder="https://cloudinary.com/v12345/video.mp4"
-          value={deliverableUrl}
-          onChange={(e) => setDeliverableUrl(e.target.value)}
-          required
-        />
-        <div style={{ marginTop: '20px' }}>
-          <Dropzone label="Upload deliverable video file directly" />
+      {/* REGISTERED CLIENTS TAB */}
+      {activeTab === 'clients' && (
+        <div style={{ display: 'grid', gap: '20px' }}>
+          <h2 className="font-display" style={{ fontSize: '24px' }}>Registered Clients Overview</h2>
+          <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>
+            Use the search box in "Create Proposal" to find client emails when issuing proposals. Total Registered Clients: {stats?.clientCount || 0}.
+          </p>
         </div>
-        <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-          <Button variant="secondary" onClick={() => setDeliverModalOpen(false)}>Cancel</Button>
-          <Button variant="primary" onClick={handleMarkDelivered}>Confirm Delivery</Button>
+      )}
+
+      {/* PACKAGE SETTINGS TAB */}
+      {activeTab === 'pricing' && (
+        <div style={{ maxWidth: '600px', backgroundColor: 'var(--surface)', padding: '28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
+          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '12px' }}>Agency Package Pricing Configurations</h2>
+          <p style={{ fontSize: '14px', color: 'var(--ink-soft)' }}>
+            Base pricing tiers: Basic Short-Form (350 - 400 ETB), Premium Short-Form (450 - 500 ETB). Long-form & USD rates custom configured per proposal.
+          </p>
         </div>
-      </Modal>
-    </div>
+      )}
+
+      {/* Project Detail Modal */}
+      {selectedProjectForDetail && (
+        <Modal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} title="Project & Proposal Specifications">
+          <div style={{ display: 'grid', gap: '16px', fontSize: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Badge variant={getStatusBadgeVariant(selectedProjectForDetail.status)}>
+                {selectedProjectForDetail.status.replace('_', ' ').toUpperCase()}
+              </Badge>
+              <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                {selectedProjectForDetail.price} {selectedProjectForDetail.currency}
+              </span>
+            </div>
+
+            <div>
+              <strong>Editing Style:</strong> {selectedProjectForDetail.editingStyle}
+            </div>
+            <div>
+              <strong>Client:</strong> {selectedProjectForDetail.clientName} ({selectedProjectForDetail.clientEmail})
+            </div>
+            <div>
+              <strong>Package Tier:</strong> {selectedProjectForDetail.packageTier?.toUpperCase()} ({selectedProjectForDetail.contentLength?.toUpperCase()})
+            </div>
+            <div>
+              <strong>Deadline:</strong> {new Date(selectedProjectForDetail.deadline).toLocaleDateString()}
+            </div>
+
+            {selectedProjectForDetail.referenceBrief && (
+              <div style={{ backgroundColor: 'var(--bg)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+                <strong>Brief Notes / Reference:</strong>
+                <p style={{ marginTop: '4px', color: 'var(--ink-soft)' }}>{selectedProjectForDetail.referenceBrief}</p>
+              </div>
+            )}
+
+            <div style={{ paddingTop: '12px', borderTop: '1px solid var(--line)', fontSize: '12px', color: 'var(--ink-soft)' }}>
+              <div>Created: {new Date(selectedProjectForDetail.createdAt).toLocaleString()}</div>
+              {selectedProjectForDetail.acceptedAt && <div>Accepted: {new Date(selectedProjectForDetail.acceptedAt).toLocaleString()}</div>}
+              {selectedProjectForDetail.deliveredAt && <div>Delivered: {new Date(selectedProjectForDetail.deliveredAt).toLocaleString()}</div>}
+              {selectedProjectForDetail.completedAt && <div>Completed: {new Date(selectedProjectForDetail.completedAt).toLocaleString()}</div>}
+            </div>
+
+            {selectedProjectForDetail.status === 'in_progress' && (
+              <div style={{ marginTop: '16px' }}>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onClick={() => handleMarkDelivered(selectedProjectForDetail._id)}
+                >
+                  Mark Work Delivered
+                </Button>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+    </AdminLayout>
   );
 };

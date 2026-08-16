@@ -26,6 +26,11 @@ import {
   Clock,
   FileText,
   ExternalLink,
+  BarChart3,
+  Folder,
+  Plus,
+  Users,
+  Settings,
 } from 'lucide-react';
 
 const createIcon = (LucideIcon, defaultProps = {}) => {
@@ -66,6 +71,11 @@ export const IconCalendar = createIcon(Calendar);
 export const IconClock = createIcon(Clock);
 export const IconFileText = createIcon(FileText);
 export const IconExternalLink = createIcon(ExternalLink);
+export const IconBarChart = createIcon(BarChart3);
+export const IconFolder = createIcon(Folder);
+export const IconPlus = createIcon(Plus);
+export const IconUsers = createIcon(Users);
+export const IconSettings = createIcon(Settings);
 
 export const IconStar = ({ size = 20, filled = false, color = 'var(--accent-gold)', className = '', ...props }) => (
   <LucideStar

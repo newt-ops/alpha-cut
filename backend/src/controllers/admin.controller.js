@@ -57,8 +57,7 @@ export const getAllProjects = async (req, res, next) => {
 export const markDelivered = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { deliverableUrl } = req.body;
-    const project = await lifecycleService.markDelivered(id, req.user._id, deliverableUrl);
+    const project = await lifecycleService.markDelivered(id, req.user._id);
     res.status(200).json({ success: true, project });
   } catch (err) {
     next(err);
@@ -70,12 +69,13 @@ export const getStats = async (req, res, next) => {
     const clientCount = await User.countDocuments({ role: 'client' });
     const allProjects = await Project.find({});
 
+    // REVENUE ACCOUNTING: Revenue adds ONLY after work is delivered or completed
     const revenueETB = allProjects
-      .filter((p) => (p.status === 'completed' || p.status === 'in_progress' || p.status === 'delivered') && p.currency === 'ETB')
+      .filter((p) => (p.status === 'delivered' || p.status === 'completed') && p.currency === 'ETB')
       .reduce((sum, p) => sum + p.price, 0);
 
     const revenueUSD = allProjects
-      .filter((p) => (p.status === 'completed' || p.status === 'in_progress' || p.status === 'delivered') && p.currency === 'USD')
+      .filter((p) => (p.status === 'delivered' || p.status === 'completed') && p.currency === 'USD')
       .reduce((sum, p) => sum + p.price, 0);
 
     const statusCounts = {
@@ -85,6 +85,10 @@ export const getStats = async (req, res, next) => {
       completed: allProjects.filter((p) => p.status === 'completed').length,
       declined: allProjects.filter((p) => p.status === 'declined').length,
     };
+
+    const totalProposals = statusCounts.proposal_sent + statusCounts.in_progress + statusCounts.delivered + statusCounts.completed + statusCounts.declined;
+    const acceptedProposals = statusCounts.in_progress + statusCounts.delivered + statusCounts.completed;
+    const conversionRate = totalProposals > 0 ? ((acceptedProposals / totalProposals) * 100).toFixed(1) + '%' : '0%';
 
     const ratings = await Rating.find({ hidden: false });
     const avgRating = ratings.length > 0
@@ -100,6 +104,7 @@ export const getStats = async (req, res, next) => {
         revenueUSD,
         clientCount,
         statusCounts,
+        conversionRate,
         avgRating,
         totalReviews: ratings.length,
         recentActivity,

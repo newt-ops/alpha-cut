@@ -32,11 +32,14 @@ export const DashboardPage = () => {
   const [profileName, setProfileName] = useState(user?.name || '');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
-    if (user?.name) {
-      setProfileName(user.name);
+    if (user) {
+      setProfileName(user.name || '');
+      setAvatarUrl(user.avatarUrl || '');
     }
   }, [user]);
 
@@ -161,12 +164,44 @@ export const DashboardPage = () => {
     }
   };
 
+  const handleAvatarUpload = async (file) => {
+    try {
+      setUploadingAvatar(true);
+      const sigRes = await apiFetch('/api/uploads/signature', { method: 'POST' });
+      if (!sigRes.success) throw new Error('Failed to obtain upload signature');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', sigRes.apiKey);
+      formData.append('timestamp', sigRes.timestamp);
+      formData.append('signature', sigRes.signature);
+      formData.append('folder', sigRes.folder);
+
+      const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${sigRes.cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const cloudData = await cloudRes.json();
+      if (cloudData.secure_url) {
+        setAvatarUrl(cloudData.secure_url);
+        await updateProfile({ avatarUrl: cloudData.secure_url });
+        toast({ message: 'Profile photo updated!', type: 'success' });
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Avatar upload failed', type: 'error' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     try {
       setSavingProfile(true);
       const res = await updateProfile({
         name: profileName,
+        avatarUrl,
         oldPassword: oldPassword || undefined,
         newPassword: newPassword || undefined,
       });
@@ -192,11 +227,37 @@ export const DashboardPage = () => {
   return (
     <div style={{ padding: '20px 0 60px 0' }} className="dashboard-page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <Badge variant="gold">Client Workspace</Badge>
-          <h1 className="font-display" style={{ fontSize: '32px', marginTop: '8px' }}>
-            Welcome, {user?.name}
-          </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={user?.name}
+              style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-gold)' }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(201, 160, 107, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--accent-gold)',
+                fontWeight: 700,
+                fontSize: '20px',
+              }}
+            >
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            </div>
+          )}
+          <div>
+            <Badge variant="gold">Client Workspace</Badge>
+            <h1 className="font-display" style={{ fontSize: '32px', marginTop: '4px' }}>
+              Welcome, {user?.name}
+            </h1>
+          </div>
         </div>
         <Tabs tabs={dashboardTabs} activeTab={activeTab} onChange={setActiveTab} />
       </div>
@@ -281,21 +342,14 @@ export const DashboardPage = () => {
                     )}
 
                     {activeProject.status === 'delivered' && (
-                      <>
-                        <a href={activeProject.deliverableUrl} target="_blank" rel="noopener noreferrer">
-                          <Button variant="secondary" iconRight={IconExternalLink}>
-                            View Deliverable
-                          </Button>
-                        </a>
-                        <Button
-                          variant="primary"
-                          iconRight={IconSparkles}
-                          isLoading={submitting}
-                          onClick={() => handleApproveDelivery(activeProject._id)}
-                        >
-                          Approve Delivery & Rate
-                        </Button>
-                      </>
+                      <Button
+                        variant="primary"
+                        iconRight={IconSparkles}
+                        isLoading={submitting}
+                        onClick={() => handleApproveDelivery(activeProject._id)}
+                      >
+                        Approve Delivery & Rate
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -389,16 +443,7 @@ export const DashboardPage = () => {
                 </div>
               </div>
 
-              {/* Deliverable Link or Action */}
               <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
-                {proj.deliverableUrl && (
-                  <a href={proj.deliverableUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: '12px' }}>
-                    <Button variant="secondary" fullWidth iconRight={IconExternalLink}>
-                      Open Deliverable
-                    </Button>
-                  </a>
-                )}
-
                 {proj.status === 'completed' && proj.rated && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--accent-gold)' }}>
                     <IconStar size={16} filled color="var(--accent-gold)" />
@@ -424,8 +469,21 @@ export const DashboardPage = () => {
             }}
           >
             <h3 className="font-display" style={{ fontSize: '20px', marginBottom: '20px' }}>
-              Account Settings
+              Account Settings & Photo
             </h3>
+
+            {/* Profile Avatar Dropzone */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
+                Profile Photo (Cloudinary)
+              </label>
+              <Dropzone
+                onFileSelect={handleAvatarUpload}
+                label={uploadingAvatar ? 'Uploading to Cloudinary...' : 'Drag & drop profile photo here'}
+                sublabel="Supports PNG, JPG (up to 5MB)"
+              />
+            </div>
+
             <Input label="Full Name" value={profileName} onChange={(e) => setProfileName(e.target.value)} required />
             <Input label="Email Address" value={user?.email || ''} disabled helperText="Email address cannot be changed." />
 

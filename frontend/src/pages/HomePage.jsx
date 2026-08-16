@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Badge } from '@components/ui/Badge';
@@ -14,6 +14,28 @@ import { IconArrowRight, IconSparkles, IconFilm, IconZap, IconShield, IconStar, 
 export const HomePage = () => {
   const featuredStyles = EDITING_STYLES.slice(0, 3);
   const featuredPortfolio = PORTFOLIO_ITEMS.slice(0, 3);
+
+  const [featuredReviews, setFeaturedReviews] = useState([]);
+  const [avgRating, setAvgRating] = useState('5.0');
+  const [totalReviews, setTotalReviews] = useState(12);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '';
+        const res = await fetch(`${API_BASE}/api/ratings?featured=true`);
+        const data = await res.json();
+        if (data.success && data.ratings && data.ratings.length > 0) {
+          setFeaturedReviews(data.ratings);
+          setAvgRating(data.avgRating);
+          setTotalReviews(data.totalReviews);
+        }
+      } catch (err) {
+        // Fallback to static reviews if offline
+      }
+    };
+    fetchFeatured();
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '90px' }} className="home-page-container">
@@ -350,38 +372,54 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* 6. RATINGS TEASER */}
+      {/* 6. RATINGS TEASER (DYNAMIC FEATURED REVIEWS) */}
       <section style={{ backgroundColor: 'var(--surface)', padding: '50px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center' }}>
         <Badge variant="gold">Client Feedback</Badge>
         <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}>
-          <span className="font-display" style={{ fontSize: '42px', fontWeight: 800, color: 'var(--ink)' }}>4.9</span>
+          <span className="font-display" style={{ fontSize: '42px', fontWeight: 800, color: 'var(--ink)' }}>{avgRating}</span>
           <div style={{ textAlign: 'left' }}>
             <StarRating rating={5} />
             <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
-              Based on 12 verified client reviews
+              Based on {totalReviews} verified client reviews
             </span>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', maxWidth: '800px', margin: '32px auto 24px auto', textAlign: 'left' }}>
-          <div style={{ padding: '20px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
-            <StarRating rating={5} size={16} />
-            <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '8px', fontStyle: 'italic' }}>
-              "Alpha Cut doubled our retention rate in our first 3 videos. The kinetic captions and sound beats are unmatched."
-            </p>
-            <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', display: 'block', marginTop: '8px' }}>
-              Tech Startup Founder
-            </span>
-          </div>
-          <div style={{ padding: '20px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
-            <StarRating rating={5} size={16} />
-            <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '8px', fontStyle: 'italic' }}>
-              "The turnaround speed and cinematic polish gave my brand instant authority on YouTube Shorts."
-            </p>
-            <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', display: 'block', marginTop: '8px' }}>
-              Productivity Creator
-            </span>
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', maxWidth: '900px', margin: '32px auto 24px auto', textAlign: 'left' }}>
+          {featuredReviews.length > 0 ? (
+            featuredReviews.slice(0, 3).map((r) => (
+              <div key={r._id} style={{ padding: '20px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+                <StarRating rating={r.stars} size={16} />
+                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '8px', fontStyle: 'italic' }}>
+                  "{r.review}"
+                </p>
+                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', display: 'block', marginTop: '8px' }}>
+                  {r.clientName} ({r.editingStyle})
+                </span>
+              </div>
+            ))
+          ) : (
+            <>
+              <div style={{ padding: '20px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+                <StarRating rating={5} size={16} />
+                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '8px', fontStyle: 'italic' }}>
+                  "Alpha Cut doubled our retention rate in our first 3 videos. The kinetic captions and sound beats are unmatched."
+                </p>
+                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', display: 'block', marginTop: '8px' }}>
+                  Tech Startup Founder
+                </span>
+              </div>
+              <div style={{ padding: '20px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+                <StarRating rating={5} size={16} />
+                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '8px', fontStyle: 'italic' }}>
+                  "The turnaround speed and cinematic polish gave my brand instant authority on YouTube Shorts."
+                </p>
+                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', display: 'block', marginTop: '8px' }}>
+                  Productivity Creator
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         <Link to="/ratings">

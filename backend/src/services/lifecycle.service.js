@@ -9,7 +9,7 @@ import { config } from '../config/env.js';
 
 const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
 
-// Helper to send Telegram message
+// Helper to send Telegram message (NO EMOJIS)
 const sendTelegramNotification = async (telegramChatId, messageText) => {
   if (!bot || !telegramChatId) return;
   try {
@@ -26,8 +26,9 @@ const sendTransactionalEmail = async ({ toEmail, subject, htmlContent }) => {
     return;
   }
   try {
+    const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || 'Alpha Cut <onboarding@resend.dev>';
     await resend.emails.send({
-      from: 'Alpha Cut <notifications@alphacut.agency>',
+      from: SENDER_EMAIL,
       to: [toEmail],
       subject,
       html: htmlContent,
@@ -163,14 +164,12 @@ export const declineProposal = async (projectId, clientId) => {
   return project;
 };
 
-export const markDelivered = async (projectId, adminId, deliverableUrl) => {
+export const markDelivered = async (projectId, adminId) => {
   const project = await Project.findById(projectId);
   if (!project) throw new Error('Project not found.');
   if (project.status !== 'in_progress') throw new Error(`Cannot mark delivered for project in status: ${project.status}`);
-  if (!deliverableUrl) throw new Error('Deliverable URL or file attachment is required.');
 
   project.status = 'delivered';
-  project.deliverableUrl = deliverableUrl;
   project.deliveredAt = new Date();
   await project.save();
 
@@ -180,27 +179,27 @@ export const markDelivered = async (projectId, adminId, deliverableUrl) => {
     await Notification.create({
       userId: client._id,
       type: 'work_delivered',
-      message: `Your video deliverable for ${project.editingStyle} is ready for review!`,
+      message: `Your project ${project.editingStyle} has been marked as delivered!`,
       projectId: project._id,
     });
 
-    const tgMessage = `<b>VIDEO DELIVERABLE READY FOR REVIEW</b>\n\n` +
+    const tgMessage = `<b>PROJECT DELIVERED</b>\n\n` +
       `Style: <b>${project.editingStyle}</b>\n` +
-      `Deliverable Link: <b>${deliverableUrl}</b>\n\n` +
+      `Status: <b>DELIVERED</b>\n\n` +
       `Log into your Alpha Cut dashboard to approve delivery and leave a review.`;
     await sendTelegramNotification(client.telegramChatId, tgMessage);
 
     const emailHtml = `
       <div style="font-family: sans-serif; padding: 24px; background: #FBEFE1; color: #451D13; border-radius: 16px;">
-        <h2 style="font-family: serif; color: #451D13;">Your Video Edit is Ready!</h2>
+        <h2 style="font-family: serif; color: #451D13;">Project Status: Delivered</h2>
         <p>Hello ${client.name},</p>
-        <p>Alpha Cut has delivered your video edit for <strong>${project.editingStyle}</strong>.</p>
-        <p><a href="${deliverableUrl}" style="background: #C9A06B; color: #170B06; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">View Deliverable</a></p>
+        <p>Alpha Cut has completed and delivered your video edit for <strong>${project.editingStyle}</strong>.</p>
+        <p>Please log into your dashboard to approve delivery and share your review.</p>
       </div>
     `;
     await sendTransactionalEmail({
       toEmail: client.email,
-      subject: `Alpha Cut — Deliverable Ready: ${project.editingStyle}`,
+      subject: `Alpha Cut — Project Delivered: ${project.editingStyle}`,
       htmlContent: emailHtml,
     });
   }
@@ -230,7 +229,7 @@ export const approveDelivery = async (projectId, clientId) => {
     const tgMessage = `<b>DELIVERY APPROVED BY CLIENT</b>\n\n` +
       `Client: <b>${project.clientName}</b>\n` +
       `Style: <b>${project.editingStyle}</b>\n\n` +
-      `Project is COMPLETED. Rating is unlocked.`;
+      `Project is COMPLETED. Revenue is booked into agency totals.`;
     await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
 
