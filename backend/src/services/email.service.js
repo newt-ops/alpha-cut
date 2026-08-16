@@ -40,17 +40,24 @@ export const sendVerificationEmail = async ({ toEmail, name, code }) => {
   }
 
   try {
-    const data = await resend.emails.send({
+    const result = await resend.emails.send({
       from: SENDER_EMAIL,
       to: [toEmail],
       subject,
       html: htmlContent,
     });
+
+    if (result.error) {
+      console.error('[RESEND API ERROR]:', result.error.message);
+      console.log(`[RESEND FALLBACK OTP CODE] for ${toEmail}: ${code}`);
+      return { success: false, error: result.error.message, fallbackCode: code };
+    }
+
     console.log(`[RESEND SUCCESS] Sent verification email to ${toEmail}`);
-    return { success: true, data };
+    return { success: true, data: result.data };
   } catch (err) {
-    console.error('Resend email error:', err.message);
-    console.log(`[RESEND FALLBACK OTP CODE] ${toEmail}: ${code}`);
+    console.error('Resend email exception:', err.message);
+    console.log(`[RESEND FALLBACK OTP CODE] for ${toEmail}: ${code}`);
     return { success: false, error: err.message, fallbackCode: code };
   }
 };
