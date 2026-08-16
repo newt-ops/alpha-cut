@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider } from '@context/ThemeContext';
 import { ToastProvider } from '@components/ui/Toast';
 import { AuthProvider } from '@context/AuthContext';
@@ -35,66 +35,87 @@ const RouteFallback = () => (
   </div>
 );
 
+// Inner layout switcher that removes Navbar/Footer for full-screen /admin route
+const AppRoutes = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  if (isAdminRoute) {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route
+              path="/admin"
+              element={
+                <RequireAdmin>
+                  <AdminPage />
+                </RequireAdmin>
+              }
+            />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+      <PageWrapper>
+        <ErrorBoundary>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/editing-styles" element={<EditingStylesPage />} />
+              <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/packages" element={<PackagesPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/ratings" element={<RatingsPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+              {/* Onboarding & Client Protected Routes */}
+              <Route
+                path="/telegram-link"
+                element={
+                  <RequireAuth>
+                    <TelegramLinkPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <RequireAuth>
+                    <DashboardPage />
+                  </RequireAuth>
+                }
+              />
+
+              {/* QA Sandbox (Dev Mode Only) */}
+              {import.meta.env.DEV && (
+                <Route path="/dev/components" element={<DevComponentsPage />} />
+              )}
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
+      </PageWrapper>
+      <Footer />
+    </>
+  );
+};
+
 export function App() {
   return (
     <ThemeProvider>
       <ToastProvider>
         <AuthProvider>
           <Router>
-            <Navbar />
-            <PageWrapper>
-              <ErrorBoundary>
-                <Suspense fallback={<RouteFallback />}>
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/editing-styles" element={<EditingStylesPage />} />
-                    <Route path="/portfolio" element={<PortfolioPage />} />
-                    <Route path="/packages" element={<PackagesPage />} />
-                    <Route path="/about" element={<AboutPage />} />
-                    <Route path="/ratings" element={<RatingsPage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/signup" element={<SignupPage />} />
-                    <Route path="/verify-email" element={<VerifyEmailPage />} />
-                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                    <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-                    {/* Onboarding & Client Protected Routes */}
-                    <Route
-                      path="/telegram-link"
-                      element={
-                        <RequireAuth>
-                          <TelegramLinkPage />
-                        </RequireAuth>
-                      }
-                    />
-                    <Route
-                      path="/dashboard"
-                      element={
-                        <RequireAuth>
-                          <DashboardPage />
-                        </RequireAuth>
-                      }
-                    />
-
-                    {/* Admin Protected Route */}
-                    <Route
-                      path="/admin"
-                      element={
-                        <RequireAdmin>
-                          <AdminPage />
-                        </RequireAdmin>
-                      }
-                    />
-
-                    {/* QA Sandbox (Dev Mode Only) */}
-                    {import.meta.env.DEV && (
-                      <Route path="/dev/components" element={<DevComponentsPage />} />
-                    )}
-                  </Routes>
-                </Suspense>
-              </ErrorBoundary>
-            </PageWrapper>
-            <Footer />
+            <AppRoutes />
           </Router>
         </AuthProvider>
       </ToastProvider>

@@ -26,13 +26,13 @@ export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollap
     <aside
       style={{
         width: collapsed ? '80px' : '260px',
-        backgroundColor: '#170B06',
-        color: '#FBEFE1',
-        borderRight: '1px solid rgba(217, 178, 124, 0.15)',
+        backgroundColor: 'var(--surface)',
+        color: 'var(--ink)',
+        borderRight: '1px solid var(--line)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        transition: 'width var(--transition-normal)',
+        transition: 'width var(--transition-normal), background-color var(--transition-normal)',
         padding: '24px 16px',
         position: 'sticky',
         top: 0,
@@ -49,15 +49,15 @@ export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollap
             justifyContent: collapsed ? 'center' : 'space-between',
             marginBottom: '32px',
             paddingBottom: '16px',
-            borderBottom: '1px solid rgba(217, 178, 124, 0.12)',
+            borderBottom: '1px solid var(--line)',
           }}
         >
           {!collapsed && (
             <div>
-              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', letterSpacing: '1.5px' }}>
+              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
                 AGENCY ERP
               </span>
-              <h2 className="font-display" style={{ fontSize: '20px', color: '#FFFDF8', marginTop: '2px' }}>
+              <h2 className="font-display" style={{ fontSize: '20px', color: 'var(--ink)', marginTop: '2px' }}>
                 Alpha Cut
               </h2>
             </div>
@@ -99,15 +99,15 @@ export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollap
                   justifyContent: collapsed ? 'center' : 'flex-start',
                   borderRadius: 'var(--radius-md)',
                   backgroundColor: isActive ? 'rgba(201, 160, 107, 0.18)' : 'transparent',
-                  color: isActive ? '#D9B27C' : 'rgba(251, 239, 225, 0.7)',
-                  border: isActive ? '1px solid rgba(217, 178, 124, 0.3)' : '1px solid transparent',
+                  color: isActive ? 'var(--accent-gold)' : 'var(--ink-soft)',
+                  border: isActive ? '1px solid var(--accent-gold)' : '1px solid transparent',
                   cursor: 'pointer',
                   fontWeight: isActive ? 600 : 400,
                   fontSize: '14px',
                   transition: 'all var(--transition-fast)',
                 }}
               >
-                <Icon size={18} color={isActive ? '#D9B27C' : 'rgba(251, 239, 225, 0.7)'} />
+                <Icon size={18} color={isActive ? 'var(--accent-gold)' : 'var(--ink-soft)'} />
                 {!collapsed && <span>{item.label}</span>}
               </button>
             );
@@ -116,14 +116,14 @@ export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollap
       </div>
 
       {/* Exit to Public Site Footer */}
-      <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(217, 178, 124, 0.12)' }}>
+      <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
         <Link
           to="/"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            color: 'rgba(251, 239, 225, 0.6)',
+            color: 'var(--ink-soft)',
             fontSize: '13px',
             textDecoration: 'none',
             justifyContent: collapsed ? 'center' : 'flex-start',

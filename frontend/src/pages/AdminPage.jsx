@@ -21,6 +21,8 @@ import {
   IconCheck,
   IconStar,
   IconFileText,
+  IconBarChart,
+  IconPlus,
 } from '@icons/icons';
 
 export const AdminPage = () => {
@@ -138,7 +140,7 @@ export const AdminPage = () => {
     }
   };
 
-  // Mark Delivered (Pure Progress Tracking - No Deliverable URL required)
+  // Mark Delivered
   const handleMarkDelivered = async (projectId) => {
     try {
       const res = await apiFetch(`/api/admin/projects/${projectId}/deliver`, { method: 'POST' });
@@ -167,7 +169,7 @@ export const AdminPage = () => {
     }
   };
 
-  // Toggle Feature Rating (Featured on Home Page)
+  // Toggle Feature Rating
   const handleToggleFeatureRating = async (ratingId) => {
     try {
       const res = await apiFetch(`/api/ratings/${ratingId}/feature`, { method: 'POST' });
@@ -191,55 +193,167 @@ export const AdminPage = () => {
     }
   };
 
+  const totalProjectCount = (stats?.statusCounts?.proposal_sent || 0) +
+    (stats?.statusCounts?.in_progress || 0) +
+    (stats?.statusCounts?.delivered || 0) +
+    (stats?.statusCounts?.completed || 0) +
+    (stats?.statusCounts?.declined || 0);
+
   return (
     <AdminLayout activeTab={activeTab} onChangeTab={setActiveTab}>
       {/* OVERVIEW / ANALYTICS TAB */}
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gap: '32px' }}>
-          {/* Revenue Stat Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-            <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>DELIVERED REVENUE (ETB)</span>
-              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '4px', color: 'var(--ink)' }}>
+          {/* Friendly Guidance Card for Initial State */}
+          {totalProjectCount === 0 && (
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                border: '1px solid var(--accent-gold)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '28px 32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '20px',
+                boxShadow: 'var(--shadow)',
+              }}
+            >
+              <div>
+                <Badge variant="gold">System Initialization</Badge>
+                <h3 className="font-display" style={{ fontSize: '22px', marginTop: '8px', color: 'var(--ink)' }}>
+                  Welcome to Alpha Cut SaaS Dashboard
+                </h3>
+                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '4px', maxWidth: '640px', lineHeight: 1.6 }}>
+                  No active client proposals or delivered video edits have been recorded yet. Click <strong>"+ Create Proposal"</strong> to select a registered client and send your first project terms offer.
+                </p>
+              </div>
+              <Button variant="primary" iconRight={IconPlus} onClick={() => setActiveTab('proposal')}>
+                Issue First Proposal
+              </Button>
+            </div>
+          )}
+
+          {/* Metric Cards Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                padding: '28px 24px',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--line)',
+                borderTop: '3px solid var(--accent-gold)',
+                boxShadow: 'var(--shadow)',
+              }}
+            >
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                DELIVERED REVENUE (ETB)
+              </span>
+              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '8px', color: 'var(--ink)' }}>
                 {stats?.revenueETB?.toLocaleString() || 0} ETB
               </h3>
-              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>Booked from delivered & completed edits</p>
+              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '6px' }}>
+                Booked from delivered & completed edits
+              </p>
             </div>
 
-            <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>DELIVERED REVENUE (USD)</span>
-              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '4px', color: 'var(--ink)' }}>
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                padding: '28px 24px',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--line)',
+                borderTop: '3px solid var(--accent-gold)',
+                boxShadow: 'var(--shadow)',
+              }}
+            >
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                DELIVERED REVENUE (USD)
+              </span>
+              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '8px', color: 'var(--ink)' }}>
                 ${stats?.revenueUSD?.toLocaleString() || 0} USD
               </h3>
-              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>Booked from delivered & completed edits</p>
+              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '6px' }}>
+                Booked from delivered & completed edits
+              </p>
             </div>
 
-            <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>REGISTERED CLIENTS</span>
-              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '4px', color: 'var(--ink)' }}>
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                padding: '28px 24px',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--line)',
+                borderTop: '3px solid var(--accent-gold)',
+                boxShadow: 'var(--shadow)',
+              }}
+            >
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                REGISTERED CLIENTS
+              </span>
+              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '8px', color: 'var(--ink)' }}>
                 {stats?.clientCount || 0}
               </h3>
-              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>Total client user accounts</p>
+              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '6px' }}>
+                Total client user accounts
+              </p>
             </div>
 
-            <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>PROPOSAL ACCEPTANCE RATE</span>
-              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '4px', color: 'var(--ink)' }}>
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                padding: '28px 24px',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--line)',
+                borderTop: '3px solid var(--accent-gold)',
+                boxShadow: 'var(--shadow)',
+              }}
+            >
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                PROPOSAL CONVERSION RATE
+              </span>
+              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '8px', color: 'var(--ink)' }}>
                 {stats?.conversionRate || '0%'}
               </h3>
-              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>Accepted vs total proposals sent</p>
+              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '6px' }}>
+                Accepted vs total proposals issued
+              </p>
             </div>
           </div>
 
-          {/* Project Status Breakdown */}
-          <div style={{ backgroundColor: 'var(--surface)', padding: '28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-            <h3 className="font-display" style={{ fontSize: '20px', marginBottom: '16px' }}>Project Lifecycle Status Breakdown</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-              <Badge variant="gold">Proposals Sent: {stats?.statusCounts?.proposal_sent || 0}</Badge>
-              <Badge variant="maroon">In Progress: {stats?.statusCounts?.in_progress || 0}</Badge>
-              <Badge variant="surface">Work Delivered: {stats?.statusCounts?.delivered || 0}</Badge>
-              <Badge variant="success">Completed & Approved: {stats?.statusCounts?.completed || 0}</Badge>
-              <Badge variant="maroon">Declined: {stats?.statusCounts?.declined || 0}</Badge>
+          {/* Project Lifecycle Progress Scannable Breakdown */}
+          <div style={{ backgroundColor: 'var(--surface)', padding: '32px 28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 className="font-display" style={{ fontSize: '20px', color: 'var(--ink)' }}>Project Lifecycle Breakdown</h3>
+                <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '2px' }}>Scannable status metrics across active and past proposals</p>
+              </div>
+              <span className="font-mono" style={{ fontSize: '12px', color: 'var(--accent-gold)' }}>Total Projects: {totalProjectCount}</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              {[
+                { label: 'Proposals Sent', count: stats?.statusCounts?.proposal_sent || 0, color: 'var(--accent-gold)' },
+                { label: 'In Progress', count: stats?.statusCounts?.in_progress || 0, color: '#3182CE' },
+                { label: 'Work Delivered', count: stats?.statusCounts?.delivered || 0, color: '#805AD5' },
+                { label: 'Completed', count: stats?.statusCounts?.completed || 0, color: '#38A169' },
+                { label: 'Declined', count: stats?.statusCounts?.declined || 0, color: '#E53E3E' },
+              ].map((item, idx) => {
+                const pct = totalProjectCount > 0 ? Math.round((item.count / totalProjectCount) * 100) : 0;
+                return (
+                  <div key={idx} style={{ backgroundColor: 'var(--bg)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{item.label}</span>
+                      <span className="font-mono" style={{ color: 'var(--ink-soft)' }}>{item.count} ({pct}%)</span>
+                    </div>
+                    {/* Progress Bar */}
+                    <div style={{ height: '6px', backgroundColor: 'var(--line)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', backgroundColor: item.color, transition: 'width 0.5s ease-in-out' }} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -247,8 +361,8 @@ export const AdminPage = () => {
 
       {/* CREATE PROPOSAL FORM TAB */}
       {activeTab === 'proposal' && (
-        <div style={{ maxWidth: '640px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 30px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '20px' }}>Issue New Client Proposal</h2>
+        <div style={{ maxWidth: '640px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 30px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
+          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '20px', color: 'var(--ink)' }}>Issue New Client Proposal</h2>
 
           <form onSubmit={handleCreateProposal}>
             <div style={{ position: 'relative', marginBottom: '20px' }}>
@@ -274,7 +388,7 @@ export const AdminPage = () => {
                         setClientSearchText(user.email);
                         setSearchResults([]);
                       }}
-                      style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--line)', fontSize: '14px' }}
+                      style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--line)', fontSize: '14px', color: 'var(--ink)' }}
                     >
                       <strong>{user.name}</strong> ({user.email})
                     </div>
@@ -354,124 +468,147 @@ export const AdminPage = () => {
       {activeTab === 'board' && (
         <div style={{ display: 'grid', gap: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="font-display" style={{ fontSize: '24px' }}>All Client Projects & Proposals</h2>
+            <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>All Client Projects & Proposals</h2>
             <span style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>Click any card to inspect full details</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-            {projects.map((proj) => (
-              <div
-                key={proj._id}
-                onClick={() => {
-                  setSelectedProjectForDetail(proj);
-                  setDetailModalOpen(true);
-                }}
-                style={{
-                  backgroundColor: 'var(--surface)',
-                  padding: '24px',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--line)',
-                  cursor: 'pointer',
-                  transition: 'transform var(--transition-fast), border-color var(--transition-fast)',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <Badge variant={getStatusBadgeVariant(proj.status)}>
-                    {proj.status.replace('_', ' ').toUpperCase()}
-                  </Badge>
-                  <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-gold)' }}>
-                    {proj.price} {proj.currency}
-                  </span>
-                </div>
+          {projects.length === 0 ? (
+            <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center', boxShadow: 'var(--shadow)' }}>
+              <h3 className="font-display" style={{ fontSize: '20px', marginBottom: '8px', color: 'var(--ink)' }}>No Proposals Issued Yet</h3>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '14px', marginBottom: '20px' }}>Create your first client proposal to populate the project board.</p>
+              <Button variant="primary" iconRight={IconPlus} onClick={() => setActiveTab('proposal')}>
+                Create Proposal
+              </Button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+              {projects.map((proj) => (
+                <div
+                  key={proj._id}
+                  onClick={() => {
+                    setSelectedProjectForDetail(proj);
+                    setDetailModalOpen(true);
+                  }}
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    padding: '24px',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--line)',
+                    cursor: 'pointer',
+                    boxShadow: 'var(--shadow)',
+                    transition: 'transform var(--transition-fast), border-color var(--transition-fast)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <Badge variant={getStatusBadgeVariant(proj.status)}>
+                      {proj.status.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                    <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-gold)' }}>
+                      {proj.price} {proj.currency}
+                    </span>
+                  </div>
 
-                <h3 className="font-display" style={{ fontSize: '18px', marginBottom: '4px' }}>
-                  {proj.editingStyle}
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
-                  Client: {proj.clientName} ({proj.clientEmail})
-                </p>
+                  <h3 className="font-display" style={{ fontSize: '18px', marginBottom: '4px', color: 'var(--ink)' }}>
+                    {proj.editingStyle}
+                  </h3>
+                  <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
+                    Client: {proj.clientName} ({proj.clientEmail})
+                  </p>
 
-                <div style={{ fontSize: '12px', color: 'var(--ink-soft)', borderTop: '1px solid var(--line)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Deadline: {new Date(proj.deadline).toLocaleDateString()}</span>
-                  {proj.status === 'in_progress' && (
-                    <Button
-                      variant="primary"
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMarkDelivered(proj._id);
-                      }}
-                    >
-                      Mark Delivered
-                    </Button>
-                  )}
+                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)', borderTop: '1px solid var(--line)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Deadline: {new Date(proj.deadline).toLocaleDateString()}</span>
+                    {proj.status === 'in_progress' && (
+                      <Button
+                        variant="primary"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkDelivered(proj._id);
+                        }}
+                      >
+                        Mark Delivered
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* RATINGS & MODERATION TAB */}
       {activeTab === 'moderation' && (
         <div style={{ display: 'grid', gap: '20px' }}>
-          <h2 className="font-display" style={{ fontSize: '24px' }}>Client Reviews & Moderation</h2>
-          <div style={{ display: 'grid', gap: '16px' }}>
-            {ratings.map((r) => (
-              <div
-                key={r._id}
-                style={{
-                  backgroundColor: 'var(--surface)',
-                  padding: '20px 24px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--line)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '16px',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                    <StarRating rating={r.stars} size={16} />
-                    {r.featured && <Badge variant="gold">FEATURED ON HOME</Badge>}
-                    {r.hidden && <Badge variant="maroon">HIDDEN</Badge>}
+          <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>Client Reviews & Moderation</h2>
+          {ratings.length === 0 ? (
+            <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center' }}>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>No client reviews submitted yet.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '16px' }}>
+              {ratings.map((r) => (
+                <div
+                  key={r._id}
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    padding: '20px 24px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--line)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '16px',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                      <StarRating rating={r.stars} size={16} />
+                      {r.featured && <Badge variant="gold">FEATURED ON HOME</Badge>}
+                      {r.hidden && <Badge variant="maroon">HIDDEN</Badge>}
+                    </div>
+                    <p style={{ fontSize: '14px', fontStyle: 'italic', marginBottom: '4px', color: 'var(--ink)' }}>"{r.review}"</p>
+                    <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>— {r.clientName} ({r.editingStyle})</span>
                   </div>
-                  <p style={{ fontSize: '14px', fontStyle: 'italic', marginBottom: '4px' }}>"{r.review}"</p>
-                  <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>— {r.clientName} ({r.editingStyle})</span>
-                </div>
 
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <Button variant="secondary" size="small" onClick={() => handleToggleFeatureRating(r._id)}>
-                    {r.featured ? 'Unfeature' : 'Mark Featured'}
-                  </Button>
-                  <Button variant="secondary" size="small" onClick={() => handleToggleHideRating(r._id)}>
-                    {r.hidden ? 'Unhide' : 'Hide Review'}
-                  </Button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <Button variant="secondary" size="small" onClick={() => handleToggleFeatureRating(r._id)}>
+                      {r.featured ? 'Unfeature' : 'Mark Featured'}
+                    </Button>
+                    <Button variant="secondary" size="small" onClick={() => handleToggleHideRating(r._id)}>
+                      {r.hidden ? 'Unhide' : 'Hide Review'}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* REGISTERED CLIENTS TAB */}
       {activeTab === 'clients' && (
         <div style={{ display: 'grid', gap: '20px' }}>
-          <h2 className="font-display" style={{ fontSize: '24px' }}>Registered Clients Overview</h2>
-          <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>
-            Use the search box in "Create Proposal" to find client emails when issuing proposals. Total Registered Clients: {stats?.clientCount || 0}.
-          </p>
+          <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>Registered Clients Overview</h2>
+          <div style={{ backgroundColor: 'var(--surface)', padding: '28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
+            <p style={{ color: 'var(--ink-soft)', fontSize: '14px', lineHeight: 1.6 }}>
+              Total Registered Client Accounts: <strong>{stats?.clientCount || 0}</strong>.<br />
+              Use the interactive email search box under <strong>"Create Proposal"</strong> to find registered client accounts when generating project terms.
+            </p>
+          </div>
         </div>
       )}
 
       {/* PACKAGE SETTINGS TAB */}
       {activeTab === 'pricing' && (
-        <div style={{ maxWidth: '600px', backgroundColor: 'var(--surface)', padding: '28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '12px' }}>Agency Package Pricing Configurations</h2>
-          <p style={{ fontSize: '14px', color: 'var(--ink-soft)' }}>
-            Base pricing tiers: Basic Short-Form (350 - 400 ETB), Premium Short-Form (450 - 500 ETB). Long-form & USD rates custom configured per proposal.
+        <div style={{ maxWidth: '600px', backgroundColor: 'var(--surface)', padding: '28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
+          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '12px', color: 'var(--ink)' }}>Agency Package Pricing Configurations</h2>
+          <p style={{ fontSize: '14px', color: 'var(--ink-soft)', lineHeight: 1.6 }}>
+            Base short-form pricing tiers:<br />
+            • <strong>Basic Short-Form Tier:</strong> 350 – 400 ETB / video<br />
+            • <strong>Premium Short-Form Tier:</strong> 450 – 500 ETB / video<br />
+            • <strong>Long-Form & USD Tiers:</strong> Custom configured per project proposal.
           </p>
         </div>
       )}
