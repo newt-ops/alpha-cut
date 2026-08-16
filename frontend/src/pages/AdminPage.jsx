@@ -223,7 +223,7 @@ export const AdminPage = () => {
               <div>
                 <Badge variant="gold">System Initialization</Badge>
                 <h3 className="font-display" style={{ fontSize: '22px', marginTop: '8px', color: 'var(--ink)' }}>
-                  Welcome to Alpha Cut SaaS Dashboard
+                  Welcome to Alpha Cut Control Center
                 </h3>
                 <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '4px', maxWidth: '640px', lineHeight: 1.6 }}>
                   No active client proposals or delivered video edits have been recorded yet. Click <strong>"+ Create Proposal"</strong> to select a registered client and send your first project terms offer.

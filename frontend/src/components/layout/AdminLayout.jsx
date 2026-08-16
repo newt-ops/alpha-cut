@@ -37,7 +37,7 @@ export const AdminLayout = ({ activeTab, onChangeTab, children }) => {
         >
           <div>
             <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-              SAAS CONTROL PORTAL
+              AGENCY CONTROL PORTAL
             </span>
             <h1 className="font-display" style={{ fontSize: '20px', marginTop: '2px', color: 'var(--ink)' }}>
               Alpha Cut Executive ERP
