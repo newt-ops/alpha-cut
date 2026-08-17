@@ -19,22 +19,55 @@ export const HomePage = () => {
   const [avgRating, setAvgRating] = useState('5.0');
   const [totalReviews, setTotalReviews] = useState(12);
 
+  const [packageTiers, setPackageTiers] = useState(PACKAGES_DATA.shortForm.tiers);
+
   useEffect(() => {
-    const fetchFeatured = async () => {
+    const fetchLiveData = async () => {
       try {
         const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '';
-        const res = await fetch(`${API_BASE}/api/ratings?featured=true`);
-        const data = await res.json();
-        if (data.success && data.ratings && data.ratings.length > 0) {
-          setFeaturedReviews(data.ratings);
-          setAvgRating(data.avgRating);
-          setTotalReviews(data.totalReviews);
+        const [pkgRes, rateRes, ratRes] = await Promise.all([
+          fetch(`${API_BASE}/api/packages`).then((r) => r.json()).catch(() => ({ success: false })),
+          fetch(`${API_BASE}/api/packages/exchange-rate`).then((r) => r.json()).catch(() => ({ success: false })),
+          fetch(`${API_BASE}/api/ratings?featured=true`).then((r) => r.json()).catch(() => ({ success: false })),
+        ]);
+
+        let currentRate = 0.00778;
+        if (rateRes.success && rateRes.etbToUsd) {
+          currentRate = rateRes.etbToUsd;
+        }
+
+        if (pkgRes.success && pkgRes.configs && pkgRes.configs.length > 0) {
+          const updatedTiers = PACKAGES_DATA.shortForm.tiers.map((t) => {
+            const dbEtbConfig = pkgRes.configs.find((c) => c.tier === t.id && c.currency === 'ETB' && c.length === 'short');
+            const minETB = dbEtbConfig?.priceMin || t.minRateETB;
+            const maxETB = dbEtbConfig?.priceMax || t.maxRateETB;
+
+            const minUSD = Math.round(minETB * currentRate);
+            const maxUSD = Math.round(maxETB * currentRate);
+
+            return {
+              ...t,
+              minRateETB: minETB,
+              maxRateETB: maxETB,
+              rateRangeETB: `${minETB.toLocaleString()} – ${maxETB.toLocaleString()}`,
+              minRateUSD: minUSD,
+              maxRateUSD: maxUSD,
+              rateRangeUSD: `$${minUSD} – $${maxUSD}`,
+            };
+          });
+          setPackageTiers(updatedTiers);
+        }
+
+        if (ratRes.success && ratRes.ratings && ratRes.ratings.length > 0) {
+          setFeaturedReviews(ratRes.ratings);
+          setAvgRating(ratRes.avgRating);
+          setTotalReviews(ratRes.totalReviews);
         }
       } catch (err) {
-        // Fallback to static reviews if offline
+        // Fallback to static defaults
       }
     };
-    fetchFeatured();
+    fetchLiveData();
   }, []);
 
   return (
@@ -318,7 +351,7 @@ export const HomePage = () => {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', maxWidth: '1140px', margin: '0 auto' }}>
-          {PACKAGES_DATA.shortForm.tiers.map((tier) => (
+          {packageTiers.map((tier) => (
             <div
               key={tier.id}
               style={{
