@@ -10,18 +10,10 @@ const INITIAL_PACKAGE_SEEDS = [
   { tier: 'basic', length: 'short', currency: 'ETB', priceMin: 500, priceMax: 800 },
   { tier: 'professional', length: 'short', currency: 'ETB', priceMin: 900, priceMax: 1400 },
   { tier: 'premium', length: 'short', currency: 'ETB', priceMin: 1600, priceMax: 2400 },
-  // Short-Form USD
-  { tier: 'basic', length: 'short', currency: 'USD', priceMin: 18, priceMax: 28 },
-  { tier: 'professional', length: 'short', currency: 'USD', priceMin: 35, priceMax: 50 },
-  { tier: 'premium', length: 'short', currency: 'USD', priceMin: 60, priceMax: 90 },
   // Long-Form ETB
   { tier: 'basic', length: 'long', currency: 'ETB', priceMin: 4000, priceMax: 6500 },
   { tier: 'professional', length: 'long', currency: 'ETB', priceMin: 7500, priceMax: 11000 },
   { tier: 'premium', length: 'long', currency: 'ETB', priceMin: 13000, priceMax: 18000 },
-  // Long-Form USD
-  { tier: 'basic', length: 'long', currency: 'USD', priceMin: 90, priceMax: 150 },
-  { tier: 'professional', length: 'long', currency: 'USD', priceMin: 180, priceMax: 280 },
-  { tier: 'premium', length: 'long', currency: 'USD', priceMin: 320, priceMax: 500 },
 ];
 
 export const searchUsers = async (req, res, next) => {

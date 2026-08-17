@@ -283,15 +283,13 @@ export const AdminPage = () => {
     }
   };
 
-  // Save 3 Package Configurations & Converted Live Rates
+  // Save Package Configurations (Canonical ETB Base Rates)
   const handleSavePackageSettings = async (e) => {
     e.preventDefault();
     try {
       setSavingPackages(true);
-      const rate = exchangeRate.etbToUsd || 0.00778;
 
       await Promise.all([
-        // Basic ETB & Converted USD
         apiFetch('/api/admin/packages', {
           method: 'PUT',
           body: JSON.stringify({
@@ -305,17 +303,6 @@ export const AdminPage = () => {
         apiFetch('/api/admin/packages', {
           method: 'PUT',
           body: JSON.stringify({
-            tier: 'basic',
-            length: 'short',
-            currency: 'USD',
-            priceMin: Math.round(Number(basicMin) * rate),
-            priceMax: Math.round(Number(basicMax) * rate),
-          }),
-        }),
-        // Professional ETB & Converted USD
-        apiFetch('/api/admin/packages', {
-          method: 'PUT',
-          body: JSON.stringify({
             tier: 'professional',
             length: 'short',
             currency: 'ETB',
@@ -326,17 +313,6 @@ export const AdminPage = () => {
         apiFetch('/api/admin/packages', {
           method: 'PUT',
           body: JSON.stringify({
-            tier: 'professional',
-            length: 'short',
-            currency: 'USD',
-            priceMin: Math.round(Number(professionalMin) * rate),
-            priceMax: Math.round(Number(professionalMax) * rate),
-          }),
-        }),
-        // Premium ETB & Converted USD
-        apiFetch('/api/admin/packages', {
-          method: 'PUT',
-          body: JSON.stringify({
             tier: 'premium',
             length: 'short',
             currency: 'ETB',
@@ -344,19 +320,9 @@ export const AdminPage = () => {
             priceMax: Number(premiumMax),
           }),
         }),
-        apiFetch('/api/admin/packages', {
-          method: 'PUT',
-          body: JSON.stringify({
-            tier: 'premium',
-            length: 'short',
-            currency: 'USD',
-            priceMin: Math.round(Number(premiumMin) * rate),
-            priceMax: Math.round(Number(premiumMax) * rate),
-          }),
-        }),
       ]);
 
-      toast({ message: '3-Tier package pricing updated successfully with live USD conversion!', type: 'success' });
+      toast({ message: 'Package ETB pricing updated successfully! Live USD rates recalculate automatically.', type: 'success' });
       fetchAdminData();
     } catch (err) {
       toast({ message: err.message || 'Failed to update package pricing', type: 'error' });
