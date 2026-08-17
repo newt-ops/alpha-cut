@@ -71,11 +71,11 @@ export const AdminPage = () => {
     try {
       setLoading(true);
       const [statsRes, projRes, ratRes, clientRes, pkgRes] = await Promise.all([
-        apiFetch('/api/admin/stats'),
-        apiFetch('/api/admin/projects'),
-        apiFetch('/api/ratings'),
-        apiFetch('/api/admin/clients'),
-        apiFetch('/api/admin/packages'),
+        apiFetch('/api/admin/stats').catch(() => ({ success: false })),
+        apiFetch('/api/admin/projects').catch(() => ({ success: false })),
+        apiFetch('/api/ratings').catch(() => ({ success: false })),
+        apiFetch('/api/admin/clients').catch(() => ({ success: false, clients: [] })),
+        apiFetch('/api/admin/packages').catch(() => ({ success: false, configs: [] })),
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
