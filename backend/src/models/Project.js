@@ -72,6 +72,10 @@ const projectSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    telegramStatusMessageId: {
+      type: String,
+      default: null,
+    },
     proposalSentAt: {
       type: Date,
       default: Date.now,

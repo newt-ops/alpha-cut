@@ -26,6 +26,7 @@ const ResetPasswordPage = lazy(() => import('@pages/ResetPasswordPage').then((m)
 const TelegramLinkPage = lazy(() => import('@pages/TelegramLinkPage').then((m) => ({ default: m.TelegramLinkPage })));
 const DashboardPage = lazy(() => import('@pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const AdminPage = lazy(() => import('@pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const TelegramMiniAppPage = lazy(() => import('@pages/TelegramMiniAppPage').then((m) => ({ default: m.TelegramMiniAppPage })));
 const DevComponentsPage = lazy(() => import('@pages/DevComponentsPage').then((m) => ({ default: m.DevComponentsPage })));
 
 const RouteFallback = () => (
@@ -35,10 +36,11 @@ const RouteFallback = () => (
   </div>
 );
 
-// Inner layout switcher that removes Navbar/Footer for full-screen /admin route
+// Inner layout switcher that removes Navbar/Footer for full-screen /admin and /app routes
 const AppRoutes = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isMiniAppRoute = location.pathname.startsWith('/app');
 
   if (isAdminRoute) {
     return (
@@ -53,6 +55,18 @@ const AppRoutes = () => {
                 </RequireAdmin>
               }
             />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
+  if (isMiniAppRoute) {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/app" element={<TelegramMiniAppPage />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>

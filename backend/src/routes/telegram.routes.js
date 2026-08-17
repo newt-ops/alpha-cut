@@ -5,6 +5,7 @@ import { bot } from '../services/telegram.service.js';
 import { PendingLink } from '../models/PendingLink.js';
 import { User } from '../models/User.js';
 import { config } from '../config/env.js';
+import { generateTokens, setRefreshCookie } from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
@@ -27,6 +28,87 @@ router.post('/webhook/:secret', async (req, res) => {
     }
   } else {
     res.status(200).send('Bot not configured');
+  }
+});
+
+// Telegram WebApp InitData Signature Authentication Bridge
+router.post('/webapp/auth', async (req, res, next) => {
+  try {
+    const { initData } = req.body;
+    if (!initData) {
+      return res.status(400).json({ success: false, message: 'initData parameter is required' });
+    }
+
+    const urlParams = new URLSearchParams(initData);
+    const hash = urlParams.get('hash');
+    urlParams.delete('hash');
+
+    if (!hash) {
+      return res.status(400).json({ success: false, message: 'Hash parameter missing in initData' });
+    }
+
+    // Sort parameters alphabetically
+    const dataCheckArr = [];
+    urlParams.sort();
+    for (const [key, value] of urlParams.entries()) {
+      dataCheckArr.push(`${key}=${value}`);
+    }
+    const dataCheckString = dataCheckArr.join('\n');
+
+    // HMAC-SHA256 verification: secret_key = HMAC-SHA256("WebAppData", bot_token)
+    const secretKey = crypto
+      .createHmac('sha256', 'WebAppData')
+      .update(config.telegramBotToken || '')
+      .digest();
+
+    const calculatedHash = crypto
+      .createHmac('sha256', secretKey)
+      .update(dataCheckString)
+      .digest('hex');
+
+    if (calculatedHash !== hash) {
+      return res.status(401).json({ success: false, message: 'Invalid WebApp initData signature' });
+    }
+
+    // Check auth_date freshness (< 24h)
+    const authDate = Number(urlParams.get('auth_date') || 0);
+    const now = Math.floor(Date.now() / 1000);
+    if (now - authDate > 86400) {
+      return res.status(401).json({ success: false, message: 'Stale authentication data (older than 24h)' });
+    }
+
+    const userParam = urlParams.get('user');
+    if (!userParam) {
+      return res.status(400).json({ success: false, message: 'User payload missing in initData' });
+    }
+
+    const telegramUser = JSON.parse(userParam);
+    const chatId = telegramUser.id ? telegramUser.id.toString() : null;
+
+    if (!chatId) {
+      return res.status(400).json({ success: false, message: 'Invalid Telegram User ID' });
+    }
+
+    const user = await User.findOne({ telegramChatId: chatId });
+    if (!user) {
+      return res.status(200).json({
+        success: false,
+        unlinked: true,
+        telegramUser,
+        message: 'Telegram account is not linked to any registered Alpha Cut user profile.',
+      });
+    }
+
+    const { accessToken, refreshToken } = generateTokens(user);
+    setRefreshCookie(res, refreshToken);
+
+    return res.status(200).json({
+      success: true,
+      accessToken,
+      user,
+    });
+  } catch (err) {
+    next(err);
   }
 });
 

@@ -2,14 +2,14 @@ import { Project } from '../models/Project.js';
 import { Rating } from '../models/Rating.js';
 import { Notification } from '../models/Notification.js';
 import { User } from '../models/User.js';
-import { bot } from './telegram.service.js';
+import { bot, updateTelegramStatusCard } from './telegram.service.js';
 import { sendVerificationEmail } from './email.service.js';
 import { Resend } from 'resend';
 import { config } from '../config/env.js';
 
 const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
 
-// Helper to send Telegram message (NO EMOJIS)
+// Helper to send Telegram message
 const sendTelegramNotification = async (telegramChatId, messageText) => {
   if (!bot || !telegramChatId) return;
   try {
@@ -72,15 +72,10 @@ export const createProposal = async (adminId, data) => {
     projectId: project._id,
   });
 
-  // 2. Telegram Notification for Client
-  const tgMessage = `<b>NEW PROJECT PROPOSAL RECEIVED</b>\n\n` +
-    `Style: <b>${editingStyle}</b>\n` +
-    `Package Tier: <b>${packageTier.toUpperCase()} (${contentLength.toUpperCase()})</b>\n` +
-    `Investment: <b>${price} ${currency}</b>\n` +
-    `Deadline: <b>${new Date(deadline).toLocaleDateString()}</b>\n\n` +
-    `Log into your Alpha Cut dashboard to review and accept your proposal.`;
-
-  await sendTelegramNotification(client.telegramChatId, tgMessage);
+  // 2. Telegram Live Status Card for Client
+  if (client.telegramChatId) {
+    await updateTelegramStatusCard(project, client.telegramChatId);
+  }
 
   // 3. Email Notification for Client
   const emailHtml = `
@@ -115,6 +110,11 @@ export const acceptProposal = async (projectId, clientId) => {
   project.acceptedAt = new Date();
   await project.save();
 
+  const client = await User.findById(clientId);
+  if (client?.telegramChatId) {
+    await updateTelegramStatusCard(project, client.telegramChatId);
+  }
+
   // Notify Admins
   const admins = await User.find({ role: 'admin' });
   for (const admin of admins) {
@@ -144,6 +144,11 @@ export const declineProposal = async (projectId, clientId) => {
   project.status = 'declined';
   project.declinedAt = new Date();
   await project.save();
+
+  const client = await User.findById(clientId);
+  if (client?.telegramChatId) {
+    await updateTelegramStatusCard(project, client.telegramChatId);
+  }
 
   // Notify Admins
   const admins = await User.find({ role: 'admin' });
@@ -183,11 +188,9 @@ export const markDelivered = async (projectId, adminId) => {
       projectId: project._id,
     });
 
-    const tgMessage = `<b>PROJECT DELIVERED</b>\n\n` +
-      `Style: <b>${project.editingStyle}</b>\n` +
-      `Status: <b>DELIVERED</b>\n\n` +
-      `Log into your Alpha Cut dashboard to approve delivery and leave a review.`;
-    await sendTelegramNotification(client.telegramChatId, tgMessage);
+    if (client.telegramChatId) {
+      await updateTelegramStatusCard(project, client.telegramChatId);
+    }
 
     const emailHtml = `
       <div style="font-family: sans-serif; padding: 24px; background: #FBEFE1; color: #451D13; border-radius: 16px;">
@@ -215,6 +218,11 @@ export const approveDelivery = async (projectId, clientId) => {
   project.status = 'completed';
   project.completedAt = new Date();
   await project.save();
+
+  const client = await User.findById(clientId);
+  if (client?.telegramChatId) {
+    await updateTelegramStatusCard(project, client.telegramChatId);
+  }
 
   // Notify Admins
   const admins = await User.find({ role: 'admin' });

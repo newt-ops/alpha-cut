@@ -7,7 +7,7 @@ import { sendVerificationEmail } from '../services/email.service.js';
 
 const googleClient = new OAuth2Client(config.googleClientId);
 
-const generateTokens = (user) => {
+export const generateTokens = (user) => {
   const accessToken = jwt.sign(
     { userId: user._id, role: user.role },
     config.jwtAccessSecret,
@@ -23,7 +23,7 @@ const generateTokens = (user) => {
   return { accessToken, refreshToken };
 };
 
-const setRefreshCookie = (res, refreshToken) => {
+export const setRefreshCookie = (res, refreshToken) => {
   res.cookie('alpha_cut_refresh', refreshToken, {
     httpOnly: true,
     secure: true,
