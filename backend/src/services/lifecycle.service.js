@@ -4,8 +4,7 @@ import { Deliverable } from '../models/Deliverable.js';
 import { Rating } from '../models/Rating.js';
 import { Notification } from '../models/Notification.js';
 import { User } from '../models/User.js';
-import { bot, updateTelegramStatusCard, updateContractTelegramStatusCard } from './telegram.service.js';
-import { sendVerificationEmail } from './email.service.js';
+import { bot, updateTelegramStatusCard, updateContractTelegramStatusCard, sendProposalNotificationTelegram, sendDeliveryNotificationTelegram } from './telegram.service.js';
 import { Resend } from 'resend';
 import { config } from '../config/env.js';
 
@@ -76,9 +75,9 @@ export const createProposal = async (adminId, data) => {
     projectId: project._id,
   });
 
-  // 2. Telegram Live Status Card for Client
+  // 2. Telegram Deep-Linked Proposal Card for Client
   if (client.telegramChatId) {
-    await updateTelegramStatusCard(project, client.telegramChatId);
+    await sendProposalNotificationTelegram(project, client.telegramChatId);
   }
 
   // 3. Email Notification for Client
@@ -116,10 +115,11 @@ export const acceptProposal = async (projectId, clientId) => {
 
   const client = await User.findById(clientId);
   if (client?.telegramChatId) {
-    await updateTelegramStatusCard(project, client.telegramChatId);
+    const confirmationText = `✅ <b>Proposal Accepted!</b>\n\nProject for <b>${project.editingStyle}</b> (${project.price} ${project.currency}) is officially in progress. Deadline: ${new Date(project.deadline).toLocaleDateString()}`;
+    await sendTelegramNotification(client.telegramChatId, confirmationText);
   }
 
-  // Notify Admins
+  // Notify Admins with Rich Emoji Alert
   const admins = await User.find({ role: 'admin' });
   for (const admin of admins) {
     await Notification.create({
@@ -129,11 +129,7 @@ export const acceptProposal = async (projectId, clientId) => {
       projectId: project._id,
     });
 
-    const tgMessage = `<b>PROPOSAL ACCEPTED BY CLIENT</b>\n\n` +
-      `Client: <b>${project.clientName}</b>\n` +
-      `Style: <b>${project.editingStyle}</b>\n` +
-      `Price: <b>${project.price} ${project.currency}</b>\n\n` +
-      `Project status is now IN PROGRESS.`;
+    const tgMessage = `✅ <b>${project.clientName}</b> accepted the proposal for <i>${project.editingStyle}</i> — ${project.packageTier?.toUpperCase()}, ${project.price} ${project.currency}. Work can start.`;
     await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
 
@@ -149,11 +145,6 @@ export const declineProposal = async (projectId, clientId) => {
   project.declinedAt = new Date();
   await project.save();
 
-  const client = await User.findById(clientId);
-  if (client?.telegramChatId) {
-    await updateTelegramStatusCard(project, client.telegramChatId);
-  }
-
   // Notify Admins
   const admins = await User.find({ role: 'admin' });
   for (const admin of admins) {
@@ -164,9 +155,7 @@ export const declineProposal = async (projectId, clientId) => {
       projectId: project._id,
     });
 
-    const tgMessage = `<b>PROPOSAL DECLINED BY CLIENT</b>\n\n` +
-      `Client: <b>${project.clientName}</b>\n` +
-      `Style: <b>${project.editingStyle}</b>`;
+    const tgMessage = `❌ <b>${project.clientName}</b> declined the proposal for <i>${project.editingStyle}</i>.`;
     await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
 
@@ -193,7 +182,7 @@ export const markDelivered = async (projectId, adminId) => {
     });
 
     if (client.telegramChatId) {
-      await updateTelegramStatusCard(project, client.telegramChatId);
+      await sendDeliveryNotificationTelegram(project, client.telegramChatId);
     }
 
     const emailHtml = `
@@ -223,11 +212,6 @@ export const approveDelivery = async (projectId, clientId) => {
   project.completedAt = new Date();
   await project.save();
 
-  const client = await User.findById(clientId);
-  if (client?.telegramChatId) {
-    await updateTelegramStatusCard(project, client.telegramChatId);
-  }
-
   // Notify Admins
   const admins = await User.find({ role: 'admin' });
   for (const admin of admins) {
@@ -238,10 +222,7 @@ export const approveDelivery = async (projectId, clientId) => {
       projectId: project._id,
     });
 
-    const tgMessage = `<b>DELIVERY APPROVED BY CLIENT</b>\n\n` +
-      `Client: <b>${project.clientName}</b>\n` +
-      `Style: <b>${project.editingStyle}</b>\n\n` +
-      `Project is COMPLETED. Revenue is booked into agency totals.`;
+    const tgMessage = `🎉 <b>${project.clientName}</b> approved the delivery for <i>${project.editingStyle}</i>. Project complete!`;
     await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
 
@@ -273,7 +254,8 @@ export const submitRating = async (projectId, clientId, stars, review) => {
   project.rated = true;
   await project.save();
 
-  // Notify Admins
+  // Notify Admins with Star Emojis
+  const starEmojis = '⭐️'.repeat(stars);
   const admins = await User.find({ role: 'admin' });
   for (const admin of admins) {
     await Notification.create({
@@ -283,11 +265,7 @@ export const submitRating = async (projectId, clientId, stars, review) => {
       projectId: project._id,
     });
 
-    const tgMessage = `<b>NEW RATING SUBMITTED</b>\n\n` +
-      `Rating: <b>${stars} / 5 Stars</b>\n` +
-      `Client: <b>${client?.name || 'Client'}</b>\n` +
-      `Style: <b>${project.editingStyle}</b>\n` +
-      `Review: "${review}"`;
+    const tgMessage = `${starEmojis} <b>${client?.name || 'Client'}</b> rated the project ${stars}/5: "${review}"`;
     await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
 
@@ -385,7 +363,7 @@ export const acceptContract = async (contractId, clientId) => {
     await updateContractTelegramStatusCard(contract, client.telegramChatId, 0);
   }
 
-  // Notify Admins
+  // Notify Admins with Rich Emoji Alert
   const admins = await User.find({ role: 'admin' });
   for (const admin of admins) {
     await Notification.create({
@@ -394,11 +372,7 @@ export const acceptContract = async (contractId, clientId) => {
       message: `Client ${contract.clientName} accepted retainer contract (${contract.packageTier.toUpperCase()}, ${contract.monthlyPrice} ${contract.currency}/mo).`,
     });
 
-    const tgMessage = `<b>RETAINER CONTRACT ACCEPTED BY CLIENT</b>\n\n` +
-      `Client: <b>${contract.clientName}</b>\n` +
-      `Tier: <b>${contract.packageTier.toUpperCase()} (${contract.frequency})</b>\n` +
-      `Monthly Revenue: <b>${contract.monthlyPrice} ${contract.currency}</b>\n\n` +
-      `Contract is now ACTIVE. Deliverables tracking enabled.`;
+    const tgMessage = `✅ <b>${contract.clientName}</b> accepted the retainer contract (${contract.packageTier.toUpperCase()}, ${contract.frequency}, ${contract.monthlyPrice} ${contract.currency}/mo). Deliverables tracking active.`;
     await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
 
@@ -414,11 +388,6 @@ export const declineContract = async (contractId, clientId) => {
   contract.declinedAt = new Date();
   await contract.save();
 
-  const client = await User.findById(clientId);
-  if (client?.telegramChatId) {
-    await updateContractTelegramStatusCard(contract, client.telegramChatId, 0);
-  }
-
   // Notify Admins
   const admins = await User.find({ role: 'admin' });
   for (const admin of admins) {
@@ -427,6 +396,9 @@ export const declineContract = async (contractId, clientId) => {
       type: 'proposal_declined',
       message: `Client ${contract.clientName} declined retainer contract proposal.`,
     });
+
+    const tgMessage = `❌ <b>${contract.clientName}</b> declined the retainer contract proposal.`;
+    await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
 
   return contract;
@@ -514,6 +486,8 @@ export const completeContract = async (contractId, adminId) => {
   contract.completedAt = new Date();
   await contract.save();
 
+  const delCount = await Deliverable.countDocuments({ contractId: contract._id });
+
   const client = await User.findById(contract.clientId);
   if (client) {
     await Notification.create({
@@ -523,9 +497,15 @@ export const completeContract = async (contractId, adminId) => {
     });
 
     if (client.telegramChatId) {
-      const delCount = await Deliverable.countDocuments({ contractId: contract._id });
       await updateContractTelegramStatusCard(contract, client.telegramChatId, delCount);
     }
+  }
+
+  // Notify Admins with Rich Emoji Alert
+  const admins = await User.find({ role: 'admin' });
+  for (const admin of admins) {
+    const tgMessage = `📦 Contract with <b>${contract.clientName}</b> completed — ${delCount} videos delivered over ${contract.durationMonths} month(s).`;
+    await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
 
   return contract;
@@ -557,6 +537,7 @@ export const submitContractRating = async (contractId, clientId, stars, review) 
   await contract.save();
 
   // Notify Admins
+  const starEmojis = '⭐️'.repeat(stars);
   const admins = await User.find({ role: 'admin' });
   for (const admin of admins) {
     await Notification.create({
@@ -565,10 +546,7 @@ export const submitContractRating = async (contractId, clientId, stars, review) 
       message: `New ${stars}-star retainer rating submitted by ${client?.name || 'Client'}.`,
     });
 
-    const tgMessage = `<b>NEW RETAINER CONTRACT RATING</b>\n\n` +
-      `Rating: <b>${stars} / 5 Stars</b>\n` +
-      `Client: <b>${client?.name || 'Client'}</b>\n` +
-      `Review: "${review}"`;
+    const tgMessage = `${starEmojis} <b>${client?.name || 'Client'}</b> rated the retainer contract ${stars}/5: "${review}"`;
     await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
 

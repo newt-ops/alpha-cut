@@ -3,6 +3,8 @@ import { config } from '../config/env.js';
 import { User } from '../models/User.js';
 import { PendingLink } from '../models/PendingLink.js';
 import { Project } from '../models/Project.js';
+import { Contract } from '../models/Contract.js';
+import { Deliverable } from '../models/Deliverable.js';
 import { PackageConfig } from '../models/PackageConfig.js';
 import { EDITING_STYLES } from '../constants/editingStyles.js';
 
@@ -30,20 +32,30 @@ export const getUnicodeProgressBar = (status) => {
 };
 
 // Inline Keyboards
-const getMainMenuKeyboard = () => {
+export const getAdminMenuKeyboard = () => {
   return Markup.inlineKeyboard([
-    [Markup.button.callback('📊 Track My Projects', 'menu:projects')],
-    [Markup.button.callback('📦 Packages & Pricing', 'menu:packages')],
-    [Markup.button.callback('🎬 Signature Editing Styles', 'menu:styles:0')],
-    [Markup.button.callback('⚡ About Alpha Cut', 'menu:about')],
-    [Markup.button.webApp('🚀 Open Full Dashboard', MINI_APP_URL)],
+    [Markup.button.callback('📋 Pending Proposals', 'admin_menu:proposals')],
+    [Markup.button.callback('📦 Active Retainer Contracts', 'admin_menu:contracts')],
+    [Markup.button.callback('🔔 Recent Agency Activity', 'admin_menu:activity')],
+    [Markup.button.url('🚀 Open Admin ERP Portal', `${CLIENT_URL}/admin`)],
     [Markup.button.callback('❌ Disconnect Account', 'unlink_account')],
   ]);
 };
 
-const getUnlinkedMenuKeyboard = () => {
+export const getClientMenuKeyboard = () => {
   return Markup.inlineKeyboard([
-    [Markup.button.webApp('🚀 Open Dashboard & Connect', MINI_APP_URL)],
+    [Markup.button.callback('📊 Track My Work', 'menu:work')],
+    [Markup.button.callback('📦 Packages & Pricing', 'menu:packages')],
+    [Markup.button.callback('🎬 Signature Editing Styles', 'menu:styles:0')],
+    [Markup.button.callback('⚡ About Alpha Cut', 'menu:about')],
+    [Markup.button.webApp('🚀 Open Mini App Workspace', MINI_APP_URL)],
+    [Markup.button.callback('❌ Disconnect Account', 'unlink_account')],
+  ]);
+};
+
+export const getUnlinkedMenuKeyboard = () => {
+  return Markup.inlineKeyboard([
+    [Markup.button.webApp('🚀 Open Workspace & Connect', MINI_APP_URL)],
     [Markup.button.url('🌐 Visit Website', CLIENT_URL)],
   ]);
 };
@@ -54,11 +66,11 @@ if (bot) {
     try {
       await bot.telegram.setMyCommands([
         { command: 'start', description: 'Launch bot & main menu' },
-        { command: 'menu', description: 'Open interactive agency menu' },
-        { command: 'status', description: 'Check live project status' },
-        { command: 'projects', description: 'View all video projects' },
+        { command: 'menu', description: 'Open role-based control menu' },
+        { command: 'status', description: 'Check live active work status' },
+        { command: 'projects', description: 'View all video projects & contracts' },
         { command: 'packages', description: 'View pricing & rate ranges' },
-        { command: 'styles', description: 'Browse video editing styles' },
+        { command: 'styles', description: 'Browse signature editing styles' },
         { command: 'about', description: 'About Alpha Cut Agency' },
         { command: 'help', description: 'Get help and instructions' },
       ]);
@@ -102,7 +114,7 @@ if (bot) {
 
         if (existingBoundUser && existingBoundUser._id.toString() !== user._id.toString()) {
           return ctx.reply(
-            `⚠️ Link Rejected: This Telegram account is already linked to another client (${existingBoundUser.email}).`
+            `⚠️ Link Rejected: This Telegram account is already linked to another user (${existingBoundUser.email}).`
           );
         }
 
@@ -113,26 +125,28 @@ if (bot) {
         pending.used = true;
         await pending.save();
 
+        const menuKb = user.role === 'admin' ? getAdminMenuKeyboard() : getClientMenuKeyboard();
         return ctx.reply(
-          `🎉 <b>Account Linked Successfully!</b>\n\nWelcome <b>${user.name}</b>. Your Telegram account is now connected to Alpha Cut Agency.`,
-          { parse_mode: 'HTML', ...getMainMenuKeyboard() }
+          `🎉 <b>Account Linked Successfully!</b>\n\nWelcome <b>${user.name}</b> (${user.role.toUpperCase()}). Your Telegram account is connected to Alpha Cut Executive ERP.`,
+          { parse_mode: 'HTML', ...menuKb }
         );
       }
 
       const existingUser = await User.findOne({ telegramChatId: chatId });
       if (existingUser) {
+        const menuKb = existingUser.role === 'admin' ? getAdminMenuKeyboard() : getClientMenuKeyboard();
         return ctx.reply(
-          `🎬 <b>Welcome back, ${existingUser.name}!</b>\n\nUse the interactive menu below to inspect active projects, packages, or launch the Mini App.`,
-          { parse_mode: 'HTML', ...getMainMenuKeyboard() }
+          `🎬 <b>Welcome back, ${existingUser.name}!</b>\n\nUse your role-based menu below to manage projects, review work, or launch the Mini App.`,
+          { parse_mode: 'HTML', ...menuKb }
         );
       }
 
       ctx.reply(
         `🎬 <b>Welcome to Alpha Cut Control Center</b>\n\n` +
-          `High-impact video editing agency for short-form, viral breakdowns, and long-form content.\n\n` +
+          `High-impact video editing agency for short-form, viral breakdowns, and retainer contracts.\n\n` +
           `<b>To link your account:</b>\n` +
           `1. Open our web platform or Mini App\n` +
-          `2. Send your 6-digit code using <code>/link 123456</code>`,
+          `2. Enter your 6-digit code using <code>/link 123456</code>`,
         { parse_mode: 'HTML', ...getUnlinkedMenuKeyboard() }
       );
     } catch (err) {
@@ -140,20 +154,39 @@ if (bot) {
     }
   });
 
-  // Handler: /menu & /status & /projects & /packages & /styles & /about & /help
+  // Handler: /menu — Role-Based Menu Branching
   bot.command('menu', async (ctx) => {
     await ctx.sendChatAction('typing');
-    ctx.reply('🎬 <b>Alpha Cut Agency Main Menu</b>', { parse_mode: 'HTML', ...getMainMenuKeyboard() });
+    const chatId = ctx.chat.id.toString();
+    const user = await User.findOne({ telegramChatId: chatId });
+
+    if (user?.role === 'admin') {
+      return ctx.reply('⚡ <b>Alpha Cut Admin ERP Command Menu</b>', { parse_mode: 'HTML', ...getAdminMenuKeyboard() });
+    }
+
+    ctx.reply('🎬 <b>Alpha Cut Client Control Menu</b>', { parse_mode: 'HTML', ...getClientMenuKeyboard() });
   });
 
+  // Handler: /status
   bot.command('status', async (ctx) => {
     await ctx.sendChatAction('typing');
     const chatId = ctx.chat.id.toString();
     const user = await User.findOne({ telegramChatId: chatId });
     if (!user) return ctx.reply('⚠️ Please link your account first.', getUnlinkedMenuKeyboard());
 
+    if (user.role === 'admin') {
+      const activeProposals = await Project.countDocuments({ status: 'proposal_sent' });
+      const activeContracts = await Contract.countDocuments({ status: 'active' });
+      return ctx.reply(
+        `⚡ <b>AGENCY OVERVIEW SNAPSHOT:</b>\n\n` +
+          `• Pending Client Proposals: <b>${activeProposals}</b>\n` +
+          `• Active Retainer Contracts: <b>${activeContracts}</b>`,
+        { parse_mode: 'HTML', ...getAdminMenuKeyboard() }
+      );
+    }
+
     const project = await Project.findOne({ clientId: user._id }).sort({ updatedAt: -1 });
-    if (!project) return ctx.reply('ℹ️ You currently have no project proposals or edits.', getMainMenuKeyboard());
+    if (!project) return ctx.reply('ℹ️ You currently have no active video projects.', getClientMenuKeyboard());
 
     const msg = `📊 <b>Latest Project Status:</b>\n\n` +
       `Style: <b>${project.editingStyle}</b>\n` +
@@ -164,38 +197,42 @@ if (bot) {
     ctx.reply(msg, {
       parse_mode: 'HTML',
       ...Markup.inlineKeyboard([
-        [Markup.button.webApp('🚀 Open Project in Mini App', MINI_APP_URL)],
+        [Markup.button.webApp('🚀 Open App to Review', `${MINI_APP_URL}?startapp=proposal_${project._id}`)],
         [Markup.button.callback('⬅️ Back to Menu', 'menu:main')],
       ]),
     });
   });
 
+  // Handler: /projects
   bot.command('projects', async (ctx) => {
-    ctx.reply('📊 <b>Fetching your video projects...</b>', { parse_mode: 'HTML', ...getMainMenuKeyboard() });
+    const chatId = ctx.chat.id.toString();
+    const user = await User.findOne({ telegramChatId: chatId });
+    const menuKb = user?.role === 'admin' ? getAdminMenuKeyboard() : getClientMenuKeyboard();
+    ctx.reply('📊 <b>Fetching active work and retainer contracts...</b>', { parse_mode: 'HTML', ...menuKb });
   });
 
   bot.command('packages', async (ctx) => {
-    ctx.reply('📦 <b>Fetching package rates...</b>', { parse_mode: 'HTML', ...getMainMenuKeyboard() });
+    ctx.reply('📦 <b>Fetching package rates...</b>', { parse_mode: 'HTML', ...getClientMenuKeyboard() });
   });
 
   bot.command('styles', async (ctx) => {
-    ctx.reply('🎬 <b>Signature Editing Styles:</b>', { parse_mode: 'HTML', ...getMainMenuKeyboard() });
+    ctx.reply('🎬 <b>Signature Editing Styles:</b>', { parse_mode: 'HTML', ...getClientMenuKeyboard() });
   });
 
   bot.command('about', async (ctx) => {
-    ctx.reply('⚡ <b>Alpha Cut Agency</b> — Retention-driven video editing.', { parse_mode: 'HTML', ...getMainMenuKeyboard() });
+    ctx.reply('⚡ <b>Alpha Cut Agency</b> — Retention-driven video editing.', { parse_mode: 'HTML', ...getClientMenuKeyboard() });
   });
 
   bot.command('help', async (ctx) => {
     ctx.reply(
       `ℹ️ <b>Alpha Cut Bot Help & Commands:</b>\n\n` +
-        `/menu — Main Menu\n` +
-        `/status — Active project status card\n` +
-        `/projects — List all projects\n` +
+        `/menu — Role-Based Control Menu\n` +
+        `/status — Active work status card\n` +
+        `/projects — List projects & retainer contracts\n` +
         `/packages — Inspect package rates\n` +
         `/styles — Signature editing styles\n` +
         `/unlink — Disconnect account`,
-      { parse_mode: 'HTML', ...getMainMenuKeyboard() }
+      { parse_mode: 'HTML', ...getClientMenuKeyboard() }
     );
   });
 
@@ -231,9 +268,10 @@ if (bot) {
       pending.used = true;
       await pending.save();
 
-      ctx.reply(`🎉 <b>Account Linked Successfully!</b>\n\nConnected to <b>${user.name}</b>.`, {
+      const menuKb = user.role === 'admin' ? getAdminMenuKeyboard() : getClientMenuKeyboard();
+      ctx.reply(`🎉 <b>Account Linked Successfully!</b>\n\nConnected to <b>${user.name}</b> (${user.role.toUpperCase()}).`, {
         parse_mode: 'HTML',
-        ...getMainMenuKeyboard(),
+        ...menuKb,
       });
     } catch (err) {
       console.error('Telegram link error:', err.message);
@@ -263,7 +301,7 @@ if (bot) {
     await handleUnlink(ctx);
   });
 
-  // In-Place Screen Router (Callback Queries)
+  // Callback Query Handling
   bot.on('callback_query', async (ctx) => {
     const data = ctx.callbackQuery.data;
     if (!data) return;
@@ -274,66 +312,130 @@ if (bot) {
       const user = await User.findOne({ telegramChatId: chatId });
 
       if (data === 'menu:main') {
-        return ctx.editMessageText('🎬 <b>Alpha Cut Agency Main Menu</b>', {
+        const menuKb = user?.role === 'admin' ? getAdminMenuKeyboard() : getClientMenuKeyboard();
+        return ctx.editMessageText(
+          user?.role === 'admin' ? '⚡ <b>Alpha Cut Admin ERP Menu</b>' : '🎬 <b>Alpha Cut Client Control Menu</b>',
+          { parse_mode: 'HTML', ...menuKb }
+        );
+      }
+
+      // Admin Callback Router
+      if (data === 'admin_menu:proposals') {
+        const pendingProposals = await Project.find({ status: 'proposal_sent' }).sort({ createdAt: -1 });
+        if (pendingProposals.length === 0) {
+          return ctx.editMessageText('ℹ️ No pending client proposals currently awaiting review.', {
+            parse_mode: 'HTML',
+            ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Back to Admin Menu', 'menu:main')]]),
+          });
+        }
+
+        let msg = `📋 <b>PENDING PROPOSALS AWAITING CLIENT RESPONSE (${pendingProposals.length}):</b>\n\n`;
+        pendingProposals.forEach((p, idx) => {
+          msg += `${idx + 1}. <b>${p.editingStyle}</b> (${p.clientName})\n   Rate: <b>${p.price} ${p.currency}</b> | Deadline: ${new Date(p.deadline).toLocaleDateString()}\n\n`;
+        });
+
+        return ctx.editMessageText(msg, {
           parse_mode: 'HTML',
-          ...getMainMenuKeyboard(),
+          ...Markup.inlineKeyboard([
+            [Markup.button.url('🚀 Manage in Admin Portal', `${CLIENT_URL}/admin`)],
+            [Markup.button.callback('⬅️ Back to Admin Menu', 'menu:main')],
+          ]),
         });
       }
 
-      if (data === 'menu:projects') {
+      if (data === 'admin_menu:contracts') {
+        const activeContracts = await Contract.find({ status: 'active' }).sort({ createdAt: -1 });
+        if (activeContracts.length === 0) {
+          return ctx.editMessageText('ℹ️ No active retainer contracts currently running.', {
+            parse_mode: 'HTML',
+            ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Back to Admin Menu', 'menu:main')]]),
+          });
+        }
+
+        let msg = `📦 <b>ACTIVE RETAINER CONTRACTS (${activeContracts.length}):</b>\n\n`;
+        activeContracts.forEach((c, idx) => {
+          msg += `${idx + 1}. <b>${c.clientName}</b> (${c.packageTier?.toUpperCase()})\n   Rate: <b>${c.monthlyPrice} ${c.currency}/mo</b> (${c.frequency})\n\n`;
+        });
+
+        return ctx.editMessageText(msg, {
+          parse_mode: 'HTML',
+          ...Markup.inlineKeyboard([
+            [Markup.button.url('🚀 Manage Retainers in Admin Portal', `${CLIENT_URL}/admin`)],
+            [Markup.button.callback('⬅️ Back to Admin Menu', 'menu:main')],
+          ]),
+        });
+      }
+
+      // Client Track Work Router
+      if (data === 'menu:work' || data === 'menu:projects') {
         if (!user) {
-          return ctx.editMessageText('⚠️ Please link your account first to track projects.', {
+          return ctx.editMessageText('⚠️ Please link your account first to track work.', {
             parse_mode: 'HTML',
             ...getUnlinkedMenuKeyboard(),
           });
         }
 
         const projects = await Project.find({ clientId: user._id }).sort({ createdAt: -1 });
-        if (projects.length === 0) {
-          return ctx.editMessageText('ℹ️ You have no project proposals or edits yet.', {
+        const contracts = await Contract.find({ clientId: user._id }).sort({ createdAt: -1 });
+
+        if (projects.length === 0 && contracts.length === 0) {
+          return ctx.editMessageText('ℹ️ You have no project proposals or retainer contracts yet.', {
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Back to Menu', 'menu:main')]]),
           });
         }
 
-        let msg = `📊 <b>Your Projects & Proposals (${projects.length}):</b>\n\n`;
-        const buttons = [];
-        projects.forEach((p, i) => {
-          const statusTag = `[${p.status.replace('_', ' ').toUpperCase()}]`;
-          msg += `${i + 1}. <b>${p.editingStyle}</b> ${statusTag}\n   Terms: ${p.price} ${p.currency}\n\n`;
-          buttons.push([Markup.button.callback(`inspect ${p.editingStyle}`, `project:${p._id}`)]);
+        let msg = `📊 <b>Your Active Work & Retainer Contracts:</b>\n\n`;
+        contracts.forEach((c) => {
+          msg += `📦 <b>Retainer: ${c.packageTier?.toUpperCase()} (${c.frequency})</b>\n   Status: <b>${c.status.toUpperCase()}</b> | Monthly: ${c.monthlyPrice} ${c.currency}\n\n`;
         });
 
-        buttons.push([Markup.button.webApp('🚀 Open Mini App Workspace', MINI_APP_URL)]);
-        buttons.push([Markup.button.callback('⬅️ Back to Menu', 'menu:main')]);
-
-        return ctx.editMessageText(msg, { parse_mode: 'HTML', ...Markup.inlineKeyboard(buttons) });
-      }
-
-      if (data.startsWith('project:')) {
-        const projId = data.split(':')[1];
-        const project = await Project.findById(projId);
-        if (!project) {
-          return ctx.editMessageText('⚠️ Project not found.', {
-            parse_mode: 'HTML',
-            ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Back to Projects', 'menu:projects')]]),
-          });
-        }
-
-        const msg = `🎬 <b>Project Details: ${project.editingStyle}</b>\n\n` +
-          `Status: <code>${getUnicodeProgressBar(project.status)}</code>\n` +
-          `Package Tier: <b>${project.packageTier.toUpperCase()} (${project.contentLength.toUpperCase()})</b>\n` +
-          `Agreed Rate: <b>${project.price} ${project.currency}</b>\n` +
-          `Deadline: <b>${new Date(project.deadline).toLocaleDateString()}</b>\n` +
-          (project.referenceBrief ? `Brief / Link: <i>${project.referenceBrief}</i>\n` : '');
+        projects.slice(0, 5).forEach((p) => {
+          msg += `🎬 <b>${p.editingStyle}</b> [${p.status.toUpperCase()}]\n   Terms: ${p.price} ${p.currency}\n\n`;
+        });
 
         return ctx.editMessageText(msg, {
           parse_mode: 'HTML',
           ...Markup.inlineKeyboard([
-            [Markup.button.webApp('🚀 Open & Action in Mini App', MINI_APP_URL)],
-            [Markup.button.callback('⬅️ Back to Projects List', 'menu:projects')],
+            [Markup.button.webApp('🚀 Open Mini App Workspace', MINI_APP_URL)],
+            [Markup.button.callback('⬅️ Back to Menu', 'menu:main')],
           ]),
         });
+      }
+
+      // Toggle In-Place Message Brief Details
+      if (data.startsWith('toggle_details_proj_')) {
+        const projId = data.replace('toggle_details_proj_', '');
+        const project = await Project.findById(projId);
+        if (!project) return;
+
+        const isShowingBrief = ctx.callbackQuery.message.text.includes('Reference Brief:');
+        let updatedText = '';
+
+        if (!isShowingBrief) {
+          updatedText = `🎬 <b>PROJECT PROPOSAL SUMMARY</b>\n\n` +
+            `Style: <b>${project.editingStyle}</b>\n` +
+            `Tier: <b>${project.packageTier?.toUpperCase()} (${project.contentLength?.toUpperCase()})</b>\n` +
+            `Rate: <b>${project.price} ${project.currency}</b>\n` +
+            `Deadline: <b>${new Date(project.deadline).toLocaleDateString()}</b>\n\n` +
+            `<b>Reference Brief Notes:</b>\n<i>${project.referenceBrief || 'No specific notes attached.'}</i>`;
+        } else {
+          updatedText = `🎬 <b>NEW PROJECT PROPOSAL RECEIVED</b>\n\n` +
+            `Style: <b>${project.editingStyle}</b>\n` +
+            `Tier: <b>${project.packageTier?.toUpperCase()} (${project.contentLength?.toUpperCase()})</b>\n` +
+            `Rate: <b>${project.price} ${project.currency}</b>\n` +
+            `Deadline: <b>${new Date(project.deadline).toLocaleDateString()}</b>`;
+        }
+
+        const keyboard = Markup.inlineKeyboard([
+          [
+            Markup.button.callback(isShowingBrief ? '🔍 See Details' : '🙈 Hide Details', `toggle_details_proj_${project._id}`),
+            Markup.button.webApp('🚀 Open & Respond', `${MINI_APP_URL}?startapp=proposal_${project._id}`),
+          ],
+          [Markup.button.callback('⬅️ Back to Menu', 'menu:main')],
+        ]);
+
+        return ctx.editMessageText(updatedText, { parse_mode: 'HTML', ...keyboard });
       }
 
       if (data.startsWith('menu:packages') || data.startsWith('packages:currency:')) {
@@ -342,10 +444,10 @@ if (bot) {
         const basicConfig = configs.find((c) => c.tier === 'basic' && c.currency === 'ETB');
         const premiumConfig = configs.find((c) => c.tier === 'premium' && c.currency === 'ETB');
 
-        const basicMin = basicConfig?.priceMin || 350;
-        const basicMax = basicConfig?.priceMax || 400;
-        const premMin = premiumConfig?.priceMin || 450;
-        const premMax = premiumConfig?.priceMax || 500;
+        const basicMin = basicConfig?.priceMin || 500;
+        const basicMax = basicConfig?.priceMax || 800;
+        const premMin = premiumConfig?.priceMin || 1600;
+        const premMax = premiumConfig?.priceMax || 2400;
 
         let msg = `📦 <b>Alpha Cut — Package Pricing & Rates:</b>\n\n`;
         if (curr === 'ETB') {
@@ -357,8 +459,8 @@ if (bot) {
             `• Kinetic typography, custom b-roll, motion graphics, 2 revisions.\n\n`;
         } else {
           msg += `💎 <b>International USD Rates:</b>\n` +
-            `• Customized per region and project requirements.\n` +
-            `• Contact <code>alphacutagency@gmail.com</code> for custom invoice terms.\n\n`;
+            `• Converted dynamically from live market rates.\n` +
+            `• Contact <code>alphacutagency@gmail.com</code> for custom terms.\n\n`;
         }
 
         return ctx.editMessageText(msg, {
@@ -368,7 +470,7 @@ if (bot) {
               Markup.button.callback(curr === 'ETB' ? '▶️ ETB Rates' : 'ETB Rates', 'packages:currency:etb'),
               Markup.button.callback(curr === 'USD' ? '▶️ USD Rates' : 'USD Rates', 'packages:currency:usd'),
             ],
-            [Markup.button.webApp('🚀 Open Calculator in Mini App', MINI_APP_URL)],
+            [Markup.button.webApp('🚀 Open Workspace in Mini App', MINI_APP_URL)],
             [Markup.button.callback('⬅️ Back to Menu', 'menu:main')],
           ]),
         });
@@ -393,7 +495,7 @@ if (bot) {
           parse_mode: 'HTML',
           ...Markup.inlineKeyboard([
             ...(navRow.length > 0 ? [navRow] : []),
-            [Markup.button.webApp('🚀 View Video Previews in Mini App', MINI_APP_URL)],
+            [Markup.button.webApp('🚀 Open Mini App Workspace', MINI_APP_URL)],
             [Markup.button.callback('⬅️ Back to Menu', 'menu:main')],
           ]),
         });
@@ -409,7 +511,7 @@ if (bot) {
         return ctx.editMessageText(msg, {
           parse_mode: 'HTML',
           ...Markup.inlineKeyboard([
-            [Markup.button.webApp('🚀 Open Full Dashboard App', MINI_APP_URL)],
+            [Markup.button.webApp('🚀 Open Mini App Workspace', MINI_APP_URL)],
             [Markup.button.callback('⬅️ Back to Menu', 'menu:main')],
           ]),
         });
@@ -420,50 +522,58 @@ if (bot) {
   });
 }
 
-// Live-Updating Status Card Function
-export const updateTelegramStatusCard = async (project, clientChatId) => {
+// Live-Updating Status Card & Notification Helpers
+export const sendProposalNotificationTelegram = async (project, clientChatId) => {
   if (!bot || !clientChatId) return;
 
-  const statusText = `🎬 <b>PROJECT LIFECYCLE UPDATE</b>\n\n` +
+  const msgText = `🎬 <b>NEW PROJECT PROPOSAL RECEIVED</b>\n\n` +
     `Style: <b>${project.editingStyle}</b>\n` +
-    `Progress: <code>${getUnicodeProgressBar(project.status)}</code>\n` +
-    `Investment: <b>${project.price} ${project.currency}</b> (${project.packageTier?.toUpperCase()})\n` +
-    `Deadline: <b>${new Date(project.deadline).toLocaleDateString()}</b>\n\n` +
-    `Log into your Mini App to take action or review deliverables.`;
+    `Tier: <b>${project.packageTier?.toUpperCase()} (${project.contentLength?.toUpperCase()})</b>\n` +
+    `Rate: <b>${project.price} ${project.currency}</b>\n` +
+    `Deadline: <b>${new Date(project.deadline).toLocaleDateString()}</b>`;
 
   const keyboard = Markup.inlineKeyboard([
-    [Markup.button.webApp('🚀 Open Project in Mini App', MINI_APP_URL)],
+    [
+      Markup.button.callback('🔍 See Details', `toggle_details_proj_${project._id}`),
+      Markup.button.webApp('🚀 Open & Respond', `${MINI_APP_URL}?startapp=proposal_${project._id}`),
+    ],
     [Markup.button.callback('⬅️ Main Menu', 'menu:main')],
   ]);
 
-  if (project.telegramStatusMessageId) {
-    try {
-      await bot.telegram.editMessageText(
-        clientChatId,
-        Number(project.telegramStatusMessageId),
-        null,
-        statusText,
-        { parse_mode: 'HTML', ...keyboard }
-      );
-      return;
-    } catch (err) {
-      console.log('Failed to edit existing status message, sending new card:', err.message);
-    }
-  }
-
   try {
-    const sentMsg = await bot.telegram.sendMessage(clientChatId, statusText, {
-      parse_mode: 'HTML',
-      ...keyboard,
-    });
+    const sentMsg = await bot.telegram.sendMessage(clientChatId, msgText, { parse_mode: 'HTML', ...keyboard });
     project.telegramStatusMessageId = sentMsg.message_id.toString();
     await project.save();
   } catch (err) {
-    console.error('Failed to send live status card:', err.message);
+    console.error('Failed to send proposal notification:', err.message);
   }
 };
 
-// Update or Send Live Status Card for Retainer Contracts
+export const sendDeliveryNotificationTelegram = async (project, clientChatId) => {
+  if (!bot || !clientChatId) return;
+
+  const msgText = `🎉 <b>YOUR VIDEO EDIT IS DELIVERED & READY!</b>\n\n` +
+    `Style: <b>${project.editingStyle}</b>\n` +
+    `Rate: <b>${project.price} ${project.currency}</b>\n\n` +
+    `Click below to launch your Mini App or visit the web platform to confirm delivery.`;
+
+  const keyboard = Markup.inlineKeyboard([
+    [Markup.button.webApp('🚀 Open App to Confirm', `${MINI_APP_URL}?startapp=delivery_${project._id}`)],
+    [Markup.button.url('🌐 Open Web Platform', CLIENT_URL)],
+  ]);
+
+  try {
+    await bot.telegram.sendMessage(clientChatId, msgText, { parse_mode: 'HTML', ...keyboard });
+  } catch (err) {
+    console.error('Failed to send delivery notification:', err.message);
+  }
+};
+
+export const updateTelegramStatusCard = async (project, clientChatId) => {
+  if (!bot || !clientChatId) return;
+  await sendProposalNotificationTelegram(project, clientChatId);
+};
+
 export const updateContractTelegramStatusCard = async (contract, clientChatId, deliveredCount = 0) => {
   if (!bot || !clientChatId) return;
 
@@ -479,7 +589,7 @@ export const updateContractTelegramStatusCard = async (contract, clientChatId, d
     `Log into your Mini App to approve video renders or review schedule.`;
 
   const keyboard = Markup.inlineKeyboard([
-    [Markup.button.webApp('🚀 Open Work in Mini App', MINI_APP_URL)],
+    [Markup.button.webApp('🚀 Open Work in Mini App', `${MINI_APP_URL}?startapp=contract_${contract._id}`)],
     [Markup.button.callback('⬅️ Main Menu', 'menu:main')],
   ]);
 
