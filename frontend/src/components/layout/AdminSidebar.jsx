@@ -11,12 +11,14 @@ import {
   IconSettings,
   IconExternalLink,
   IconMenu,
+  IconCalendar,
 } from '@icons/icons';
 
 export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollapse }) => {
   const menuItems = [
     { id: 'overview', label: 'Analytics & Revenue', icon: IconBarChart },
     { id: 'board', label: 'Proposals & Projects', icon: IconFolder },
+    { id: 'calendar', label: 'Calendar Schedule', icon: IconCalendar },
     { id: 'proposal', label: 'Create Proposal', icon: IconPlus },
     { id: 'clients', label: 'Registered Clients', icon: IconUsers },
     { id: 'portfolio', label: 'Portfolio Showcase', icon: IconFilm },

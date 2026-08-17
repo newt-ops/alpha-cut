@@ -385,36 +385,85 @@ export const HomePage = () => {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', maxWidth: '900px', margin: '32px auto 24px auto', textAlign: 'left' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', maxWidth: '1000px', margin: '32px auto 24px auto', textAlign: 'left' }}>
           {featuredReviews.length > 0 ? (
             featuredReviews.slice(0, 3).map((r) => (
-              <div key={r._id} style={{ padding: '20px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
-                <StarRating rating={r.stars} size={16} />
-                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '8px', fontStyle: 'italic' }}>
-                  "{r.review}"
-                </p>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', display: 'block', marginTop: '8px' }}>
-                  {r.clientName} ({r.editingStyle})
-                </span>
+              <div
+                key={r._id}
+                style={{
+                  padding: '24px',
+                  backgroundColor: 'var(--bg)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--accent-gold)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <StarRating rating={r.stars || 5} size={16} />
+                    <Badge variant="gold" size="small">FEATURED</Badge>
+                  </div>
+                  <p style={{ fontSize: '14px', color: 'var(--ink)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '20px' }}>
+                    "{r.review}"
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '14px', borderTop: '1px solid var(--line)' }}>
+                  {r.clientAvatarUrl ? (
+                    <img
+                      src={r.clientAvatarUrl}
+                      alt={r.clientName}
+                      style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--accent-gold)' }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(201, 160, 107, 0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--accent-gold)',
+                        fontWeight: 800,
+                        fontSize: '14px',
+                      }}
+                    >
+                      {r.clientName ? r.clientName.charAt(0).toUpperCase() : 'C'}
+                    </div>
+                  )}
+                  <div>
+                    <strong style={{ fontSize: '14px', color: 'var(--ink)', display: 'block' }}>
+                      {r.clientName || 'Verified Client'}
+                    </strong>
+                    <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>
+                      {r.clientTitle || r.editingStyle || 'Client Partner'}
+                    </span>
+                  </div>
+                </div>
               </div>
             ))
           ) : (
             <>
-              <div style={{ padding: '20px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+              <div style={{ padding: '24px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
                 <StarRating rating={5} size={16} />
-                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '8px', fontStyle: 'italic' }}>
+                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '12px', fontStyle: 'italic' }}>
                   "Alpha Cut doubled our retention rate in our first 3 videos. The kinetic captions and sound beats are unmatched."
                 </p>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', display: 'block', marginTop: '8px' }}>
+                <span className="font-mono" style={{ fontSize: '12px', color: 'var(--accent-gold)', display: 'block', marginTop: '14px', fontWeight: 600 }}>
                   Tech Startup Founder
                 </span>
               </div>
-              <div style={{ padding: '20px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+              <div style={{ padding: '24px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
                 <StarRating rating={5} size={16} />
-                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '8px', fontStyle: 'italic' }}>
+                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '12px', fontStyle: 'italic' }}>
                   "The turnaround speed and cinematic polish gave my brand instant authority on YouTube Shorts."
                 </p>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', display: 'block', marginTop: '8px' }}>
+                <span className="font-mono" style={{ fontSize: '12px', color: 'var(--accent-gold)', display: 'block', marginTop: '14px', fontWeight: 600 }}>
                   Productivity Creator
                 </span>
               </div>

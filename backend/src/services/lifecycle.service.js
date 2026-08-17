@@ -255,7 +255,9 @@ export const submitRating = async (projectId, clientId, stars, review) => {
   const rating = await Rating.create({
     projectId: project._id,
     clientId: project.clientId,
-    clientName: client.name,
+    clientName: client?.name || project.clientName || 'Verified Client',
+    clientTitle: 'Verified Client',
+    clientAvatarUrl: client?.avatarUrl || null,
     stars,
     review,
     editingStyle: project.editingStyle,

@@ -181,6 +181,11 @@ export const DatePicker = ({
                   selectedDate.getMonth() === currentMonth &&
                   selectedDate.getFullYear() === currentYear;
 
+                const today = new Date();
+                const isToday = today.getDate() === day &&
+                  today.getMonth() === currentMonth &&
+                  today.getFullYear() === currentYear;
+
                 return (
                   <button
                     key={day}
@@ -190,10 +195,10 @@ export const DatePicker = ({
                       height: '32px',
                       borderRadius: 'var(--radius-sm)',
                       backgroundColor: isSelected ? 'var(--accent-gold)' : 'transparent',
-                      color: isSelected ? '#170B06' : 'var(--ink)',
-                      fontWeight: isSelected ? 700 : 500,
+                      color: isSelected ? '#170B06' : isToday ? 'var(--accent-gold)' : 'var(--ink)',
+                      fontWeight: isSelected || isToday ? 700 : 500,
                       fontSize: '13px',
-                      border: 'none',
+                      border: isSelected ? 'none' : isToday ? '1px solid var(--accent-gold)' : '1px solid transparent',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',

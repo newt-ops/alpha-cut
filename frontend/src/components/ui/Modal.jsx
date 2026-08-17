@@ -7,7 +7,7 @@ export const Modal = ({
   onClose,
   title,
   children,
-  maxWidth = '520px',
+  maxWidth = '560px',
 }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -64,12 +64,16 @@ export const Modal = ({
               position: 'relative',
               width: '100%',
               maxWidth,
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
               backgroundColor: 'var(--surface)',
               border: '1px solid var(--line)',
               borderRadius: 'var(--radius-lg)',
               boxShadow: 'var(--shadow)',
               padding: '28px',
               zIndex: 1001,
+              boxSizing: 'border-box',
             }}
           >
             <div
@@ -78,6 +82,9 @@ export const Modal = ({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 marginBottom: title ? '20px' : '0',
+                paddingBottom: title ? '12px' : '0',
+                borderBottom: title ? '1px solid var(--line)' : 'none',
+                flexShrink: 0,
               }}
             >
               {title && (
@@ -94,6 +101,7 @@ export const Modal = ({
               )}
               <button
                 onClick={onClose}
+                type="button"
                 style={{
                   width: '32px',
                   height: '32px',
@@ -111,7 +119,9 @@ export const Modal = ({
                 <IconClose size={18} />
               </button>
             </div>
-            <div>{children}</div>
+            <div style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
+              {children}
+            </div>
           </motion.div>
         </div>
       )}

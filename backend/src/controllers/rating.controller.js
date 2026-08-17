@@ -61,10 +61,20 @@ export const toggleHideRating = async (req, res, next) => {
 export const toggleFeatureRating = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { featured, clientTitle } = req.body || {};
     const rating = await Rating.findById(id);
     if (!rating) return res.status(404).json({ success: false, message: 'Rating not found' });
 
-    rating.featured = !rating.featured;
+    if (typeof featured === 'boolean') {
+      rating.featured = featured;
+    } else {
+      rating.featured = !rating.featured;
+    }
+
+    if (clientTitle !== undefined) {
+      rating.clientTitle = clientTitle;
+    }
+
     await rating.save();
 
     res.status(200).json({ success: true, rating });

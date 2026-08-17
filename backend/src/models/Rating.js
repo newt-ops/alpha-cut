@@ -13,6 +13,26 @@ const ratingSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    clientName: {
+      type: String,
+      default: 'Verified Client',
+    },
+    clientTitle: {
+      type: String,
+      default: 'Client',
+    },
+    clientAvatarUrl: {
+      type: String,
+      default: null,
+    },
+    editingStyle: {
+      type: String,
+      default: '',
+    },
+    packageTier: {
+      type: String,
+      default: '',
+    },
     stars: {
       type: Number,
       required: true,

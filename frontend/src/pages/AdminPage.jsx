@@ -7,6 +7,8 @@ import { Select } from '@components/ui/Select';
 import { Modal } from '@components/ui/Modal';
 import { DatePicker } from '@components/ui/DatePicker';
 import { StarRating } from '@components/ui/StarRating';
+import { Dropzone } from '@components/ui/Dropzone';
+import { NotionCalendar } from '@components/calendar/NotionCalendar';
 import { EDITING_STYLES } from '../data/editingStyles';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
@@ -25,6 +27,7 @@ import {
   IconPlus,
   IconClose,
   IconFilm,
+  IconCalendar,
 } from '@icons/icons';
 
 export const AdminPage = () => {
@@ -69,7 +72,14 @@ export const AdminPage = () => {
   const [portClientType, setPortClientType] = useState('Tech Creator');
   const [portVideoUrl, setPortVideoUrl] = useState('');
   const [portThumbnailUrl, setPortThumbnailUrl] = useState('');
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [submittingPortfolio, setSubmittingPortfolio] = useState(false);
+
+  // Featured Rating Modal State
+  const [featuredModalOpen, setFeaturedModalOpen] = useState(false);
+  const [selectedRatingForFeature, setSelectedRatingForFeature] = useState(null);
+  const [featureClientTitle, setFeatureClientTitle] = useState('');
+  const [submittingFeature, setSubmittingFeature] = useState(false);
 
   // Package Settings State (3 Tiers)
   const [basicMin, setBasicMin] = useState('500');
@@ -201,6 +211,37 @@ export const AdminPage = () => {
     }
   };
 
+  // Portfolio Cover Cloudinary Upload Handler
+  const handlePortfolioCoverUpload = async (file) => {
+    try {
+      setUploadingCover(true);
+      const sigRes = await apiFetch('/api/uploads/signature', { method: 'POST' });
+      if (!sigRes.success) throw new Error('Failed to obtain upload signature');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', sigRes.apiKey);
+      formData.append('timestamp', sigRes.timestamp);
+      formData.append('signature', sigRes.signature);
+      formData.append('folder', sigRes.folder);
+
+      const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${sigRes.cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const cloudData = await cloudRes.json();
+      if (cloudData.secure_url) {
+        setPortThumbnailUrl(cloudData.secure_url);
+        toast({ message: 'Cover thumbnail uploaded to Cloudinary!', type: 'success' });
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Thumbnail upload failed', type: 'error' });
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
   // Open Create/Edit Portfolio Modal
   const handleOpenPortfolioModal = (item = null) => {
     if (item) {
@@ -283,6 +324,40 @@ export const AdminPage = () => {
     }
   };
 
+  // Open Featured Rating Modal
+  const handleOpenFeaturedModal = (rating) => {
+    setSelectedRatingForFeature(rating);
+    setFeatureClientTitle(rating.clientTitle || `${rating.clientName} — Verified Client`);
+    setFeaturedModalOpen(true);
+  };
+
+  // Submit Featured Rating with Custom Client Title Tag
+  const handleSaveFeaturedRating = async (e) => {
+    e.preventDefault();
+    if (!selectedRatingForFeature) return;
+
+    try {
+      setSubmittingFeature(true);
+      const res = await apiFetch(`/api/ratings/${selectedRatingForFeature._id}/feature`, {
+        method: 'POST',
+        body: JSON.stringify({
+          featured: true,
+          clientTitle: featureClientTitle,
+        }),
+      });
+
+      if (res.success) {
+        toast({ message: `Rating featured with title: "${featureClientTitle}"!`, type: 'success' });
+        setFeaturedModalOpen(false);
+        fetchAdminData();
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Failed to feature rating', type: 'error' });
+    } finally {
+      setSubmittingFeature(false);
+    }
+  };
+
   // Save Package Configurations (Canonical ETB Base Rates)
   const handleSavePackageSettings = async (e) => {
     e.preventDefault();
@@ -353,19 +428,6 @@ export const AdminPage = () => {
       const res = await apiFetch(`/api/ratings/${ratingId}/hide`, { method: 'POST' });
       if (res.success) {
         toast({ message: 'Rating visibility updated.', type: 'info' });
-        fetchAdminData();
-      }
-    } catch (err) {
-      toast({ message: err.message, type: 'error' });
-    }
-  };
-
-  // Toggle Feature Rating
-  const handleToggleFeatureRating = async (ratingId) => {
-    try {
-      const res = await apiFetch(`/api/ratings/${ratingId}/feature`, { method: 'POST' });
-      if (res.success) {
-        toast({ message: 'Rating featured status updated.', type: 'success' });
         fetchAdminData();
       }
     } catch (err) {
@@ -524,7 +586,18 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* CREATE PROPOSAL FORM TAB (3 Tiers) */}
+      {/* NOTION-STYLE CALENDAR SCHEDULE TAB */}
+      {activeTab === 'calendar' && (
+        <NotionCalendar
+          projects={projects}
+          onSelectProject={(proj) => {
+            setSelectedProjectForDetail(proj);
+            setDetailModalOpen(true);
+          }}
+        />
+      )}
+
+      {/* CREATE PROPOSAL FORM TAB */}
       {activeTab === 'proposal' && (
         <div style={{ maxWidth: '640px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 30px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
           <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '20px', color: 'var(--ink)' }}>Issue New Client Proposal</h2>
@@ -743,6 +816,12 @@ export const AdminPage = () => {
                     <p style={{ fontSize: '13px', color: 'var(--accent-gold)', marginBottom: '12px', fontWeight: 600 }}>
                       Style: {item.styleName}
                     </p>
+
+                    {item.thumbnailUrl && (
+                      <div style={{ marginBottom: '12px', height: '120px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--line)' }}>
+                        <img src={item.thumbnailUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    )}
 
                     {item.videoUrl && (
                       <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginBottom: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1106,13 +1185,20 @@ export const AdminPage = () => {
                       {r.featured && <Badge variant="gold">FEATURED ON HOME</Badge>}
                       {r.hidden && <Badge variant="maroon">HIDDEN</Badge>}
                     </div>
-                    <p style={{ fontSize: '14px', fontStyle: 'italic', marginBottom: '4px', color: 'var(--ink)' }}>"{r.review}"</p>
-                    <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>— {r.clientName} ({r.editingStyle})</span>
+                    <p style={{ fontSize: '14px', fontStyle: 'italic', marginBottom: '6px', color: 'var(--ink)' }}>"{r.review}"</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--ink-soft)' }}>
+                      <strong>{r.clientName || 'Verified Client'}</strong>
+                      {r.clientTitle && <span style={{ color: 'var(--accent-gold)' }}>({r.clientTitle})</span>}
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <Button variant="secondary" size="small" onClick={() => handleToggleFeatureRating(r._id)}>
-                      {r.featured ? 'Unfeature' : 'Mark Featured'}
+                    <Button
+                      variant={r.featured ? 'primary' : 'secondary'}
+                      size="small"
+                      onClick={() => handleOpenFeaturedModal(r)}
+                    >
+                      {r.featured ? 'Edit Featured Title' : 'Mark Featured'}
                     </Button>
                     <Button variant="secondary" size="small" onClick={() => handleToggleHideRating(r._id)}>
                       {r.hidden ? 'Unhide' : 'Hide Review'}
@@ -1176,17 +1262,61 @@ export const AdminPage = () => {
             onChange={(e) => setPortVideoUrl(e.target.value)}
           />
 
-          <Input
-            label="Custom Cover Thumbnail Image URL (Optional)"
-            placeholder="https://res.cloudinary.com/..."
-            value={portThumbnailUrl}
-            onChange={(e) => setPortThumbnailUrl(e.target.value)}
-          />
+          {/* Cloudinary Cover Image Uploader */}
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
+              Custom Cover Thumbnail Image (Cloudinary Direct Upload)
+            </label>
+            <Dropzone
+              onFileSelect={handlePortfolioCoverUpload}
+              isLoading={uploadingCover}
+              accept="image/*"
+              label="Drag & drop custom cover thumbnail image here..."
+            />
+            {portThumbnailUrl && (
+              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <img
+                  src={portThumbnailUrl}
+                  alt="Thumbnail Preview"
+                  style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--line)' }}
+                />
+                <span style={{ fontSize: '12px', color: 'var(--accent-gold)' }}>Cover uploaded to Cloudinary</span>
+              </div>
+            )}
+          </div>
 
           <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
             <Button variant="secondary" onClick={() => setPortfolioModalOpen(false)}>Cancel</Button>
             <Button type="submit" variant="primary" isLoading={submittingPortfolio} iconRight={IconCheck}>
               {editingPortfolioId ? 'Save Changes' : 'Publish Sample Video'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* FEATURED RATING MODAL WITH CLIENT TITLE TAG */}
+      <Modal
+        isOpen={featuredModalOpen}
+        onClose={() => setFeaturedModalOpen(false)}
+        title="Mark Rating Featured & Set Client Title"
+      >
+        <form onSubmit={handleSaveFeaturedRating} style={{ display: 'grid', gap: '16px' }}>
+          <p style={{ fontSize: '14px', color: 'var(--ink-soft)' }}>
+            Set the client's custom title tag (e.g. <em>"CEO / Founder of Tesla, SpaceX"</em> or <em>"Lead Tech Creator"</em>) to be displayed on the Home Page.
+          </p>
+
+          <Input
+            label="Client Custom Title / Tagline"
+            placeholder="e.g. CEO / Founder of Tesla, SpaceX"
+            value={featureClientTitle}
+            onChange={(e) => setFeatureClientTitle(e.target.value)}
+            required
+          />
+
+          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <Button variant="secondary" onClick={() => setFeaturedModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" isLoading={submittingFeature} iconRight={IconStar}>
+              Feature Rating on Home
             </Button>
           </div>
         </form>
