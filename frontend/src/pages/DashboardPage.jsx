@@ -65,9 +65,10 @@ export const DashboardPage = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  const activeProject = projects.find(
+  // Filter all active projects / proposals
+  const activeProjects = projects.filter(
     (p) => p.status === 'proposal_sent' || p.status === 'in_progress' || p.status === 'delivered'
-  ) || projects[0];
+  );
 
   const getStepIndex = (status) => {
     switch (status) {
@@ -275,100 +276,116 @@ export const DashboardPage = () => {
         <Tabs tabs={dashboardTabs} activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
-      {/* OVERVIEW TAB */}
+      {/* OVERVIEW TAB — Renders ALL Active Projects simultaneously */}
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gap: '32px' }}>
-          {/* Active Project Timeline Card */}
-          <div
-            style={{
-              backgroundColor: 'var(--surface)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--line)',
-              padding: '32px 28px',
-              boxShadow: 'var(--shadow)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>ACTIVE PROJECT STATUS</span>
-                <h3 className="font-display" style={{ fontSize: '24px', marginTop: '4px' }}>
-                  {activeProject ? activeProject.editingStyle : 'No Active Projects'}
-                </h3>
+          <div>
+            <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '4px', color: 'var(--ink)' }}>Active Proposals & Projects ({activeProjects.length})</h2>
+            <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '24px' }}>Inspect project status, accept terms offers, or approve video deliverables.</p>
+
+            {activeProjects.length === 0 ? (
+              <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center', boxShadow: 'var(--shadow)' }}>
+                <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>You currently have no active proposals or ongoing video projects.</p>
               </div>
-              {activeProject && (
-                <Badge variant={activeProject.status === 'completed' ? 'success' : 'gold'}>
-                  {activeProject.status.replace('_', ' ').toUpperCase()}
-                </Badge>
-              )}
-            </div>
-
-            {activeProject ? (
-              <>
-                <div style={{ marginBottom: '36px' }}>
-                  <Stepper steps={stepperSteps} currentStep={getStepIndex(activeProject.status)} />
-                </div>
-
-                {/* Contextual Action Banner */}
-                <div
-                  style={{
-                    backgroundColor: 'var(--bg)',
-                    padding: '24px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--line)',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '16px',
-                  }}
-                >
-                  <div>
-                    <h4 style={{ fontSize: '16px', fontWeight: 600 }}>
-                      Project Terms: {activeProject.price} {activeProject.currency} ({activeProject.packageTier.toUpperCase()})
-                    </h4>
-                    <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                      Deadline: {new Date(activeProject.deadline).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    {activeProject.status === 'proposal_sent' && (
-                      <>
-                        <Button
-                          variant="secondary"
-                          onClick={() => {
-                            setSelectedProject(activeProject);
-                            setDeclineModalOpen(true);
-                          }}
-                        >
-                          Decline
-                        </Button>
-                        <Button
-                          variant="primary"
-                          iconRight={IconCheck}
-                          isLoading={submitting}
-                          onClick={() => handleAcceptProposal(activeProject._id)}
-                        >
-                          Accept Proposal
-                        </Button>
-                      </>
-                    )}
-
-                    {activeProject.status === 'delivered' && (
-                      <Button
-                        variant="primary"
-                        iconRight={IconSparkles}
-                        isLoading={submitting}
-                        onClick={() => handleApproveDelivery(activeProject._id)}
-                      >
-                        Approve Delivery & Rate
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </>
             ) : (
-              <p style={{ color: 'var(--ink-soft)' }}>You currently have no active proposals or ongoing video projects.</p>
+              <div style={{ display: 'grid', gap: '24px' }}>
+                {activeProjects.map((proj) => (
+                  <div
+                    key={proj._id}
+                    style={{
+                      backgroundColor: 'var(--surface)',
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1px solid var(--line)',
+                      padding: '32px 28px',
+                      boxShadow: 'var(--shadow)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                      <div>
+                        <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>PROJECT SPECIFICATION</span>
+                        <h3 className="font-display" style={{ fontSize: '24px', marginTop: '4px' }}>
+                          {proj.editingStyle}
+                        </h3>
+                      </div>
+                      <Badge variant={proj.status === 'completed' ? 'success' : 'gold'}>
+                        {proj.status.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                    </div>
+
+                    <div style={{ marginBottom: '32px' }}>
+                      <Stepper steps={stepperSteps} currentStep={getStepIndex(proj.status)} />
+                    </div>
+
+                    {/* Contextual Action Banner for THIS specific project */}
+                    <div
+                      style={{
+                        backgroundColor: 'var(--bg)',
+                        padding: '24px',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--line)',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '16px',
+                      }}
+                    >
+                      <div>
+                        <h4 style={{ fontSize: '16px', fontWeight: 600 }}>
+                          Project Terms: {proj.price} {proj.currency} ({proj.packageTier?.toUpperCase()})
+                        </h4>
+                        <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px' }}>
+                          Deadline: {new Date(proj.deadline).toLocaleDateString()}
+                        </p>
+                        {proj.referenceBrief && (
+                          <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '6px', fontStyle: 'italic' }}>
+                            Brief / Reference: {proj.referenceBrief}
+                          </p>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        {proj.status === 'proposal_sent' && (
+                          <>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setSelectedProject(proj);
+                                setDeclineModalOpen(true);
+                              }}
+                            >
+                              Decline
+                            </Button>
+                            <Button
+                              variant="primary"
+                              iconRight={IconCheck}
+                              isLoading={submitting}
+                              onClick={() => handleAcceptProposal(proj._id)}
+                            >
+                              Accept Proposal
+                            </Button>
+                          </>
+                        )}
+
+                        {proj.status === 'delivered' && (
+                          <Button
+                            variant="primary"
+                            iconRight={IconSparkles}
+                            isLoading={submitting}
+                            onClick={() => handleApproveDelivery(proj._id)}
+                          >
+                            Approve Delivery & Rate
+                          </Button>
+                        )}
+
+                        {proj.status === 'in_progress' && (
+                          <Badge variant="gold">WORK IN PROGRESS (50%)</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
@@ -448,7 +465,7 @@ export const DashboardPage = () => {
                 </h3>
 
                 <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
-                  Tier: <strong>{proj.packageTier.toUpperCase()}</strong> ({proj.contentLength.toUpperCase()})
+                  Tier: <strong>{proj.packageTier?.toUpperCase()}</strong> ({proj.contentLength?.toUpperCase()})
                 </p>
 
                 <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '16px' }}>
