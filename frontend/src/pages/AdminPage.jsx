@@ -204,36 +204,6 @@ export const AdminPage = () => {
       {/* OVERVIEW / ANALYTICS TAB */}
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gap: '32px' }}>
-          {/* Friendly Guidance Card for Initial State */}
-          {totalProjectCount === 0 && (
-            <div
-              style={{
-                backgroundColor: 'var(--surface)',
-                border: '1px solid var(--accent-gold)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '28px 32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '20px',
-                boxShadow: 'var(--shadow)',
-              }}
-            >
-              <div>
-                <Badge variant="gold">System Initialization</Badge>
-                <h3 className="font-display" style={{ fontSize: '22px', marginTop: '8px', color: 'var(--ink)' }}>
-                  Welcome to Alpha Cut Control Center
-                </h3>
-                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '4px', maxWidth: '640px', lineHeight: 1.6 }}>
-                  No active client proposals or delivered video edits have been recorded yet. Click <strong>"+ Create Proposal"</strong> to select a registered client and send your first project terms offer.
-                </p>
-              </div>
-              <Button variant="primary" iconRight={IconPlus} onClick={() => setActiveTab('proposal')}>
-                Issue First Proposal
-              </Button>
-            </div>
-          )}
 
           {/* Metric Cards Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
