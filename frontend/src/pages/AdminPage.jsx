@@ -282,7 +282,7 @@ export const AdminPage = () => {
           monthlyPrice: Number(contractMonthlyPrice),
           startDate: contractStartDate,
           durationMonths: Number(contractDurationMonths) || 1,
-          notes,
+          notes: referenceBrief || notes,
         }),
       });
 
@@ -341,6 +341,34 @@ export const AdminPage = () => {
       const res = await apiFetch(`/api/admin/contracts/${contractId}/complete`, { method: 'POST' });
       if (res.success) {
         toast({ message: 'Retainer contract marked as COMPLETED! Rating unlocked for client.', type: 'success' });
+        fetchAdminData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    }
+  };
+
+  // Delete Deliverable Video from Contract
+  const handleDeleteDeliverable = async (contractId, deliverableId) => {
+    if (!window.confirm('Are you sure you want to delete this deliverable video?')) return;
+    try {
+      const res = await apiFetch(`/api/admin/contracts/${contractId}/deliverables/${deliverableId}`, { method: 'DELETE' });
+      if (res.success) {
+        toast({ message: 'Deliverable video deleted.', type: 'info' });
+        fetchAdminData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    }
+  };
+
+  // Cancel Retainer Contract
+  const handleCancelContract = async (contractId) => {
+    if (!window.confirm('Are you sure you want to cancel this retainer contract?')) return;
+    try {
+      const res = await apiFetch(`/api/admin/contracts/${contractId}/cancel`, { method: 'POST' });
+      if (res.success) {
+        toast({ message: 'Retainer contract cancelled.', type: 'info' });
         fetchAdminData();
       }
     } catch (err) {
@@ -796,7 +824,7 @@ export const AdminPage = () => {
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                         {contract.status === 'active' && (
                           <>
                             <Button
@@ -820,8 +848,25 @@ export const AdminPage = () => {
                             </Button>
                           </>
                         )}
+
+                        {(contract.status === 'proposed' || contract.status === 'active') && (
+                          <Button
+                            variant="ghost"
+                            size="small"
+                            onClick={() => handleCancelContract(contract._id)}
+                          >
+                            Cancel Contract
+                          </Button>
+                        )}
                       </div>
                     </div>
+
+                    {/* Contract Notes / Brief */}
+                    {contract.notes && (
+                      <div style={{ backgroundColor: 'var(--bg)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)', fontSize: '13px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
+                        <strong>Brief Notes:</strong> {contract.notes}
+                      </div>
+                    )}
 
                     {/* Progress Bar */}
                     <div style={{ marginBottom: '16px' }}>
@@ -849,9 +894,19 @@ export const AdminPage = () => {
                                   </a>
                                 )}
                               </div>
-                              <Badge variant={d.status === 'approved' ? 'success' : 'surface'} size="small">
-                                {d.status.toUpperCase()}
-                              </Badge>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Badge variant={d.status === 'approved' ? 'success' : 'surface'} size="small">
+                                  {d.status.toUpperCase()}
+                                </Badge>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteDeliverable(contract._id, d._id)}
+                                  style={{ background: 'none', border: 'none', color: '#E53E3E', fontSize: '12px', cursor: 'pointer', opacity: 0.8 }}
+                                  title="Delete deliverable video"
+                                >
+                                  ✕
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -869,6 +924,7 @@ export const AdminPage = () => {
       {activeTab === 'calendar' && (
         <NotionCalendar
           projects={projects}
+          contracts={contracts}
           onSelectProject={(proj) => {
             setSelectedProjectForDetail(proj);
             setDetailModalOpen(true);

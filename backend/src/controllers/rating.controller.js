@@ -35,8 +35,14 @@ export const getPublicRatings = async (req, res, next) => {
 
 export const submitRating = async (req, res, next) => {
   try {
-    const { projectId, stars, review } = req.body;
-    const rating = await lifecycleService.submitRating(projectId, req.user._id, stars, review);
+    const { projectId, contractId, subjectType, subjectId, stars, review } = req.body;
+    if (subjectType === 'contract' || contractId) {
+      const targetContractId = contractId || subjectId;
+      const rating = await lifecycleService.submitContractRating(targetContractId, req.user._id, stars, review);
+      return res.status(201).json({ success: true, rating });
+    }
+    const targetProjectId = projectId || subjectId;
+    const rating = await lifecycleService.submitRating(targetProjectId, req.user._id, stars, review);
     res.status(201).json({ success: true, rating });
   } catch (err) {
     next(err);

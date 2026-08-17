@@ -4,7 +4,7 @@ import { Button } from '@components/ui/Button';
 import { Modal } from '@components/ui/Modal';
 import { IconChevronRight, IconCalendar, IconCheck, IconSparkles } from '@icons/icons';
 
-export const NotionCalendar = ({ projects = [], onSelectProject }) => {
+export const NotionCalendar = ({ projects = [], contracts = [], onSelectProject }) => {
   const [viewDate, setViewDate] = useState(new Date());
   const [selectedDayEvents, setSelectedDayEvents] = useState(null);
   const [eventModalOpen, setEventModalOpen] = useState(false);
@@ -29,9 +29,9 @@ export const NotionCalendar = ({ projects = [], onSelectProject }) => {
 
   const today = new Date();
 
-  // Helper to find projects assigned or due on a given day
+  // Helper to find projects & retainer contracts assigned or due on a given day
   const getEventsForDay = (day) => {
-    return projects.filter((p) => {
+    const projEvents = projects.filter((p) => {
       const d = p.deadline ? new Date(p.deadline) : null;
       const c = p.createdAt ? new Date(p.createdAt) : null;
 
@@ -40,6 +40,20 @@ export const NotionCalendar = ({ projects = [], onSelectProject }) => {
 
       return isDeadline || isCreated;
     });
+
+    const contractEvents = (contracts || [])
+      .filter((c) => {
+        const s = c.startDate ? new Date(c.startDate) : null;
+        return s && s.getDate() === day && s.getMonth() === currentMonth && s.getFullYear() === currentYear;
+      })
+      .map((c) => ({
+        ...c,
+        editingStyle: `[Retainer] ${c.packageTier?.toUpperCase()}`,
+        status: c.status === 'active' ? 'in_progress' : c.status,
+        isContract: true,
+      }));
+
+    return [...projEvents, ...contractEvents];
   };
 
   const handleDayClick = (day, events) => {

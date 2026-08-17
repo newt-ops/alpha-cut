@@ -10,6 +10,8 @@ import {
   declineContract,
   approveDeliverable,
   submitContractRating,
+  deleteDeliverable,
+  cancelContract,
 } from '../controllers/contract.controller.js';
 
 const router = express.Router();
@@ -18,7 +20,9 @@ const router = express.Router();
 router.post('/admin/contracts', requireAuth, requireAdmin, createContractProposal);
 router.get('/admin/contracts', requireAuth, requireAdmin, getAllContractsAdmin);
 router.post('/admin/contracts/:id/deliverables', requireAuth, requireAdmin, addDeliverable);
+router.delete('/admin/contracts/:id/deliverables/:deliverableId', requireAuth, requireAdmin, deleteDeliverable);
 router.post('/admin/contracts/:id/complete', requireAuth, requireAdmin, completeContract);
+router.post('/admin/contracts/:id/cancel', requireAuth, requireAdmin, cancelContract);
 
 // Client Contract Routes
 router.get('/contracts', requireAuth, getClientContracts);

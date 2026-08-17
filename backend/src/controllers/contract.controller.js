@@ -132,3 +132,25 @@ export const submitContractRating = async (req, res, next) => {
     next(err);
   }
 };
+
+// Admin: Delete Deliverable
+export const deleteDeliverable = async (req, res, next) => {
+  try {
+    const { id, deliverableId } = req.params;
+    const result = await lifecycleService.deleteDeliverable(id, deliverableId, req.user._id);
+    res.status(200).json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Admin: Cancel Contract
+export const cancelContract = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const contract = await lifecycleService.cancelContract(id, req.user._id);
+    res.status(200).json({ success: true, contract });
+  } catch (err) {
+    next(err);
+  }
+};

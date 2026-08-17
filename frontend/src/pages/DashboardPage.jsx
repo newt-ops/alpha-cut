@@ -401,6 +401,99 @@ export const DashboardPage = () => {
       {/* OVERVIEW TAB — Contained Cards with Expandable Details */}
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gap: '32px' }}>
+          {/* Active Retainer Contracts Section */}
+          {contracts.filter((c) => c.status === 'proposed' || c.status === 'active').length > 0 && (
+            <div>
+              <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '4px', color: 'var(--ink)' }}>
+                Active Retainer Contracts ({contracts.filter((c) => c.status === 'proposed' || c.status === 'active').length})
+              </h2>
+              <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '20px' }}>
+                Your ongoing monthly retainer engagements and handed-over deliverables.
+              </p>
+
+              <div style={{ display: 'grid', gap: '20px' }}>
+                {contracts.filter((c) => c.status === 'proposed' || c.status === 'active').map((contract) => {
+                  const delCount = contract.deliveredCount || 0;
+                  const planned = contract.totalVideosPlanned || 8;
+                  const pct = Math.min(100, Math.round((delCount / planned) * 100));
+
+                  return (
+                    <div
+                      key={contract._id}
+                      style={{
+                        backgroundColor: 'var(--surface)',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid var(--line)',
+                        padding: '24px 28px',
+                        boxShadow: 'var(--shadow-sm)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                        <div>
+                          <Badge variant={contract.status === 'active' ? 'success' : 'gold'}>
+                            RETAINER • {contract.status.toUpperCase()}
+                          </Badge>
+                          <h3 className="font-display" style={{ fontSize: '20px', marginTop: '6px' }}>
+                            {contract.packageTier?.toUpperCase()} Retainer ({contract.frequency})
+                          </h3>
+                          <span style={{ fontSize: '13px', color: 'var(--accent-gold)', fontWeight: 700 }}>
+                            {contract.monthlyPrice} {contract.currency} / month
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                          {contract.status === 'proposed' && (
+                            <>
+                              <Button
+                                variant="secondary"
+                                size="small"
+                                isLoading={submitting}
+                                onClick={() => handleDeclineContract(contract._id)}
+                              >
+                                Decline
+                              </Button>
+
+                              <Button
+                                variant="primary"
+                                size="small"
+                                iconRight={IconCheck}
+                                isLoading={submitting}
+                                onClick={() => handleAcceptContract(contract._id)}
+                              >
+                                Accept Retainer Terms
+                              </Button>
+                            </>
+                          )}
+
+                          {contract.status === 'active' && (
+                            <Button
+                              variant="secondary"
+                              size="small"
+                              onClick={() => setActiveTab('contracts')}
+                            >
+                              Manage Deliverables ({delCount}/{planned})
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--ink-soft)', marginBottom: '6px' }}>
+                          <span>Deliverables Handed Over: {delCount} of {planned} Videos</span>
+                          <span className="font-mono">{pct}%</span>
+                        </div>
+                        <div style={{ height: '8px', backgroundColor: 'var(--bg)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--line)' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', backgroundColor: 'var(--accent-gold)', transition: 'width 0.4s ease' }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div>
             <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '4px', color: 'var(--ink)' }}>
               Active Proposals & Projects ({activeProjects.length})
@@ -680,6 +773,7 @@ export const DashboardPage = () => {
       {activeTab === 'calendar' && (
         <NotionCalendar
           projects={projects}
+          contracts={contracts}
           onSelectProject={(proj) => {
             setSelectedProject(proj);
             setExpandedProjectIds((prev) => ({ ...prev, [proj._id]: true }));

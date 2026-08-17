@@ -552,3 +552,25 @@ export const submitContractRating = async (contractId, clientId, stars, review) 
 
   return rating;
 };
+
+export const deleteDeliverable = async (contractId, deliverableId, adminId) => {
+  const contract = await Contract.findById(contractId);
+  if (!contract) throw new Error('Contract not found.');
+
+  const deliverable = await Deliverable.findOneAndDelete({ _id: deliverableId, contractId });
+  if (!deliverable) throw new Error('Deliverable not found.');
+
+  return { success: true, deliverableId };
+};
+
+export const cancelContract = async (contractId, adminId) => {
+  const contract = await Contract.findById(contractId);
+  if (!contract) throw new Error('Contract not found.');
+
+  contract.status = 'cancelled';
+  contract.cancelledAt = new Date();
+  await contract.save();
+
+  return contract;
+};
+
