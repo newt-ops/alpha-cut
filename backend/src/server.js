@@ -18,6 +18,7 @@ import adminRoutes from './routes/admin.routes.js';
 import ratingRoutes from './routes/rating.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
+import portfolioRoutes from './routes/portfolio.routes.js';
 import { getAllPackageConfigs } from './controllers/admin.controller.js';
 
 validateEnv();
@@ -38,7 +39,7 @@ app.use(
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https://*.googleusercontent.com'],
         connectSrc: ["'self'", 'https://accounts.google.com', 'https://api.cloudinary.com', 'https://alpha-cut.onrender.com'],
-        frameSrc: ["'self'", 'https://accounts.google.com'],
+        frameSrc: ["'self'", 'https://accounts.google.com', 'https://www.youtube.com', 'https://player.vimeo.com'],
       },
     },
     crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -95,6 +96,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/portfolio', portfolioRoutes);
 app.get('/api/packages', getAllPackageConfigs);
 
 app.get('/api/health', (req, res) => {

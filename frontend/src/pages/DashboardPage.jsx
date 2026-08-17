@@ -545,7 +545,7 @@ export const DashboardPage = () => {
             {/* Profile Avatar Dropzone */}
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
-                Profile Photo (Cloudinary)
+                Profile Photo
               </label>
               <Dropzone
                 onFileSelect={handleAvatarUpload}

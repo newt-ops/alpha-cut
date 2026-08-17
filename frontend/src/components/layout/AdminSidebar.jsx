@@ -6,6 +6,7 @@ import {
   IconFolder,
   IconPlus,
   IconUsers,
+  IconFilm,
   IconStar,
   IconSettings,
   IconExternalLink,
@@ -18,6 +19,7 @@ export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollap
     { id: 'board', label: 'Proposals & Projects', icon: IconFolder },
     { id: 'proposal', label: 'Create Proposal', icon: IconPlus },
     { id: 'clients', label: 'Registered Clients', icon: IconUsers },
+    { id: 'portfolio', label: 'Portfolio Showcase', icon: IconFilm },
     { id: 'moderation', label: 'Reviews & Moderation', icon: IconStar },
     { id: 'pricing', label: 'Package Settings', icon: IconSettings },
   ];

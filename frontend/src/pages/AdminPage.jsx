@@ -24,6 +24,7 @@ import {
   IconBarChart,
   IconPlus,
   IconClose,
+  IconFilm,
 } from '@icons/icons';
 
 export const AdminPage = () => {
@@ -37,6 +38,7 @@ export const AdminPage = () => {
   const [ratings, setRatings] = useState([]);
   const [clients, setClients] = useState([]);
   const [packages, setPackages] = useState([]);
+  const [portfolioItems, setPortfolioItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Client Filter Search State
@@ -56,6 +58,18 @@ export const AdminPage = () => {
   const [notes, setNotes] = useState('');
   const [submittingProposal, setSubmittingProposal] = useState(false);
 
+  // Portfolio Management Form & Modal State
+  const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
+  const [editingPortfolioId, setEditingPortfolioId] = useState(null);
+  const [portTitle, setPortTitle] = useState('');
+  const [portStyleName, setPortStyleName] = useState('Viral Animation Breakdown');
+  const [portFormat, setPortFormat] = useState('short');
+  const [portDuration, setPortDuration] = useState('0:60');
+  const [portClientType, setPortClientType] = useState('Tech Creator');
+  const [portVideoUrl, setPortVideoUrl] = useState('');
+  const [portThumbnailUrl, setPortThumbnailUrl] = useState('');
+  const [submittingPortfolio, setSubmittingPortfolio] = useState(false);
+
   // Package Settings State
   const [basicMin, setBasicMin] = useState('350');
   const [basicMax, setBasicMax] = useState('400');
@@ -70,18 +84,20 @@ export const AdminPage = () => {
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, projRes, ratRes, clientRes, pkgRes] = await Promise.all([
+      const [statsRes, projRes, ratRes, clientRes, pkgRes, portRes] = await Promise.all([
         apiFetch('/api/admin/stats').catch(() => ({ success: false })),
         apiFetch('/api/admin/projects').catch(() => ({ success: false })),
         apiFetch('/api/ratings').catch(() => ({ success: false })),
         apiFetch('/api/admin/clients').catch(() => ({ success: false, clients: [] })),
         apiFetch('/api/admin/packages').catch(() => ({ success: false, configs: [] })),
+        apiFetch('/api/portfolio').catch(() => ({ success: false, items: [] })),
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
       if (projRes.success) setProjects(projRes.projects);
       if (ratRes.success) setRatings(ratRes.ratings);
       if (clientRes.success) setClients(clientRes.clients);
+      if (portRes.success) setPortfolioItems(portRes.items);
       if (pkgRes.success) {
         setPackages(pkgRes.configs);
         const basicConfig = pkgRes.configs.find((c) => c.tier === 'basic' && c.currency === 'ETB');
@@ -166,6 +182,88 @@ export const AdminPage = () => {
       toast({ message: err.message, type: 'error' });
     } finally {
       setSubmittingProposal(false);
+    }
+  };
+
+  // Open Create/Edit Portfolio Modal
+  const handleOpenPortfolioModal = (item = null) => {
+    if (item) {
+      setEditingPortfolioId(item._id);
+      setPortTitle(item.title || '');
+      setPortStyleName(item.styleName || 'Viral Animation Breakdown');
+      setPortFormat(item.format || 'short');
+      setPortDuration(item.duration || '0:60');
+      setPortClientType(item.clientType || 'Tech Creator');
+      setPortVideoUrl(item.videoUrl || '');
+      setPortThumbnailUrl(item.thumbnailUrl || '');
+    } else {
+      setEditingPortfolioId(null);
+      setPortTitle('');
+      setPortStyleName('Viral Animation Breakdown');
+      setPortFormat('short');
+      setPortDuration('0:60');
+      setPortClientType('Tech Creator');
+      setPortVideoUrl('');
+      setPortThumbnailUrl('');
+    }
+    setPortfolioModalOpen(true);
+  };
+
+  // Save / Submit Portfolio Item
+  const handleSavePortfolioItem = async (e) => {
+    e.preventDefault();
+    if (!portTitle) {
+      toast({ message: 'Please enter a title for the sample video.', type: 'error' });
+      return;
+    }
+
+    try {
+      setSubmittingPortfolio(true);
+      const payload = {
+        title: portTitle,
+        styleName: portStyleName,
+        format: portFormat,
+        duration: portDuration,
+        clientType: portClientType,
+        videoUrl: portVideoUrl,
+        thumbnailUrl: portThumbnailUrl,
+      };
+
+      let res;
+      if (editingPortfolioId) {
+        res = await apiFetch(`/api/portfolio/${editingPortfolioId}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+      } else {
+        res = await apiFetch('/api/portfolio', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (res.success) {
+        toast({ message: `Portfolio sample ${editingPortfolioId ? 'updated' : 'added'} successfully!`, type: 'success' });
+        setPortfolioModalOpen(false);
+        fetchAdminData();
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Failed to save portfolio sample', type: 'error' });
+    } finally {
+      setSubmittingPortfolio(false);
+    }
+  };
+
+  // Delete Portfolio Item
+  const handleDeletePortfolioItem = async (id) => {
+    try {
+      const res = await apiFetch(`/api/portfolio/${id}`, { method: 'DELETE' });
+      if (res.success) {
+        toast({ message: 'Portfolio sample deleted.', type: 'info' });
+        fetchAdminData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
     }
   };
 
@@ -412,7 +510,7 @@ export const AdminPage = () => {
                     label="Registered Client Email (Required)"
                     placeholder="Search registered client email..."
                     value={clientSearchText}
-                    onChange={(e) => setSearchText(e.target.value)}
+                    onChange={(e) => setClientSearchText(e.target.value)}
                     icon={IconSearch}
                     required
                   />
@@ -441,7 +539,6 @@ export const AdminPage = () => {
                   )}
                 </>
               ) : (
-                /* UPGRADED SELECTED CLIENT CARD (Request #3) */
                 <div>
                   <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
                     Targeted Client Profile
@@ -566,6 +663,78 @@ export const AdminPage = () => {
         </div>
       )}
 
+      {/* DYNAMIC PORTFOLIO SHOWCASE MANAGEMENT CONSOLE (New Feature) */}
+      {activeTab === 'portfolio' && (
+        <div style={{ display: 'grid', gap: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>Portfolio Sample Videos Management</h2>
+              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '2px' }}>
+                Create, update, and manage agency sample videos displayed live on the public website.
+              </p>
+            </div>
+            <Button variant="primary" iconRight={IconPlus} onClick={() => handleOpenPortfolioModal()}>
+              Add Sample Video
+            </Button>
+          </div>
+
+          {portfolioItems.length === 0 ? (
+            <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center', boxShadow: 'var(--shadow)' }}>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>No portfolio sample videos created yet.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+              {portfolioItems.map((item) => (
+                <div
+                  key={item._id}
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--line)',
+                    padding: '24px',
+                    boxShadow: 'var(--shadow-sm)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <Badge variant={item.format === 'short' ? 'gold' : 'maroon'}>
+                        {item.format?.toUpperCase()} ({item.duration})
+                      </Badge>
+                      <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{item.clientType}</span>
+                    </div>
+
+                    <h3 className="font-display" style={{ fontSize: '18px', marginBottom: '6px', color: 'var(--ink)' }}>
+                      {item.title}
+                    </h3>
+                    <p style={{ fontSize: '13px', color: 'var(--accent-gold)', marginBottom: '12px', fontWeight: 600 }}>
+                      Style: {item.styleName}
+                    </p>
+
+                    {item.videoUrl && (
+                      <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginBottom: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        Link: <a href={item.videoUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-gold)' }}>{item.videoUrl}</a>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px', paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
+                    <Button variant="secondary" size="small" onClick={() => handleOpenPortfolioModal(item)}>
+                      Edit Details
+                    </Button>
+                    <Button variant="ghost" size="small" onClick={() => handleDeletePortfolioItem(item._id)} style={{ color: '#E53E3E' }}>
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* PROJECT BOARD TAB WITH DETAIL VIEW MODAL */}
       {activeTab === 'board' && (
         <div style={{ display: 'grid', gap: '20px' }}>
@@ -639,7 +808,7 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* UPGRADED INTERACTIVE REGISTERED CLIENTS DIRECTORY (Request #4) */}
+      {/* REGISTERED CLIENTS DIRECTORY TAB */}
       {activeTab === 'clients' && (
         <div style={{ display: 'grid', gap: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
@@ -747,7 +916,7 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* UPGRADED INTERACTIVE PACKAGE & PRICING CONSOLE (Request #5) */}
+      {/* PACKAGE PRICING CONSOLE */}
       {activeTab === 'pricing' && (
         <div style={{ maxWidth: '720px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 32px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
           <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--ink)' }}>Package Pricing Configurations</h2>
@@ -756,7 +925,6 @@ export const AdminPage = () => {
           </p>
 
           <form onSubmit={handleSavePackageSettings} style={{ display: 'grid', gap: '28px' }}>
-            {/* Basic Short-Form Tier Box */}
             <div style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '20px 24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
@@ -784,7 +952,6 @@ export const AdminPage = () => {
               </div>
             </div>
 
-            {/* Premium Short-Form Tier Box */}
             <div style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '20px 24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
@@ -870,6 +1037,73 @@ export const AdminPage = () => {
           )}
         </div>
       )}
+
+      {/* PORTFOLIO ITEM CREATE / EDIT MODAL */}
+      <Modal
+        isOpen={portfolioModalOpen}
+        onClose={() => setPortfolioModalOpen(false)}
+        title={editingPortfolioId ? 'Edit Portfolio Sample Video' : 'Add New Portfolio Sample Video'}
+      >
+        <form onSubmit={handleSavePortfolioItem} style={{ display: 'grid', gap: '16px' }}>
+          <Input
+            label="Sample Video Title (Required)"
+            placeholder="e.g., The AI Revolution in 60 Seconds"
+            value={portTitle}
+            onChange={(e) => setPortTitle(e.target.value)}
+            required
+          />
+
+          <Select
+            label="Editing Style Category"
+            options={EDITING_STYLES.map((s) => ({ label: s.name, value: s.name }))}
+            value={portStyleName}
+            onChange={setPortStyleName}
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <Select
+              label="Format"
+              options={[{ label: 'Short-Form (9:16)', value: 'short' }, { label: 'Long-Form (16:9)', value: 'long' }]}
+              value={portFormat}
+              onChange={setPortFormat}
+            />
+            <Input
+              label="Video Duration"
+              placeholder="e.g. 0:58"
+              value={portDuration}
+              onChange={(e) => setPortDuration(e.target.value)}
+            />
+          </div>
+
+          <Input
+            label="Target Client Category"
+            placeholder="e.g. Tech Creator, B2B SaaS, Founder Brand"
+            value={portClientType}
+            onChange={(e) => setPortClientType(e.target.value)}
+          />
+
+          <Input
+            label="Video Preview URL (YouTube, Vimeo, Google Drive, MP4)"
+            placeholder="https://..."
+            value={portVideoUrl}
+            onChange={(e) => setPortVideoUrl(e.target.value)}
+          />
+
+          <Input
+            label="Custom Cover Thumbnail Image URL (Optional)"
+            placeholder="https://res.cloudinary.com/..."
+            value={portThumbnailUrl}
+            onChange={(e) => setPortThumbnailUrl(e.target.value)}
+          />
+
+          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <Button variant="secondary" onClick={() => setPortfolioModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" isLoading={submittingPortfolio} iconRight={IconCheck}>
+              {editingPortfolioId ? 'Save Changes' : 'Publish Sample Video'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Project Detail Modal */}
       {selectedProjectForDetail && (

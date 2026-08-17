@@ -1,14 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@components/ui/Badge';
 import { Tabs } from '@components/ui/Tabs';
 import { PhoneFrame } from '@components/media/PhoneFrame';
 import { VideoFrame } from '@components/media/VideoFrame';
 import { PORTFOLIO_ITEMS } from '../data/portfolioItems';
 import { EDITING_STYLES } from '../data/editingStyles';
+import { customFetch } from '../utils/api';
 
 export const PortfolioPage = () => {
+  const [items, setItems] = useState(PORTFOLIO_ITEMS);
   const [activeFormat, setActiveFormat] = useState('all');
   const [selectedStyle, setSelectedStyle] = useState('all');
+
+  useEffect(() => {
+    const fetchLivePortfolio = async () => {
+      try {
+        const res = await customFetch('/api/portfolio');
+        if (res.success && res.items && res.items.length > 0) {
+          setItems(res.items);
+        }
+      } catch (err) {
+        // Fallback to initial items
+      }
+    };
+    fetchLivePortfolio();
+  }, []);
 
   const formatTabs = [
     { id: 'all', label: 'All Works' },
@@ -16,9 +32,9 @@ export const PortfolioPage = () => {
     { id: 'long', label: 'Long-Form (16:9)' },
   ];
 
-  const filteredItems = PORTFOLIO_ITEMS.filter((item) => {
+  const filteredItems = items.filter((item) => {
     const matchesFormat = activeFormat === 'all' || item.format === activeFormat;
-    const matchesStyle = selectedStyle === 'all' || item.styleId === selectedStyle;
+    const matchesStyle = selectedStyle === 'all' || item.styleName?.toLowerCase().includes(selectedStyle.toLowerCase());
     return matchesFormat && matchesStyle;
   });
 
@@ -30,7 +46,7 @@ export const PortfolioPage = () => {
           Portfolio & Work Showcase
         </h1>
         <p style={{ fontSize: '16px', color: 'var(--ink-soft)', marginTop: '12px', lineHeight: 1.6 }}>
-          Filter through our client projects by format and editing style. Real sample media is updated via the admin panel.
+          Filter through our client projects by format and editing style. Live sample media is managed directly via the agency admin panel.
         </p>
       </div>
 
@@ -65,15 +81,15 @@ export const PortfolioPage = () => {
           {EDITING_STYLES.map((style) => (
             <button
               key={style.id}
-              onClick={() => setSelectedStyle(style.id)}
+              onClick={() => setSelectedStyle(style.name)}
               style={{
                 padding: '6px 14px',
                 borderRadius: '100px',
                 fontSize: '12px',
                 fontWeight: 600,
-                backgroundColor: selectedStyle === style.id ? 'var(--accent-gold)' : 'var(--surface)',
-                color: selectedStyle === style.id ? '#170B06' : 'var(--ink)',
-                border: `1px solid ${selectedStyle === style.id ? 'var(--accent-gold)' : 'var(--line)'}`,
+                backgroundColor: selectedStyle === style.name ? 'var(--accent-gold)' : 'var(--surface)',
+                color: selectedStyle === style.name ? '#170B06' : 'var(--ink)',
+                border: `1px solid ${selectedStyle === style.name ? 'var(--accent-gold)' : 'var(--line)'}`,
               }}
             >
               {style.name}
@@ -92,20 +108,22 @@ export const PortfolioPage = () => {
         }}
       >
         {filteredItems.map((item) => {
+          const itemId = item._id || item.id;
           if (item.format === 'long') {
             return (
-              <div key={item.id} style={{ gridColumn: 'span 1' }}>
-                <VideoFrame title={item.title} styleName={item.styleName} duration={item.duration} />
+              <div key={itemId} style={{ gridColumn: 'span 1' }}>
+                <VideoFrame title={item.title} styleName={item.styleName} duration={item.duration} videoUrl={item.videoUrl} />
               </div>
             );
           }
           return (
             <PhoneFrame
-              key={item.id}
+              key={itemId}
               title={item.title}
               styleName={item.styleName}
               duration={item.duration}
               formatLabel="9:16 SHORT"
+              videoUrl={item.videoUrl}
             />
           );
         })}
