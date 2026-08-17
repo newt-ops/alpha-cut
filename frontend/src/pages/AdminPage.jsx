@@ -39,6 +39,7 @@ export const AdminPage = () => {
   const [clients, setClients] = useState([]);
   const [packages, setPackages] = useState([]);
   const [portfolioItems, setPortfolioItems] = useState([]);
+  const [exchangeRate, setExchangeRate] = useState({ usdToEtb: 128.5, etbToUsd: 0.00778 });
   const [loading, setLoading] = useState(true);
 
   // Client Filter Search State
@@ -50,9 +51,9 @@ export const AdminPage = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [editingStyle, setEditingStyle] = useState(EDITING_STYLES[0].name);
   const [contentLength, setContentLength] = useState('short');
-  const [packageTier, setPackageTier] = useState('premium');
+  const [packageTier, setPackageTier] = useState('professional');
   const [currency, setCurrency] = useState('ETB');
-  const [price, setPrice] = useState('450');
+  const [price, setPrice] = useState('900');
   const [referenceBrief, setReferenceBrief] = useState('');
   const [deadline, setDeadline] = useState('');
   const [notes, setNotes] = useState('');
@@ -70,11 +71,13 @@ export const AdminPage = () => {
   const [portThumbnailUrl, setPortThumbnailUrl] = useState('');
   const [submittingPortfolio, setSubmittingPortfolio] = useState(false);
 
-  // Package Settings State
-  const [basicMin, setBasicMin] = useState('350');
-  const [basicMax, setBasicMax] = useState('400');
-  const [premiumMin, setPremiumMin] = useState('450');
-  const [premiumMax, setPremiumMax] = useState('500');
+  // Package Settings State (3 Tiers)
+  const [basicMin, setBasicMin] = useState('500');
+  const [basicMax, setBasicMax] = useState('800');
+  const [professionalMin, setProfessionalMin] = useState('900');
+  const [professionalMax, setProfessionalMax] = useState('1400');
+  const [premiumMin, setPremiumMin] = useState('1600');
+  const [premiumMax, setPremiumMax] = useState('2400');
   const [savingPackages, setSavingPackages] = useState(false);
 
   // Detail Modal State
@@ -84,13 +87,14 @@ export const AdminPage = () => {
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, projRes, ratRes, clientRes, pkgRes, portRes] = await Promise.all([
+      const [statsRes, projRes, ratRes, clientRes, pkgRes, portRes, rateRes] = await Promise.all([
         apiFetch('/api/admin/stats').catch(() => ({ success: false })),
         apiFetch('/api/admin/projects').catch(() => ({ success: false })),
         apiFetch('/api/ratings').catch(() => ({ success: false })),
         apiFetch('/api/admin/clients').catch(() => ({ success: false, clients: [] })),
         apiFetch('/api/admin/packages').catch(() => ({ success: false, configs: [] })),
         apiFetch('/api/portfolio').catch(() => ({ success: false, items: [] })),
+        apiFetch('/api/packages/exchange-rate').catch(() => ({ success: false })),
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
@@ -98,13 +102,25 @@ export const AdminPage = () => {
       if (ratRes.success) setRatings(ratRes.ratings);
       if (clientRes.success) setClients(clientRes.clients);
       if (portRes.success) setPortfolioItems(portRes.items);
+      if (rateRes.success && rateRes.usdToEtb) {
+        setExchangeRate({ usdToEtb: rateRes.usdToEtb, etbToUsd: rateRes.etbToUsd });
+      }
+
       if (pkgRes.success) {
         setPackages(pkgRes.configs);
+
         const basicConfig = pkgRes.configs.find((c) => c.tier === 'basic' && c.currency === 'ETB');
         if (basicConfig) {
           if (basicConfig.priceMin) setBasicMin(basicConfig.priceMin.toString());
           if (basicConfig.priceMax) setBasicMax(basicConfig.priceMax.toString());
         }
+
+        const profConfig = pkgRes.configs.find((c) => c.tier === 'professional' && c.currency === 'ETB');
+        if (profConfig) {
+          if (profConfig.priceMin) setProfessionalMin(profConfig.priceMin.toString());
+          if (profConfig.priceMax) setProfessionalMax(profConfig.priceMax.toString());
+        }
+
         const premiumConfig = pkgRes.configs.find((c) => c.tier === 'premium' && c.currency === 'ETB');
         if (premiumConfig) {
           if (premiumConfig.priceMin) setPremiumMin(premiumConfig.priceMin.toString());
@@ -267,12 +283,15 @@ export const AdminPage = () => {
     }
   };
 
-  // Save Package Configurations
+  // Save 3 Package Configurations & Converted Live Rates
   const handleSavePackageSettings = async (e) => {
     e.preventDefault();
     try {
       setSavingPackages(true);
+      const rate = exchangeRate.etbToUsd || 0.00778;
+
       await Promise.all([
+        // Basic ETB & Converted USD
         apiFetch('/api/admin/packages', {
           method: 'PUT',
           body: JSON.stringify({
@@ -286,6 +305,38 @@ export const AdminPage = () => {
         apiFetch('/api/admin/packages', {
           method: 'PUT',
           body: JSON.stringify({
+            tier: 'basic',
+            length: 'short',
+            currency: 'USD',
+            priceMin: Math.round(Number(basicMin) * rate),
+            priceMax: Math.round(Number(basicMax) * rate),
+          }),
+        }),
+        // Professional ETB & Converted USD
+        apiFetch('/api/admin/packages', {
+          method: 'PUT',
+          body: JSON.stringify({
+            tier: 'professional',
+            length: 'short',
+            currency: 'ETB',
+            priceMin: Number(professionalMin),
+            priceMax: Number(professionalMax),
+          }),
+        }),
+        apiFetch('/api/admin/packages', {
+          method: 'PUT',
+          body: JSON.stringify({
+            tier: 'professional',
+            length: 'short',
+            currency: 'USD',
+            priceMin: Math.round(Number(professionalMin) * rate),
+            priceMax: Math.round(Number(professionalMax) * rate),
+          }),
+        }),
+        // Premium ETB & Converted USD
+        apiFetch('/api/admin/packages', {
+          method: 'PUT',
+          body: JSON.stringify({
             tier: 'premium',
             length: 'short',
             currency: 'ETB',
@@ -293,9 +344,19 @@ export const AdminPage = () => {
             priceMax: Number(premiumMax),
           }),
         }),
+        apiFetch('/api/admin/packages', {
+          method: 'PUT',
+          body: JSON.stringify({
+            tier: 'premium',
+            length: 'short',
+            currency: 'USD',
+            priceMin: Math.round(Number(premiumMin) * rate),
+            priceMax: Math.round(Number(premiumMax) * rate),
+          }),
+        }),
       ]);
 
-      toast({ message: 'Package pricing updated successfully!', type: 'success' });
+      toast({ message: '3-Tier package pricing updated successfully with live USD conversion!', type: 'success' });
       fetchAdminData();
     } catch (err) {
       toast({ message: err.message || 'Failed to update package pricing', type: 'error' });
@@ -497,7 +558,7 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* CREATE PROPOSAL FORM TAB */}
+      {/* CREATE PROPOSAL FORM TAB (3 Tiers) */}
       {activeTab === 'proposal' && (
         <div style={{ maxWidth: '640px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 30px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
           <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '20px', color: 'var(--ink)' }}>Issue New Client Proposal</h2>
@@ -618,7 +679,11 @@ export const AdminPage = () => {
               />
               <Select
                 label="Package Tier"
-                options={[{ label: 'Basic Tier', value: 'basic' }, { label: 'Premium Tier', value: 'premium' }]}
+                options={[
+                  { label: 'Basic Tier', value: 'basic' },
+                  { label: 'Professional Tier (Popular)', value: 'professional' },
+                  { label: 'Premium Tier', value: 'premium' },
+                ]}
                 value={packageTier}
                 onChange={setPackageTier}
               />
@@ -663,7 +728,7 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* DYNAMIC PORTFOLIO SHOWCASE MANAGEMENT CONSOLE (New Feature) */}
+      {/* DYNAMIC PORTFOLIO SHOWCASE MANAGEMENT CONSOLE */}
       {activeTab === 'portfolio' && (
         <div style={{ display: 'grid', gap: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
@@ -916,22 +981,43 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* PACKAGE PRICING CONSOLE */}
+      {/* 3-TIER PACKAGE PRICING CONSOLE WITH LIVE EXCHANGE RATE */}
       {activeTab === 'pricing' && (
-        <div style={{ maxWidth: '720px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 32px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
-          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--ink)' }}>Package Pricing Configurations</h2>
-          <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '28px', lineHeight: 1.6 }}>
-            Dynamically update base package rate ranges for short-form video edits in ETB. Changes apply live across client package rate calculators.
+        <div style={{ maxWidth: '760px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 32px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
+          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--ink)' }}>Package Pricing Configurations (3 Tiers)</h2>
+          <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.6 }}>
+            Dynamically update base rates for Basic, Professional, and Premium tiers. Live ETB to USD conversion rates update in real-time.
           </p>
 
-          <form onSubmit={handleSavePackageSettings} style={{ display: 'grid', gap: '28px' }}>
+          {/* Live Exchange Rate Status Banner */}
+          <div
+            style={{
+              backgroundColor: 'rgba(201, 160, 107, 0.12)',
+              border: '1px solid var(--accent-gold)',
+              borderRadius: 'var(--radius-md)',
+              padding: '14px 20px',
+              marginBottom: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '13px',
+            }}
+          >
+            <div>
+              <strong style={{ color: 'var(--accent-gold)' }}>Live Exchange Rate Feed:</strong> 1 USD = {exchangeRate.usdToEtb} ETB (1 ETB = ${exchangeRate.etbToUsd} USD)
+            </div>
+            <Badge variant="gold" size="small">LIVE API</Badge>
+          </div>
+
+          <form onSubmit={handleSavePackageSettings} style={{ display: 'grid', gap: '24px' }}>
+            {/* Basic Tier Box */}
             <div style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '20px 24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>Basic Short-Form Tier (ETB)</h3>
-                  <p style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>Clean captions, basic sound design, color correction, 1 revision</p>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>Basic Edit Tier</h3>
+                  <p style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>Standard captions, limited b-roll, basic sound effects, 1 revision</p>
                 </div>
-                <Badge variant="gold">BASIC</Badge>
+                <Badge variant="surface">BASIC</Badge>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -940,6 +1026,7 @@ export const AdminPage = () => {
                   type="number"
                   value={basicMin}
                   onChange={(e) => setBasicMin(e.target.value)}
+                  helperText={`Converted Live USD: ~$${Math.round(Number(basicMin) * exchangeRate.etbToUsd)} USD`}
                   required
                 />
                 <Input
@@ -947,16 +1034,48 @@ export const AdminPage = () => {
                   type="number"
                   value={basicMax}
                   onChange={(e) => setBasicMax(e.target.value)}
+                  helperText={`Converted Live USD: ~$${Math.round(Number(basicMax) * exchangeRate.etbToUsd)} USD`}
                   required
                 />
               </div>
             </div>
 
-            <div style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '20px 24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            {/* Professional Tier Box (Recommended) */}
+            <div style={{ backgroundColor: 'var(--bg)', border: '2px solid var(--accent-gold)', borderRadius: 'var(--radius-md)', padding: '20px 24px', boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>Premium Short-Form Tier (ETB)</h3>
-                  <p style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>Kinetic typography, custom b-roll, motion graphics, sound design, 2 revisions</p>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>Professional Tier (Recommended)</h3>
+                  <p style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>Advanced kinetic captions, extended b-roll, audio mix, 2 revisions</p>
+                </div>
+                <Badge variant="gold">RECOMMENDED</Badge>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Input
+                  label="Minimum Rate (ETB / video)"
+                  type="number"
+                  value={professionalMin}
+                  onChange={(e) => setProfessionalMin(e.target.value)}
+                  helperText={`Converted Live USD: ~$${Math.round(Number(professionalMin) * exchangeRate.etbToUsd)} USD`}
+                  required
+                />
+                <Input
+                  label="Maximum Rate (ETB / video)"
+                  type="number"
+                  value={professionalMax}
+                  onChange={(e) => setProfessionalMax(e.target.value)}
+                  helperText={`Converted Live USD: ~$${Math.round(Number(professionalMax) * exchangeRate.etbToUsd)} USD`}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Premium Tier Box */}
+            <div style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '20px 24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>Premium Edit Tier</h3>
+                  <p style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>Custom animated captions, extensive b-roll, heavy custom 3D graphics, 3 revisions</p>
                 </div>
                 <Badge variant="gold">PREMIUM</Badge>
               </div>
@@ -967,6 +1086,7 @@ export const AdminPage = () => {
                   type="number"
                   value={premiumMin}
                   onChange={(e) => setPremiumMin(e.target.value)}
+                  helperText={`Converted Live USD: ~$${Math.round(Number(premiumMin) * exchangeRate.etbToUsd)} USD`}
                   required
                 />
                 <Input
@@ -974,6 +1094,7 @@ export const AdminPage = () => {
                   type="number"
                   value={premiumMax}
                   onChange={(e) => setPremiumMax(e.target.value)}
+                  helperText={`Converted Live USD: ~$${Math.round(Number(premiumMax) * exchangeRate.etbToUsd)} USD`}
                   required
                 />
               </div>
@@ -981,7 +1102,7 @@ export const AdminPage = () => {
 
             <div style={{ marginTop: '8px' }}>
               <Button type="submit" variant="primary" fullWidth isLoading={savingPackages} iconRight={IconCheck}>
-                Save Pricing Configurations
+                Save 3-Tier Pricing & Live USD Rates
               </Button>
             </div>
           </form>

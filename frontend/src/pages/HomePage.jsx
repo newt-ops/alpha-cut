@@ -317,7 +317,7 @@ export const HomePage = () => {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', maxWidth: '1140px', margin: '0 auto' }}>
           {PACKAGES_DATA.shortForm.tiers.map((tier) => (
             <div
               key={tier.id}

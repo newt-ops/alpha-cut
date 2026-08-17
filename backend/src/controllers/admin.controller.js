@@ -5,6 +5,25 @@ import { PackageConfig } from '../models/PackageConfig.js';
 import { Notification } from '../models/Notification.js';
 import * as lifecycleService from '../services/lifecycle.service.js';
 
+const INITIAL_PACKAGE_SEEDS = [
+  // Short-Form ETB
+  { tier: 'basic', length: 'short', currency: 'ETB', priceMin: 500, priceMax: 800 },
+  { tier: 'professional', length: 'short', currency: 'ETB', priceMin: 900, priceMax: 1400 },
+  { tier: 'premium', length: 'short', currency: 'ETB', priceMin: 1600, priceMax: 2400 },
+  // Short-Form USD
+  { tier: 'basic', length: 'short', currency: 'USD', priceMin: 18, priceMax: 28 },
+  { tier: 'professional', length: 'short', currency: 'USD', priceMin: 35, priceMax: 50 },
+  { tier: 'premium', length: 'short', currency: 'USD', priceMin: 60, priceMax: 90 },
+  // Long-Form ETB
+  { tier: 'basic', length: 'long', currency: 'ETB', priceMin: 4000, priceMax: 6500 },
+  { tier: 'professional', length: 'long', currency: 'ETB', priceMin: 7500, priceMax: 11000 },
+  { tier: 'premium', length: 'long', currency: 'ETB', priceMin: 13000, priceMax: 18000 },
+  // Long-Form USD
+  { tier: 'basic', length: 'long', currency: 'USD', priceMin: 90, priceMax: 150 },
+  { tier: 'professional', length: 'long', currency: 'USD', priceMin: 180, priceMax: 280 },
+  { tier: 'premium', length: 'long', currency: 'USD', priceMin: 320, priceMax: 500 },
+];
+
 export const searchUsers = async (req, res, next) => {
   try {
     const { email } = req.query;
@@ -156,8 +175,48 @@ export const updatePackageConfig = async (req, res, next) => {
 
 export const getAllPackageConfigs = async (req, res, next) => {
   try {
-    const configs = await PackageConfig.find({});
+    let configs = await PackageConfig.find({});
+
+    // Seed any missing tier configs
+    for (const seed of INITIAL_PACKAGE_SEEDS) {
+      const exists = configs.some((c) => c.tier === seed.tier && c.length === seed.length && c.currency === seed.currency);
+      if (!exists) {
+        await PackageConfig.create(seed);
+      }
+    }
+
+    configs = await PackageConfig.find({});
     res.status(200).json({ success: true, configs });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Live Exchange Rate Fetcher
+export const getLiveExchangeRate = async (req, res, next) => {
+  try {
+    let usdToEtbRate = 128.5; // Canonical Ethiopian exchange rate fallback
+
+    try {
+      const apiRes = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (apiRes.ok) {
+        const data = await apiRes.json();
+        if (data && data.rates && data.rates.ETB) {
+          usdToEtbRate = Number(data.rates.ETB.toFixed(2));
+        }
+      }
+    } catch (e) {
+      // Use fallback
+    }
+
+    const etbToUsdRate = Number((1 / usdToEtbRate).toFixed(5));
+
+    res.status(200).json({
+      success: true,
+      usdToEtb: usdToEtbRate,
+      etbToUsd: etbToUsdRate,
+      timestamp: new Date().toISOString(),
+    });
   } catch (err) {
     next(err);
   }

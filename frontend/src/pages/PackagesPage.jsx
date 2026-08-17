@@ -11,25 +11,42 @@ export const PackagesPage = () => {
   const [formatTab, setFormatTab] = useState('short');
   const [currency, setCurrency] = useState('ETB');
   const [selectedPresetIndex, setSelectedPresetIndex] = useState(1); // 2 videos/week (8/mo)
-  const [selectedTierId, setSelectedTierId] = useState('premium');
+  const [selectedTierId, setSelectedTierId] = useState('professional');
   const [tiers, setTiers] = useState(PACKAGES_DATA.shortForm.tiers);
+  const [exchangeRate, setExchangeRate] = useState({ usdToEtb: 128.5, etbToUsd: 0.00778 });
 
   useEffect(() => {
-    const fetchLivePackageConfigs = async () => {
+    const fetchLiveData = async () => {
       try {
-        const res = await customFetch('/api/packages');
-        if (res.success && res.configs && res.configs.length > 0) {
+        const [pkgRes, rateRes] = await Promise.all([
+          customFetch('/api/packages').catch(() => ({ success: false })),
+          customFetch('/api/packages/exchange-rate').catch(() => ({ success: false })),
+        ]);
+
+        let currentRate = 0.00778;
+        if (rateRes.success && rateRes.etbToUsd) {
+          setExchangeRate({ usdToEtb: rateRes.usdToEtb, etbToUsd: rateRes.etbToUsd });
+          currentRate = rateRes.etbToUsd;
+        }
+
+        if (pkgRes.success && pkgRes.configs && pkgRes.configs.length > 0) {
           const updatedTiers = PACKAGES_DATA.shortForm.tiers.map((t) => {
-            const dbConfig = res.configs.find((c) => c.tier === t.id && c.currency === 'ETB');
-            if (dbConfig && dbConfig.priceMin && dbConfig.priceMax) {
-              return {
-                ...t,
-                minRateETB: dbConfig.priceMin,
-                maxRateETB: dbConfig.priceMax,
-                rateRangeETB: `${dbConfig.priceMin.toLocaleString()} – ${dbConfig.priceMax.toLocaleString()}`,
-              };
-            }
-            return t;
+            const dbEtbConfig = pkgRes.configs.find((c) => c.tier === t.id && c.currency === 'ETB' && c.length === formatTab);
+            const minETB = dbEtbConfig?.priceMin || t.minRateETB;
+            const maxETB = dbEtbConfig?.priceMax || t.maxRateETB;
+
+            const minUSD = Math.round(minETB * currentRate);
+            const maxUSD = Math.round(maxETB * currentRate);
+
+            return {
+              ...t,
+              minRateETB: minETB,
+              maxRateETB: maxETB,
+              rateRangeETB: `${minETB.toLocaleString()} – ${maxETB.toLocaleString()}`,
+              minRateUSD: minUSD,
+              maxRateUSD: maxUSD,
+              rateRangeUSD: `$${minUSD} – $${maxUSD}`,
+            };
           });
           setTiers(updatedTiers);
         }
@@ -37,8 +54,8 @@ export const PackagesPage = () => {
         // Fallback to static defaults
       }
     };
-    fetchLivePackageConfigs();
-  }, []);
+    fetchLiveData();
+  }, [formatTab]);
 
   const formatTabs = [
     { id: 'short', label: 'Short-Form Rates (Reels/Shorts/TikTok)' },
@@ -47,10 +64,13 @@ export const PackagesPage = () => {
 
   const presets = PACKAGES_DATA.frequencyPresets;
   const currentPreset = presets[selectedPresetIndex];
-  const selectedTier = tiers.find((t) => t.id === selectedTierId) || tiers[0];
+  const selectedTier = tiers.find((t) => t.id === selectedTierId) || tiers[1];
 
   const minMonthlyETB = currentPreset.videosPerMonth * selectedTier.minRateETB;
   const maxMonthlyETB = currentPreset.videosPerMonth * selectedTier.maxRateETB;
+
+  const minMonthlyUSD = Math.round(minMonthlyETB * exchangeRate.etbToUsd);
+  const maxMonthlyUSD = Math.round(maxMonthlyETB * exchangeRate.etbToUsd);
 
   return (
     <div style={{ padding: '20px 0 60px 0' }} className="packages-page">
@@ -60,7 +80,7 @@ export const PackagesPage = () => {
           Packages & Monthly Calculator
         </h1>
         <p style={{ fontSize: '16px', color: 'var(--ink-soft)', marginTop: '12px', lineHeight: 1.6 }}>
-          Transparent per-video editing rates with zero hidden fees. Calculate your monthly investment based on your publishing frequency.
+          Transparent 3-tier editing rates with live exchange rates. Calculate your monthly investment based on publishing frequency.
         </p>
       </div>
 
@@ -92,7 +112,7 @@ export const PackagesPage = () => {
             backgroundColor: 'var(--surface)',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--line)',
-            maxWidth: '700px',
+            maxWidth: '720px',
             margin: '0 auto',
           }}
         >
@@ -111,26 +131,24 @@ export const PackagesPage = () => {
         </div>
       ) : (
         <>
-          {/* Currency USD Warning Notice if USD Selected */}
-          {currency === 'USD' && (
-            <div
-              style={{
-                backgroundColor: 'rgba(201, 160, 107, 0.1)',
-                border: '1px solid var(--accent-gold)',
-                borderRadius: 'var(--radius-md)',
-                padding: '14px 20px',
-                marginBottom: '32px',
-                textAlign: 'center',
-                fontSize: '14px',
-                color: 'var(--ink)',
-              }}
-            >
-              USD international rates are generated on request per client region. ETB values reflect canonical Ethiopian local rates.
-            </div>
-          )}
+          {/* Live Currency Feed Notice */}
+          <div
+            style={{
+              backgroundColor: 'rgba(201, 160, 107, 0.1)',
+              border: '1px solid var(--accent-gold)',
+              borderRadius: 'var(--radius-md)',
+              padding: '14px 20px',
+              marginBottom: '32px',
+              textAlign: 'center',
+              fontSize: '13px',
+              color: 'var(--ink)',
+            }}
+          >
+            Live Market Conversion: 1 USD = {exchangeRate.usdToEtb} ETB. Displaying live rates in {currency}.
+          </div>
 
-          {/* Pricing Tiers Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', marginBottom: '60px' }}>
+          {/* 3 Pricing Tiers Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '28px', marginBottom: '60px' }}>
             {tiers.map((tier) => (
               <div
                 key={tier.id}
@@ -138,7 +156,7 @@ export const PackagesPage = () => {
                   backgroundColor: 'var(--surface)',
                   borderRadius: 'var(--radius-lg)',
                   border: `2px solid ${tier.isPopular ? 'var(--accent-gold)' : 'var(--line)'}`,
-                  padding: '36px 30px',
+                  padding: '32px 26px',
                   position: 'relative',
                   display: 'flex',
                   flexDirection: 'column',
@@ -147,34 +165,34 @@ export const PackagesPage = () => {
                 }}
               >
                 {tier.isPopular && (
-                  <div style={{ position: 'absolute', top: '-14px', right: '28px' }}>
+                  <div style={{ position: 'absolute', top: '-14px', right: '24px' }}>
                     <Badge variant="gold">RECOMMENDED TIER</Badge>
                   </div>
                 )}
 
                 <div>
                   <h2 className="font-display" style={{ fontSize: '24px' }}>{tier.name}</h2>
-                  <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '4px', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px', lineHeight: 1.5, minHeight: '40px' }}>
                     {tier.tagline}
                   </p>
 
                   <div style={{ margin: '24px 0' }}>
                     {currency === 'ETB' ? (
                       <div>
-                        <span className="font-display" style={{ fontSize: '42px', fontWeight: 800, color: 'var(--accent-gold)' }}>
-                          {tier.rateRangeETB} <span style={{ fontSize: '20px' }}>ETB</span>
+                        <span className="font-display" style={{ fontSize: '38px', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                          {tier.rateRangeETB} <span style={{ fontSize: '18px' }}>ETB</span>
                         </span>
-                        <span className="font-mono" style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
+                        <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
                           PER SHORT-FORM VIDEO
                         </span>
                       </div>
                     ) : (
                       <div>
-                        <span className="font-display" style={{ fontSize: '24px', color: 'var(--accent-gold)' }}>
-                          USD Quote on Request
+                        <span className="font-display" style={{ fontSize: '38px', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                          {tier.rateRangeUSD} <span style={{ fontSize: '18px' }}>USD</span>
                         </span>
-                        <span className="font-mono" style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginTop: '4px' }}>
-                          EMAIL FOR INTERNATIONAL USD RATE
+                        <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
+                          LIVE CONVERTED INTERNATIONAL RATE
                         </span>
                       </div>
                     )}
@@ -186,9 +204,9 @@ export const PackagesPage = () => {
                   </h4>
                   <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {tier.features.map((feat, idx) => (
-                      <li key={idx} style={{ fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: feat.included ? 'var(--ink)' : 'var(--ink-soft)' }}>
+                      <li key={idx} style={{ fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: feat.included ? 'var(--ink)' : 'var(--ink-soft)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <IconCheck size={18} color={feat.included ? 'var(--accent-gold)' : 'var(--line)'} />
+                          <IconCheck size={16} color={feat.included ? 'var(--accent-gold)' : 'var(--line)'} />
                           <span style={{ opacity: feat.included ? 1 : 0.45 }}>{feat.name}</span>
                         </div>
                         {feat.note && (
@@ -201,7 +219,7 @@ export const PackagesPage = () => {
                   </ul>
                 </div>
 
-                <div style={{ marginTop: '36px' }}>
+                <div style={{ marginTop: '32px' }}>
                   <a href="mailto:alphacutagency@gmail.com">
                     <Button variant={tier.isPopular ? 'primary' : 'secondary'} fullWidth iconRight={IconArrowRight}>
                       Select {tier.name}
@@ -212,14 +230,14 @@ export const PackagesPage = () => {
             ))}
           </div>
 
-          {/* DELIVERY FREQUENCY CALCULATOR */}
+          {/* DELIVERY FREQUENCY CALCULATOR (3 Tiers) */}
           <div
             style={{
               backgroundColor: 'var(--surface)',
               borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--line)',
               padding: '40px 32px',
-              maxWidth: '900px',
+              maxWidth: '960px',
               margin: '0 auto',
               boxShadow: 'var(--shadow)',
             }}
@@ -240,20 +258,27 @@ export const PackagesPage = () => {
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', marginBottom: '8px' }}>
                   1. Select Package Tier:
                 </label>
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
                   <Button
                     variant={selectedTierId === 'basic' ? 'primary' : 'secondary'}
                     size="small"
                     onClick={() => setSelectedTierId('basic')}
                   >
-                    Basic Tier
+                    Basic
+                  </Button>
+                  <Button
+                    variant={selectedTierId === 'professional' ? 'primary' : 'secondary'}
+                    size="small"
+                    onClick={() => setSelectedTierId('professional')}
+                  >
+                    Professional
                   </Button>
                   <Button
                     variant={selectedTierId === 'premium' ? 'primary' : 'secondary'}
                     size="small"
                     onClick={() => setSelectedTierId('premium')}
                   >
-                    Premium Tier
+                    Premium
                   </Button>
                 </div>
 
@@ -308,7 +333,7 @@ export const PackagesPage = () => {
                 <div style={{ margin: '16px 0' }}>
                   {currency === 'ETB' ? (
                     <div>
-                      <h3 className="font-display" style={{ fontSize: '38px', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                      <h3 className="font-display" style={{ fontSize: '34px', fontWeight: 800, color: 'var(--accent-gold)' }}>
                         {minMonthlyETB.toLocaleString()} – {maxMonthlyETB.toLocaleString()} ETB
                       </h3>
                       <span className="font-mono" style={{ fontSize: '12px', color: 'rgba(251, 239, 225, 0.6)' }}>
@@ -317,11 +342,11 @@ export const PackagesPage = () => {
                     </div>
                   ) : (
                     <div>
-                      <h3 className="font-display" style={{ fontSize: '24px', color: 'var(--accent-gold)' }}>
-                        USD Proposal on Request
+                      <h3 className="font-display" style={{ fontSize: '34px', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                        ${minMonthlyUSD.toLocaleString()} – ${maxMonthlyUSD.toLocaleString()} USD
                       </h3>
-                      <span style={{ fontSize: '13px', color: 'rgba(251,239,225,0.7)', marginTop: '8px', display: 'block' }}>
-                        Contact us for international USD invoice terms
+                      <span className="font-mono" style={{ fontSize: '12px', color: 'rgba(251, 239, 225, 0.6)' }}>
+                        for {currentPreset.videosPerMonth} videos per month ({selectedTier.name})
                       </span>
                     </div>
                   )}

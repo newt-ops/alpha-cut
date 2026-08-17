@@ -4,7 +4,7 @@ const packageConfigSchema = new mongoose.Schema(
   {
     tier: {
       type: String,
-      enum: ['basic', 'premium'],
+      enum: ['basic', 'professional', 'premium'],
       required: true,
     },
     length: {

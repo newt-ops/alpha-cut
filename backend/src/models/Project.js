@@ -36,7 +36,7 @@ const projectSchema = new mongoose.Schema(
     },
     packageTier: {
       type: String,
-      enum: ['basic', 'premium'],
+      enum: ['basic', 'professional', 'premium'],
       required: true,
     },
     currency: {

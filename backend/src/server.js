@@ -19,7 +19,7 @@ import ratingRoutes from './routes/rating.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import portfolioRoutes from './routes/portfolio.routes.js';
-import { getAllPackageConfigs } from './controllers/admin.controller.js';
+import { getAllPackageConfigs, getLiveExchangeRate } from './controllers/admin.controller.js';
 
 validateEnv();
 
@@ -97,6 +97,7 @@ app.use('/api/ratings', ratingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.get('/api/packages/exchange-rate', getLiveExchangeRate);
 app.get('/api/packages', getAllPackageConfigs);
 
 app.get('/api/health', (req, res) => {
