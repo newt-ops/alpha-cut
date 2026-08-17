@@ -12,6 +12,7 @@ import {
   IconExternalLink,
   IconMenu,
   IconCalendar,
+  IconFileText,
 } from '@icons/icons';
 
 export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollapse }) => {
