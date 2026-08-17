@@ -29,7 +29,7 @@ export const NotionCalendar = ({ projects = [], contracts = [], onSelectProject 
 
   const today = new Date();
 
-  // Helper to find projects & retainer contracts assigned or due on a given day
+  // Helper to find projects, retainer contracts & deliverable handoffs on a given day
   const getEventsForDay = (day) => {
     const projEvents = projects.filter((p) => {
       const d = p.deadline ? new Date(p.deadline) : null;
@@ -41,17 +41,37 @@ export const NotionCalendar = ({ projects = [], contracts = [], onSelectProject 
       return isDeadline || isCreated;
     });
 
-    const contractEvents = (contracts || [])
-      .filter((c) => {
-        const s = c.startDate ? new Date(c.startDate) : null;
-        return s && s.getDate() === day && s.getMonth() === currentMonth && s.getFullYear() === currentYear;
-      })
-      .map((c) => ({
-        ...c,
-        editingStyle: `[Retainer] ${c.packageTier?.toUpperCase()}`,
-        status: c.status === 'active' ? 'in_progress' : c.status,
-        isContract: true,
-      }));
+    const contractEvents = [];
+    (contracts || []).forEach((c) => {
+      const s = c.startDate ? new Date(c.startDate) : null;
+      if (s && s.getDate() === day && s.getMonth() === currentMonth && s.getFullYear() === currentYear) {
+        contractEvents.push({
+          ...c,
+          editingStyle: `[Retainer Start] ${c.packageTier?.toUpperCase()}`,
+          status: c.status === 'active' ? 'in_progress' : c.status,
+          isContract: true,
+        });
+      }
+
+      if (c.deliverables && c.deliverables.length > 0) {
+        c.deliverables.forEach((d) => {
+          const date = d.deliveredAt ? new Date(d.deliveredAt) : (d.createdAt ? new Date(d.createdAt) : null);
+          if (date && date.getDate() === day && date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+            contractEvents.push({
+              _id: d._id,
+              editingStyle: `[Render #${d.sequenceNumber}] ${d.title || 'Deliverable'}`,
+              clientName: c.clientName,
+              clientEmail: c.clientEmail,
+              price: c.monthlyPrice,
+              currency: c.currency,
+              packageTier: c.packageTier,
+              status: d.status === 'approved' ? 'completed' : 'delivered',
+              isDeliverable: true,
+            });
+          }
+        });
+      }
+    });
 
     return [...projEvents, ...contractEvents];
   };

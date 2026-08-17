@@ -673,11 +673,14 @@ export const AdminPage = () => {
               }}
             >
               <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                DELIVERED REVENUE (ETB)
+                TOTAL EARNED REVENUE (ETB)
               </span>
               <h3 className="font-display" style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
                 {stats?.revenueETB?.toLocaleString() || 0} ETB
               </h3>
+              <span style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '4px' }}>
+                Projects: {stats?.projRevenueETB?.toLocaleString() || 0} ETB • Retainers: {stats?.contractRevenueETB?.toLocaleString() || 0} ETB
+              </span>
             </div>
 
             <div
@@ -691,11 +694,14 @@ export const AdminPage = () => {
               }}
             >
               <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                DELIVERED REVENUE (USD)
+                TOTAL EARNED REVENUE (USD)
               </span>
               <h3 className="font-display" style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
                 ${stats?.revenueUSD?.toLocaleString() || 0} USD
               </h3>
+              <span style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '4px' }}>
+                Projects: ${stats?.projRevenueUSD?.toLocaleString() || 0} USD • Retainers: ${stats?.contractRevenueUSD?.toLocaleString() || 0} USD
+              </span>
             </div>
 
             <div
