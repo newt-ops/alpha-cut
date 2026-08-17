@@ -163,22 +163,36 @@ export const Navbar = () => {
                     cursor: 'pointer',
                   }}
                 >
-                  <div
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--accent-gold)',
-                      color: '#170B06',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '11px',
-                      fontWeight: 800,
-                    }}
-                  >
-                    {user?.name?.charAt(0) || 'U'}
-                  </div>
+                  {user?.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user?.name}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '1px solid var(--accent-gold)',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--accent-gold)',
+                        color: '#170B06',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                      }}
+                    >
+                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
                   <span>{user?.name}</span>
                   <IconChevronDown size={16} color="var(--ink-soft)" />
                 </button>
