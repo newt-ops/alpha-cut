@@ -13,6 +13,15 @@ export const bot = config.telegramBotToken ? new Telegraf(config.telegramBotToke
 const CLIENT_URL = process.env.CLIENT_URL || 'https://alpha-cut-nine.vercel.app';
 const MINI_APP_URL = `${CLIENT_URL}/app`;
 
+export const sendTelegramNotification = async (chatId, text) => {
+  if (!bot || !chatId) return;
+  try {
+    await bot.telegram.sendMessage(chatId, text, { parse_mode: 'HTML' });
+  } catch (err) {
+    console.error('Failed to send Telegram notification:', err.message);
+  }
+};
+
 // Format Progress Bar using Unicode Blocks
 export const getUnicodeProgressBar = (status) => {
   switch (status) {
