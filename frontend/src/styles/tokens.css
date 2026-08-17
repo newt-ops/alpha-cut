@@ -38,3 +38,18 @@
 
   --grid-line-color: rgba(251, 239, 225, 0.04);
 }
+
+.app-logo-img {
+  display: inline-block;
+  object-fit: contain;
+  transition: filter var(--transition-smooth), transform var(--transition-fast);
+}
+
+[data-theme='light'] .app-logo-img {
+  filter: drop-shadow(0 2px 6px rgba(69, 29, 19, 0.12));
+}
+
+[data-theme='dark'] .app-logo-img {
+  filter: brightness(1.15) contrast(1.1) drop-shadow(0 2px 10px rgba(217, 178, 124, 0.3));
+}
+

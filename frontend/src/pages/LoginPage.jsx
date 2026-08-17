@@ -6,6 +6,8 @@ import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
 import { IconGoogle } from '@icons/icons';
 
+import { Logo } from '@components/ui/Logo';
+
 export const LoginPage = () => {
   const { loginWithGoogle, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
@@ -47,6 +49,9 @@ export const LoginPage = () => {
   return (
     <div style={{ padding: '60px 0', maxWidth: '440px', margin: '0 auto' }} className="login-page">
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <Logo size="large" />
+        </div>
         <Badge variant="gold">Client & Admin Access</Badge>
         <h1 className="font-display" style={{ fontSize: '32px', marginTop: '12px' }}>
           Welcome to Alpha Cut

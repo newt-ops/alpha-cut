@@ -1,13 +1,16 @@
 import React from 'react';
+import { useTheme } from '@context/ThemeContext';
 
 export const Logo = ({ size = 'medium', showText = true, className = '' }) => {
+  const { theme } = useTheme();
+
   const sizeMap = {
-    small: { icon: 24, text: '16px' },
-    medium: { icon: 32, text: '20px' },
-    large: { icon: 44, text: '26px' },
+    small: { img: 28, text: '16px' },
+    medium: { img: 38, text: '20px' },
+    large: { img: 52, text: '26px' },
   };
 
-  const { icon, text } = sizeMap[size] || sizeMap.medium;
+  const { img: imgSize, text: textSize } = sizeMap[size] || sizeMap.medium;
 
   return (
     <div
@@ -15,42 +18,28 @@ export const Logo = ({ size = 'medium', showText = true, className = '' }) => {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '10px',
+        gap: '12px',
         color: 'var(--ink)',
         textDecoration: 'none',
         userSelect: 'none',
       }}
     >
-      <svg
-        width={icon}
-        height={icon}
-        viewBox="0 0 40 40"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ flexShrink: 0 }}
-      >
-        <path
-          d="M6 30L20 6L34 30H27L20 17.5L13 30H6Z"
-          fill="currentColor"
-        />
-        <path
-          d="M10 34L30 34"
-          stroke="var(--accent-gold)"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-        />
-        <path
-          d="M24 14L34 26"
-          stroke="var(--accent-gold)"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-      </svg>
+      <img
+        src="/logo.png"
+        alt="Alpha Cut Logo"
+        className="app-logo-img"
+        style={{
+          height: `${imgSize}px`,
+          width: 'auto',
+          maxHeight: `${imgSize}px`,
+          flexShrink: 0,
+        }}
+      />
       {showText && (
         <span
           className="font-display"
           style={{
-            fontSize: text,
+            fontSize: textSize,
             fontWeight: 800,
             letterSpacing: '-0.02em',
             textTransform: 'uppercase',

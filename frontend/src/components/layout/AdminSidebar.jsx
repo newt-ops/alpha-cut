@@ -15,6 +15,8 @@ import {
   IconFileText,
 } from '@icons/icons';
 
+import { Logo } from '@components/ui/Logo';
+
 export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollapse }) => {
   const menuItems = [
     { id: 'overview', label: 'Analytics & Revenue', icon: IconBarChart },
@@ -58,15 +60,15 @@ export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollap
             borderBottom: '1px solid var(--line)',
           }}
         >
-          {!collapsed && (
+          {!collapsed ? (
             <div>
-              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', letterSpacing: '1.5px', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                 AGENCY ERP
               </span>
-              <h2 className="font-display" style={{ fontSize: '20px', color: 'var(--ink)', marginTop: '2px' }}>
-                Alpha Cut
-              </h2>
+              <Logo size="small" />
             </div>
+          ) : (
+            <Logo size="small" showText={false} />
           )}
           <button
             onClick={onToggleCollapse}
