@@ -1,16 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { Tabs } from '@components/ui/Tabs';
 import { CurrencyToggle } from '@components/ui/CurrencyToggle';
 import { PACKAGES_DATA } from '../data/packagesData';
 import { IconCheck, IconArrowRight, IconInfo, IconSparkles } from '@icons/icons';
+import { customFetch } from '../utils/api';
 
 export const PackagesPage = () => {
   const [formatTab, setFormatTab] = useState('short');
   const [currency, setCurrency] = useState('ETB');
   const [selectedPresetIndex, setSelectedPresetIndex] = useState(1); // 2 videos/week (8/mo)
   const [selectedTierId, setSelectedTierId] = useState('premium');
+  const [tiers, setTiers] = useState(PACKAGES_DATA.shortForm.tiers);
+
+  useEffect(() => {
+    const fetchLivePackageConfigs = async () => {
+      try {
+        const res = await customFetch('/api/packages');
+        if (res.success && res.configs && res.configs.length > 0) {
+          const updatedTiers = PACKAGES_DATA.shortForm.tiers.map((t) => {
+            const dbConfig = res.configs.find((c) => c.tier === t.id && c.currency === 'ETB');
+            if (dbConfig && dbConfig.priceMin && dbConfig.priceMax) {
+              return {
+                ...t,
+                minRateETB: dbConfig.priceMin,
+                maxRateETB: dbConfig.priceMax,
+                rateRangeETB: `${dbConfig.priceMin.toLocaleString()} – ${dbConfig.priceMax.toLocaleString()}`,
+              };
+            }
+            return t;
+          });
+          setTiers(updatedTiers);
+        }
+      } catch (err) {
+        // Fallback to static defaults
+      }
+    };
+    fetchLivePackageConfigs();
+  }, []);
 
   const formatTabs = [
     { id: 'short', label: 'Short-Form Rates (Reels/Shorts/TikTok)' },
@@ -19,7 +47,7 @@ export const PackagesPage = () => {
 
   const presets = PACKAGES_DATA.frequencyPresets;
   const currentPreset = presets[selectedPresetIndex];
-  const selectedTier = PACKAGES_DATA.shortForm.tiers.find((t) => t.id === selectedTierId);
+  const selectedTier = tiers.find((t) => t.id === selectedTierId) || tiers[0];
 
   const minMonthlyETB = currentPreset.videosPerMonth * selectedTier.minRateETB;
   const maxMonthlyETB = currentPreset.videosPerMonth * selectedTier.maxRateETB;
@@ -55,7 +83,7 @@ export const PackagesPage = () => {
         <CurrencyToggle currency={currency} onChange={setCurrency} />
       </div>
 
-      {/* Long-Form State (No Invented Numbers) */}
+      {/* Long-Form State */}
       {formatTab === 'long' ? (
         <div
           style={{
@@ -103,7 +131,7 @@ export const PackagesPage = () => {
 
           {/* Pricing Tiers Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', marginBottom: '60px' }}>
-            {PACKAGES_DATA.shortForm.tiers.map((tier) => (
+            {tiers.map((tier) => (
               <div
                 key={tier.id}
                 style={{
