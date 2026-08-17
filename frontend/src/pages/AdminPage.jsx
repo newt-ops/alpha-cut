@@ -108,6 +108,7 @@ export const AdminPage = () => {
   const [premiumMin, setPremiumMin] = useState('1600');
   const [premiumMax, setPremiumMax] = useState('2400');
   const [savingPackages, setSavingPackages] = useState(false);
+  const [chapaTestModeEnabled, setChapaTestModeEnabled] = useState(true);
 
   // Detail Modal State
   const [selectedProjectForDetail, setSelectedProjectForDetail] = useState(null);
@@ -116,7 +117,7 @@ export const AdminPage = () => {
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, projRes, contractRes, ratRes, clientRes, pkgRes, portRes, rateRes] = await Promise.all([
+      const [statsRes, projRes, contractRes, ratRes, clientRes, pkgRes, portRes, rateRes, chapaRes] = await Promise.all([
         apiFetch('/api/admin/stats').catch(() => ({ success: false })),
         apiFetch('/api/admin/projects').catch(() => ({ success: false })),
         apiFetch('/api/admin/contracts').catch(() => ({ success: false, contracts: [] })),
@@ -125,6 +126,7 @@ export const AdminPage = () => {
         apiFetch('/api/admin/packages').catch(() => ({ success: false, configs: [] })),
         apiFetch('/api/portfolio').catch(() => ({ success: false, items: [] })),
         apiFetch('/api/packages/exchange-rate').catch(() => ({ success: false })),
+        apiFetch('/api/payments/chapa/status').catch(() => ({ success: false })),
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
@@ -133,6 +135,7 @@ export const AdminPage = () => {
       if (ratRes.success) setRatings(ratRes.ratings);
       if (clientRes.success) setClients(clientRes.clients);
       if (portRes.success) setPortfolioItems(portRes.items);
+      if (chapaRes.success) setChapaTestModeEnabled(chapaRes.enabled);
       if (rateRes.success && rateRes.usdToEtb) {
         setExchangeRate({ usdToEtb: rateRes.usdToEtb, etbToUsd: rateRes.etbToUsd });
       }
@@ -551,6 +554,21 @@ export const AdminPage = () => {
       toast({ message: err.message || 'Failed to feature rating', type: 'error' });
     } finally {
       setSubmittingFeature(false);
+    }
+  };
+
+  const handleToggleChapaTestMode = async () => {
+    try {
+      const res = await apiFetch('/api/payments/chapa/toggle-test-mode', {
+        method: 'POST',
+        body: JSON.stringify({ enabled: !chapaTestModeEnabled }),
+      });
+      if (res.success) {
+        setChapaTestModeEnabled(res.enabled);
+        toast({ message: res.message, type: 'info' });
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Failed to toggle Chapa test mode', type: 'error' });
     }
   };
 
@@ -1469,7 +1487,7 @@ export const AdminPage = () => {
               border: '1px solid var(--accent-gold)',
               borderRadius: 'var(--radius-md)',
               padding: '14px 20px',
-              marginBottom: '28px',
+              marginBottom: '20px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -1480,6 +1498,42 @@ export const AdminPage = () => {
               <strong style={{ color: 'var(--accent-gold)' }}>Live Exchange Rate Feed:</strong> 1 USD = {exchangeRate.usdToEtb} ETB (1 ETB = ${exchangeRate.etbToUsd} USD)
             </div>
             <Badge variant="gold" size="small">LIVE API</Badge>
+          </div>
+
+          {/* CHAPA PAYMENT GATEWAY TEST MODE SETTINGS */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg)',
+              border: `2px solid ${chapaTestModeEnabled ? 'var(--accent-gold)' : 'var(--line)'}`,
+              borderRadius: 'var(--radius-md)',
+              padding: '20px',
+              marginBottom: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+            }}
+          >
+            <div>
+              <Badge variant={chapaTestModeEnabled ? 'gold' : 'surface'}>
+                CHAPA.CO • {chapaTestModeEnabled ? 'TEST MODE ENABLED' : 'FEATURE DISABLED'}
+              </Badge>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', marginTop: '6px' }}>
+                Chapa Payment Gateway (ETB / Mobile Money / Cards)
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px' }}>
+                Temporary test mode integration for Telebirr, CBE Birr & Card checkout. Enable or disable anytime.
+              </p>
+            </div>
+
+            <Button
+              variant={chapaTestModeEnabled ? 'secondary' : 'primary'}
+              size="small"
+              onClick={handleToggleChapaTestMode}
+            >
+              {chapaTestModeEnabled ? 'Disable Chapa Feature' : 'Enable Chapa Test Mode'}
+            </Button>
           </div>
 
           <form onSubmit={handleSavePackageSettings} style={{ display: 'grid', gap: '24px' }}>

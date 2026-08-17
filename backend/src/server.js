@@ -20,6 +20,7 @@ import notificationRoutes from './routes/notification.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import portfolioRoutes from './routes/portfolio.routes.js';
 import contractRoutes from './routes/contract.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 import { getAllPackageConfigs, getLiveExchangeRate } from './controllers/admin.controller.js';
 
 validateEnv();
@@ -35,12 +36,12 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", 'https://accounts.google.com', 'https://apis.google.com'],
+        scriptSrc: ["'self'", "'unsafe-inline'", 'https://accounts.google.com', 'https://apis.google.com', 'https://*.chapa.co', 'https://checkout.chapa.co'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https://*.googleusercontent.com'],
-        connectSrc: ["'self'", 'https://accounts.google.com', 'https://api.cloudinary.com', 'https://alpha-cut.onrender.com'],
-        frameSrc: ["'self'", 'https://accounts.google.com', 'https://www.youtube.com', 'https://player.vimeo.com'],
+        imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https://*.googleusercontent.com', 'https://*.chapa.co'],
+        connectSrc: ["'self'", 'https://accounts.google.com', 'https://api.cloudinary.com', 'https://alpha-cut.onrender.com', 'https://api.chapa.co', 'https://*.chapa.co'],
+        frameSrc: ["'self'", 'https://accounts.google.com', 'https://www.youtube.com', 'https://player.vimeo.com', 'https://*.chapa.co', 'https://checkout.chapa.co'],
       },
     },
     crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -98,6 +99,7 @@ app.use('/api/ratings', ratingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/payments/chapa', paymentRoutes);
 app.use('/api', contractRoutes);
 app.get('/api/packages/exchange-rate', getLiveExchangeRate);
 app.get('/api/packages', getAllPackageConfigs);

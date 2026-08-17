@@ -58,20 +58,26 @@ export const DashboardPage = () => {
   const [reviewText, setReviewText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Chapa Payment Test Mode State
+  const [chapaEnabled, setChapaEnabled] = useState(false);
+  const [payingChapaId, setPayingChapaId] = useState(null);
+
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      const [projRes, contractRes, notifRes, ratRes] = await Promise.all([
+      const [projRes, contractRes, notifRes, ratRes, chapaRes] = await Promise.all([
         apiFetch('/api/projects').catch(() => ({ success: false, projects: [] })),
         apiFetch('/api/contracts').catch(() => ({ success: false, contracts: [] })),
         apiFetch('/api/notifications').catch(() => ({ success: false, notifications: [] })),
         apiFetch('/api/ratings').catch(() => ({ success: false, ratings: [] })),
+        apiFetch('/api/payments/chapa/status').catch(() => ({ success: false })),
       ]);
 
       if (projRes.success) setProjects(projRes.projects);
       if (contractRes.success) setContracts(contractRes.contracts);
       if (notifRes.success) setNotifications(notifRes.notifications);
       if (ratRes.success) setRatings(ratRes.ratings);
+      if (chapaRes.success) setChapaEnabled(chapaRes.enabled);
     } catch (err) {
       toast({ message: 'Failed to load dashboard data', type: 'error' });
     } finally {
@@ -82,6 +88,25 @@ export const DashboardPage = () => {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  const handlePayWithChapa = async (itemType, itemId) => {
+    try {
+      setPayingChapaId(itemId);
+      const res = await apiFetch('/api/payments/chapa/initialize', {
+        method: 'POST',
+        body: JSON.stringify({ itemType, itemId }),
+      });
+
+      if (res.success && res.checkoutUrl) {
+        toast({ message: 'Redirecting to Chapa Payment Gateway (Test Mode)...', type: 'info' });
+        window.location.href = res.checkoutUrl;
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Failed to initialize Chapa payment', type: 'error' });
+    } finally {
+      setPayingChapaId(null);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -465,6 +490,17 @@ export const DashboardPage = () => {
                             </>
                           )}
 
+                          {chapaEnabled && (contract.status === 'proposed' || contract.status === 'active') && (
+                            <Button
+                              variant="gold"
+                              size="small"
+                              isLoading={payingChapaId === contract._id}
+                              onClick={() => handlePayWithChapa('contract', contract._id)}
+                            >
+                              Pay with Chapa (ETB)
+                            </Button>
+                          )}
+
                           {contract.status === 'active' && (
                             <Button
                               variant="secondary"
@@ -579,6 +615,17 @@ export const DashboardPage = () => {
                               onClick={() => handleAcceptProposal(proj._id)}
                             >
                               Accept Proposal
+                            </Button>
+                          )}
+
+                          {chapaEnabled && (proj.status === 'proposal_sent' || proj.status === 'in_progress' || proj.status === 'delivered') && (
+                            <Button
+                              variant="gold"
+                              size="small"
+                              isLoading={payingChapaId === proj._id}
+                              onClick={() => handlePayWithChapa('project', proj._id)}
+                            >
+                              Pay with Chapa (ETB)
                             </Button>
                           )}
 
