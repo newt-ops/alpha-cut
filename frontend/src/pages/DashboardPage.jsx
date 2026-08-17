@@ -436,53 +436,93 @@ export const DashboardPage = () => {
 
       {/* MY PROJECTS TAB */}
       {activeTab === 'projects' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-          {projects.map((proj) => (
+        <div>
+          {projects.length === 0 ? (
             <div
-              key={proj._id}
               style={{
                 backgroundColor: 'var(--surface)',
                 borderRadius: 'var(--radius-lg)',
                 border: '1px solid var(--line)',
-                padding: '28px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
+                padding: '48px 32px',
+                textAlign: 'center',
+                maxWidth: '640px',
+                margin: '0 auto',
+                boxShadow: 'var(--shadow)',
               }}
             >
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <Badge variant={proj.status === 'completed' ? 'success' : 'gold'}>
-                    {proj.status.replace('_', ' ').toUpperCase()}
-                  </Badge>
-                  <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>
-                    {new Date(proj.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-
-                <h3 className="font-display" style={{ fontSize: '20px', marginBottom: '8px' }}>
-                  {proj.editingStyle}
-                </h3>
-
-                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
-                  Tier: <strong>{proj.packageTier?.toUpperCase()}</strong> ({proj.contentLength?.toUpperCase()})
-                </p>
-
-                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '16px' }}>
-                  {proj.price} {proj.currency}
-                </div>
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(201, 160, 107, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 20px auto',
+                  color: 'var(--accent-gold)',
+                }}
+              >
+                <IconFileText size={28} />
               </div>
-
-              <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
-                {proj.status === 'completed' && proj.rated && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--accent-gold)' }}>
-                    <IconStar size={16} filled color="var(--accent-gold)" />
-                    <span>Project Reviewed & Completed</span>
-                  </div>
-                )}
-              </div>
+              <h3 className="font-display" style={{ fontSize: '22px', marginBottom: '8px', color: 'var(--ink)' }}>
+                No Project History Yet
+              </h3>
+              <p style={{ fontSize: '14px', color: 'var(--ink-soft)', lineHeight: 1.6, marginBottom: '24px' }}>
+                When the agency team issues a video proposal for your channel or brand, your project specifications and editing terms will appear here automatically.
+              </p>
+              <Badge variant="gold">Awaiting Initial Proposal</Badge>
             </div>
-          ))}
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+              {projects.map((proj) => (
+                <div
+                  key={proj._id}
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--line)',
+                    padding: '28px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <Badge variant={proj.status === 'completed' ? 'success' : 'gold'}>
+                        {proj.status.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                      <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>
+                        {new Date(proj.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <h3 className="font-display" style={{ fontSize: '20px', marginBottom: '8px' }}>
+                      {proj.editingStyle}
+                    </h3>
+
+                    <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
+                      Tier: <strong>{proj.packageTier?.toUpperCase()}</strong> ({proj.contentLength?.toUpperCase()})
+                    </p>
+
+                    <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '16px' }}>
+                      {proj.price} {proj.currency}
+                    </div>
+                  </div>
+
+                  <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
+                    {proj.status === 'completed' && proj.rated && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--accent-gold)' }}>
+                        <IconStar size={16} filled color="var(--accent-gold)" />
+                        <span>Project Reviewed & Completed</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
