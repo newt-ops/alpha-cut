@@ -23,6 +23,7 @@ import {
   IconFileText,
   IconBarChart,
   IconPlus,
+  IconClose,
 } from '@icons/icons';
 
 export const AdminPage = () => {
@@ -34,7 +35,12 @@ export const AdminPage = () => {
   const [stats, setStats] = useState(null);
   const [projects, setProjects] = useState([]);
   const [ratings, setRatings] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Client Filter Search State
+  const [clientFilterText, setClientFilterText] = useState('');
 
   // New Proposal Form State
   const [clientSearchText, setClientSearchText] = useState('');
@@ -50,6 +56,13 @@ export const AdminPage = () => {
   const [notes, setNotes] = useState('');
   const [submittingProposal, setSubmittingProposal] = useState(false);
 
+  // Package Settings State
+  const [basicMin, setBasicMin] = useState('350');
+  const [basicMax, setBasicMax] = useState('400');
+  const [premiumMin, setPremiumMin] = useState('450');
+  const [premiumMax, setPremiumMax] = useState('500');
+  const [savingPackages, setSavingPackages] = useState(false);
+
   // Detail Modal State
   const [selectedProjectForDetail, setSelectedProjectForDetail] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -57,15 +70,31 @@ export const AdminPage = () => {
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, projRes, ratRes] = await Promise.all([
+      const [statsRes, projRes, ratRes, clientRes, pkgRes] = await Promise.all([
         apiFetch('/api/admin/stats'),
         apiFetch('/api/admin/projects'),
         apiFetch('/api/ratings'),
+        apiFetch('/api/admin/clients'),
+        apiFetch('/api/admin/packages'),
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
       if (projRes.success) setProjects(projRes.projects);
       if (ratRes.success) setRatings(ratRes.ratings);
+      if (clientRes.success) setClients(clientRes.clients);
+      if (pkgRes.success) {
+        setPackages(pkgRes.configs);
+        const basicConfig = pkgRes.configs.find((c) => c.tier === 'basic' && c.currency === 'ETB');
+        if (basicConfig) {
+          if (basicConfig.priceMin) setBasicMin(basicConfig.priceMin.toString());
+          if (basicConfig.priceMax) setBasicMax(basicConfig.priceMax.toString());
+        }
+        const premiumConfig = pkgRes.configs.find((c) => c.tier === 'premium' && c.currency === 'ETB');
+        if (premiumConfig) {
+          if (premiumConfig.priceMin) setPremiumMin(premiumConfig.priceMin.toString());
+          if (premiumConfig.priceMax) setPremiumMax(premiumConfig.priceMax.toString());
+        }
+      }
     } catch (err) {
       toast({ message: 'Failed to load admin panel data', type: 'error' });
     } finally {
@@ -140,6 +169,43 @@ export const AdminPage = () => {
     }
   };
 
+  // Save Package Configurations
+  const handleSavePackageSettings = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingPackages(true);
+      await Promise.all([
+        apiFetch('/api/admin/packages', {
+          method: 'PUT',
+          body: JSON.stringify({
+            tier: 'basic',
+            length: 'short',
+            currency: 'ETB',
+            priceMin: Number(basicMin),
+            priceMax: Number(basicMax),
+          }),
+        }),
+        apiFetch('/api/admin/packages', {
+          method: 'PUT',
+          body: JSON.stringify({
+            tier: 'premium',
+            length: 'short',
+            currency: 'ETB',
+            priceMin: Number(premiumMin),
+            priceMax: Number(premiumMax),
+          }),
+        }),
+      ]);
+
+      toast({ message: 'Package pricing updated successfully!', type: 'success' });
+      fetchAdminData();
+    } catch (err) {
+      toast({ message: err.message || 'Failed to update package pricing', type: 'error' });
+    } finally {
+      setSavingPackages(false);
+    }
+  };
+
   // Mark Delivered
   const handleMarkDelivered = async (projectId) => {
     try {
@@ -199,12 +265,16 @@ export const AdminPage = () => {
     (stats?.statusCounts?.completed || 0) +
     (stats?.statusCounts?.declined || 0);
 
+  const filteredClients = clients.filter((c) =>
+    c.name.toLowerCase().includes(clientFilterText.toLowerCase()) ||
+    c.email.toLowerCase().includes(clientFilterText.toLowerCase())
+  );
+
   return (
     <AdminLayout activeTab={activeTab} onChangeTab={setActiveTab}>
       {/* OVERVIEW / ANALYTICS TAB */}
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gap: '32px' }}>
-
           {/* Metric Cards Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
             <div
@@ -335,40 +405,102 @@ export const AdminPage = () => {
           <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '20px', color: 'var(--ink)' }}>Issue New Client Proposal</h2>
 
           <form onSubmit={handleCreateProposal}>
-            <div style={{ position: 'relative', marginBottom: '20px' }}>
-              <Input
-                label="Registered Client Email (Required)"
-                placeholder="Search registered client email..."
-                value={clientSearchText}
-                onChange={(e) => {
-                  setClientSearchText(e.target.value);
-                  setSelectedClient(null);
-                }}
-                icon={IconSearch}
-                required
-              />
+            <div style={{ position: 'relative', marginBottom: '24px' }}>
+              {!selectedClient ? (
+                <>
+                  <Input
+                    label="Registered Client Email (Required)"
+                    placeholder="Search registered client email..."
+                    value={clientSearchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    icon={IconSearch}
+                    required
+                  />
 
-              {searchResults.length > 0 && !selectedClient && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, backgroundColor: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow)', maxHeight: '180px', overflowY: 'auto' }}>
-                  {searchResults.map((user) => (
-                    <div
-                      key={user._id}
-                      onClick={() => {
-                        setSelectedClient(user);
-                        setClientSearchText(user.email);
-                        setSearchResults([]);
-                      }}
-                      style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--line)', fontSize: '14px', color: 'var(--ink)' }}
-                    >
-                      <strong>{user.name}</strong> ({user.email})
+                  {searchResults.length > 0 && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, backgroundColor: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow)', maxHeight: '200px', overflowY: 'auto' }}>
+                      {searchResults.map((user) => (
+                        <div
+                          key={user._id}
+                          onClick={() => {
+                            setSelectedClient(user);
+                            setClientSearchText(user.email);
+                            setSearchResults([]);
+                          }}
+                          style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--line)', fontSize: '14px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '12px' }}
+                        >
+                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'rgba(201,160,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-gold)', fontWeight: 700, fontSize: '12px' }}>
+                            {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                          <div>
+                            <strong>{user.name}</strong> <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>({user.email})</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
+                </>
+              ) : (
+                /* UPGRADED SELECTED CLIENT CARD (Request #3) */
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
+                    Targeted Client Profile
+                  </label>
+                  <div
+                    style={{
+                      backgroundColor: 'var(--bg)',
+                      border: '1px solid var(--accent-gold)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '16px 20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          backgroundColor: 'rgba(201, 160, 107, 0.25)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--accent-gold)',
+                          fontWeight: 800,
+                          fontSize: '16px',
+                          border: '1px solid var(--accent-gold)',
+                        }}
+                      >
+                        {selectedClient.avatarUrl ? (
+                          <img src={selectedClient.avatarUrl} alt={selectedClient.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                          selectedClient.name ? selectedClient.name.charAt(0).toUpperCase() : 'U'
+                        )}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {selectedClient.name}
+                          <IconCheck size={16} color="var(--accent-gold)" />
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{selectedClient.email}</div>
+                      </div>
+                    </div>
 
-              {selectedClient && (
-                <div style={{ marginTop: '6px', fontSize: '13px', color: 'var(--accent-gold)', fontWeight: 600 }}>
-                  Selected Client: {selectedClient.name} ({selectedClient.email})
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      onClick={() => {
+                        setSelectedClient(null);
+                        setClientSearchText('');
+                      }}
+                      style={{ color: 'var(--ink-soft)', fontSize: '12px' }}
+                    >
+                      Change Client
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -507,6 +639,188 @@ export const AdminPage = () => {
         </div>
       )}
 
+      {/* UPGRADED INTERACTIVE REGISTERED CLIENTS DIRECTORY (Request #4) */}
+      {activeTab === 'clients' && (
+        <div style={{ display: 'grid', gap: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>Registered Clients Directory</h2>
+              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '2px' }}>
+                Manage all registered client user profiles and issue targeted project proposals directly.
+              </p>
+            </div>
+
+            <div style={{ width: '320px' }}>
+              <Input
+                placeholder="Search clients by name or email..."
+                value={clientFilterText}
+                onChange={(e) => setClientFilterText(e.target.value)}
+                icon={IconSearch}
+              />
+            </div>
+          </div>
+
+          {filteredClients.length === 0 ? (
+            <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center', boxShadow: 'var(--shadow)' }}>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>No registered clients match your search filter.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
+              {filteredClients.map((client) => (
+                <div
+                  key={client._id}
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--line)',
+                    padding: '24px',
+                    boxShadow: 'var(--shadow-sm)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
+                      {client.avatarUrl ? (
+                        <img
+                          src={client.avatarUrl}
+                          alt={client.name}
+                          style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--accent-gold)' }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(201, 160, 107, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--accent-gold)',
+                            fontWeight: 800,
+                            fontSize: '18px',
+                          }}
+                        >
+                          {client.name ? client.name.charAt(0).toUpperCase() : 'C'}
+                        </div>
+                      )}
+                      <div>
+                        <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>{client.name}</h3>
+                        <p style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>{client.email}</p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px', backgroundColor: 'var(--bg)', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', fontSize: '12px' }}>
+                      <div>
+                        <span style={{ color: 'var(--ink-soft)', display: 'block' }}>Telegram Status</span>
+                        {client.telegramChatId ? (
+                          <Badge variant="success" size="small">CONNECTED</Badge>
+                        ) : (
+                          <Badge variant="maroon" size="small">NOT LINKED</Badge>
+                        )}
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--ink-soft)', display: 'block' }}>Proposals / Projects</span>
+                        <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>{client.projectCount || 0}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    iconRight={IconPlus}
+                    onClick={() => {
+                      setSelectedClient(client);
+                      setClientSearchText(client.email);
+                      setActiveTab('proposal');
+                    }}
+                  >
+                    Issue Proposal to {client.name.split(' ')[0]}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* UPGRADED INTERACTIVE PACKAGE & PRICING CONSOLE (Request #5) */}
+      {activeTab === 'pricing' && (
+        <div style={{ maxWidth: '720px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 32px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
+          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--ink)' }}>Package Pricing Configurations</h2>
+          <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '28px', lineHeight: 1.6 }}>
+            Dynamically update base package rate ranges for short-form video edits in ETB. Changes apply live across client package rate calculators.
+          </p>
+
+          <form onSubmit={handleSavePackageSettings} style={{ display: 'grid', gap: '28px' }}>
+            {/* Basic Short-Form Tier Box */}
+            <div style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '20px 24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>Basic Short-Form Tier (ETB)</h3>
+                  <p style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>Clean captions, basic sound design, color correction, 1 revision</p>
+                </div>
+                <Badge variant="gold">BASIC</Badge>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Input
+                  label="Minimum Rate (ETB / video)"
+                  type="number"
+                  value={basicMin}
+                  onChange={(e) => setBasicMin(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Maximum Rate (ETB / video)"
+                  type="number"
+                  value={basicMax}
+                  onChange={(e) => setBasicMax(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Premium Short-Form Tier Box */}
+            <div style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '20px 24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>Premium Short-Form Tier (ETB)</h3>
+                  <p style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>Kinetic typography, custom b-roll, motion graphics, sound design, 2 revisions</p>
+                </div>
+                <Badge variant="gold">PREMIUM</Badge>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Input
+                  label="Minimum Rate (ETB / video)"
+                  type="number"
+                  value={premiumMin}
+                  onChange={(e) => setPremiumMin(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Maximum Rate (ETB / video)"
+                  type="number"
+                  value={premiumMax}
+                  onChange={(e) => setPremiumMax(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div style={{ marginTop: '8px' }}>
+              <Button type="submit" variant="primary" fullWidth isLoading={savingPackages} iconRight={IconCheck}>
+                Save Pricing Configurations
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* RATINGS & MODERATION TAB */}
       {activeTab === 'moderation' && (
         <div style={{ display: 'grid', gap: '20px' }}>
@@ -554,32 +868,6 @@ export const AdminPage = () => {
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {/* REGISTERED CLIENTS TAB */}
-      {activeTab === 'clients' && (
-        <div style={{ display: 'grid', gap: '20px' }}>
-          <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>Registered Clients Overview</h2>
-          <div style={{ backgroundColor: 'var(--surface)', padding: '28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
-            <p style={{ color: 'var(--ink-soft)', fontSize: '14px', lineHeight: 1.6 }}>
-              Total Registered Client Accounts: <strong>{stats?.clientCount || 0}</strong>.<br />
-              Use the interactive email search box under <strong>"Create Proposal"</strong> to find registered client accounts when generating project terms.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* PACKAGE SETTINGS TAB */}
-      {activeTab === 'pricing' && (
-        <div style={{ maxWidth: '600px', backgroundColor: 'var(--surface)', padding: '28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
-          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '12px', color: 'var(--ink)' }}>Agency Package Pricing Configurations</h2>
-          <p style={{ fontSize: '14px', color: 'var(--ink-soft)', lineHeight: 1.6 }}>
-            Base short-form pricing tiers:<br />
-            • <strong>Basic Short-Form Tier:</strong> 350 – 400 ETB / video<br />
-            • <strong>Premium Short-Form Tier:</strong> 450 – 500 ETB / video<br />
-            • <strong>Long-Form & USD Tiers:</strong> Custom configured per project proposal.
-          </p>
         </div>
       )}
 

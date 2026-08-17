@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { AdminSidebar } from './AdminSidebar';
-import { Badge } from '@components/ui/Badge';
 import { useAuth } from '@context/AuthContext';
 import { useTheme } from '@context/ThemeContext';
-import { IconSun, IconMoon } from '@icons/icons';
+import { IconSun, IconMoon, IconUser } from '@icons/icons';
 
 export const AdminLayout = ({ activeTab, onChangeTab, children }) => {
   const { user } = useAuth();
@@ -46,7 +45,7 @@ export const AdminLayout = ({ activeTab, onChangeTab, children }) => {
             </h1>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             {/* Theme Switcher Toggle */}
             <button
               onClick={toggleTheme}
@@ -70,11 +69,46 @@ export const AdminLayout = ({ activeTab, onChangeTab, children }) => {
               {theme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <Badge variant="maroon">Agency Admin</Badge>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>{user?.name || 'Admin'}</div>
-                <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{user?.email}</div>
+            {/* Clean Admin User Profile Pill */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                backgroundColor: 'var(--bg)',
+                border: '1px solid var(--line)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '6px 14px',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user?.name}
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--accent-gold)' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(201, 160, 107, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--accent-gold)',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                  }}
+                >
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                </div>
+              )}
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2 }}>{user?.name || 'Alpha Cut'}</div>
+                <div style={{ fontSize: '11px', color: 'var(--ink-soft)', lineHeight: 1.2 }}>{user?.email || 'alphacutagency@gmail.com'}</div>
               </div>
             </div>
           </div>

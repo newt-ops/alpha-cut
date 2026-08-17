@@ -24,6 +24,30 @@ export const searchUsers = async (req, res, next) => {
   }
 };
 
+export const getAllClients = async (req, res, next) => {
+  try {
+    const clients = await User.find({ role: 'client' })
+      .select('name email avatarUrl telegramChatId telegramLinkedAt createdAt')
+      .sort({ createdAt: -1 });
+
+    const clientIds = clients.map((c) => c._id);
+    const projects = await Project.find({ clientId: { $in: clientIds } }).select('clientId status');
+
+    const clientsWithStats = clients.map((client) => {
+      const userProjects = projects.filter((p) => p.clientId.toString() === client._id.toString());
+      return {
+        ...client.toObject(),
+        projectCount: userProjects.length,
+        activeProjectCount: userProjects.filter((p) => p.status === 'in_progress' || p.status === 'proposal_sent').length,
+      };
+    });
+
+    res.status(200).json({ success: true, clients: clientsWithStats });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const createProposal = async (req, res, next) => {
   try {
     const project = await lifecycleService.createProposal(req.user._id, req.body);
@@ -69,7 +93,6 @@ export const getStats = async (req, res, next) => {
     const clientCount = await User.countDocuments({ role: 'client' });
     const allProjects = await Project.find({});
 
-    // REVENUE ACCOUNTING: Revenue adds ONLY after work is delivered or completed
     const revenueETB = allProjects
       .filter((p) => (p.status === 'delivered' || p.status === 'completed') && p.currency === 'ETB')
       .reduce((sum, p) => sum + p.price, 0);

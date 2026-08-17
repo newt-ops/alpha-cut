@@ -2,6 +2,7 @@ import express from 'express';
 import { requireAuth, requireAdmin } from '../middleware/auth.middleware.js';
 import {
   searchUsers,
+  getAllClients,
   createProposal,
   getAllProjects,
   markDelivered,
@@ -16,6 +17,7 @@ router.use(requireAuth);
 router.use(requireAdmin);
 
 router.get('/users/search', searchUsers);
+router.get('/clients', getAllClients);
 router.post('/projects', createProposal);
 router.get('/projects', getAllProjects);
 router.post('/projects/:id/deliver', markDelivered);
