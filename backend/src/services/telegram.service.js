@@ -462,3 +462,50 @@ export const updateTelegramStatusCard = async (project, clientChatId) => {
     console.error('Failed to send live status card:', err.message);
   }
 };
+
+// Update or Send Live Status Card for Retainer Contracts
+export const updateContractTelegramStatusCard = async (contract, clientChatId, deliveredCount = 0) => {
+  if (!bot || !clientChatId) return;
+
+  const pct = contract.totalVideosPlanned > 0
+    ? Math.round((deliveredCount / contract.totalVideosPlanned) * 100)
+    : 0;
+
+  const statusText = `📦 <b>RETAINER CONTRACT STATUS CARD</b>\n\n` +
+    `Tier: <b>${contract.packageTier?.toUpperCase()} (${contract.frequency})</b>\n` +
+    `Monthly Investment: <b>${contract.monthlyPrice} ${contract.currency}</b>\n` +
+    `Progress: <b>${deliveredCount}/${contract.totalVideosPlanned} Videos Delivered (${pct}%)</b>\n` +
+    `Status: <b>${contract.status.toUpperCase()}</b>\n\n` +
+    `Log into your Mini App to approve video renders or review schedule.`;
+
+  const keyboard = Markup.inlineKeyboard([
+    [Markup.button.webApp('🚀 Open Work in Mini App', MINI_APP_URL)],
+    [Markup.button.callback('⬅️ Main Menu', 'menu:main')],
+  ]);
+
+  if (contract.telegramStatusMessageId) {
+    try {
+      await bot.telegram.editMessageText(
+        clientChatId,
+        Number(contract.telegramStatusMessageId),
+        null,
+        statusText,
+        { parse_mode: 'HTML', ...keyboard }
+      );
+      return;
+    } catch (err) {
+      console.log('Failed to edit contract status message, sending new card:', err.message);
+    }
+  }
+
+  try {
+    const sentMsg = await bot.telegram.sendMessage(clientChatId, statusText, {
+      parse_mode: 'HTML',
+      ...keyboard,
+    });
+    contract.telegramStatusMessageId = sentMsg.message_id.toString();
+    await contract.save();
+  } catch (err) {
+    console.error('Failed to send contract status card:', err.message);
+  }
+};

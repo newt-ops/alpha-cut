@@ -22,6 +22,7 @@ export const TelegramMiniAppPage = () => {
   // Dashboard Data State
   const [activeTab, setActiveTab] = useState('overview');
   const [projects, setProjects] = useState([]);
+  const [contracts, setContracts] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
   // Account Linking Form State
@@ -37,11 +38,13 @@ export const TelegramMiniAppPage = () => {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const [projRes, notifRes] = await Promise.all([
-        customFetch('/api/projects'),
-        customFetch('/api/notifications'),
+      const [projRes, contractRes, notifRes] = await Promise.all([
+        customFetch('/api/projects').catch(() => ({ success: false, projects: [] })),
+        customFetch('/api/contracts').catch(() => ({ success: false, contracts: [] })),
+        customFetch('/api/notifications').catch(() => ({ success: false, notifications: [] })),
       ]);
       if (projRes.success) setProjects(projRes.projects);
+      if (contractRes.success) setContracts(contractRes.contracts);
       if (notifRes.success) setNotifications(notifRes.notifications);
     } catch (err) {
       toast({ message: 'Failed to load Mini App data', type: 'error' });
@@ -130,6 +133,10 @@ export const TelegramMiniAppPage = () => {
     (p) => p.status === 'proposal_sent' || p.status === 'in_progress' || p.status === 'delivered'
   );
 
+  const activeContracts = contracts.filter(
+    (c) => c.status === 'proposed' || c.status === 'active'
+  );
+
   const getStepIndex = (status) => {
     switch (status) {
       case 'proposal_sent': return 0;
@@ -172,6 +179,36 @@ export const TelegramMiniAppPage = () => {
         fetchDashboardData();
         setSelectedProject(res.project);
         setRateModalOpen(true);
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAcceptContract = async (contractId) => {
+    try {
+      setSubmitting(true);
+      const res = await customFetch(`/api/contracts/${contractId}/accept`, { method: 'POST' });
+      if (res.success) {
+        toast({ message: 'Retainer contract accepted!', type: 'success' });
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleApproveDeliverable = async (contractId, deliverableId) => {
+    try {
+      setSubmitting(true);
+      const res = await customFetch(`/api/contracts/${contractId}/deliverables/${deliverableId}/approve`, { method: 'POST' });
+      if (res.success) {
+        toast({ message: 'Video deliverable approved!', type: 'success' });
+        fetchDashboardData();
       }
     } catch (err) {
       toast({ message: err.message, type: 'error' });
@@ -269,7 +306,7 @@ export const TelegramMiniAppPage = () => {
         </div>
         <Tabs
           tabs={[
-            { id: 'overview', label: 'Active' },
+            { id: 'overview', label: 'Track My Work' },
             { id: 'projects', label: 'History' },
           ]}
           activeTab={activeTab}
@@ -279,49 +316,106 @@ export const TelegramMiniAppPage = () => {
 
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gap: '24px' }}>
-          {activeProjects.length === 0 ? (
-            <div style={{ backgroundColor: 'var(--surface)', padding: '36px 20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center' }}>
-              <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>No active proposals or ongoing edits at this time.</p>
-            </div>
-          ) : (
-            activeProjects.map((proj) => (
-              <div
-                key={proj._id}
-                style={{
-                  backgroundColor: 'var(--surface)',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--line)',
-                  padding: '24px 20px',
-                  boxShadow: 'var(--shadow)',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <h3 className="font-display" style={{ fontSize: '20px' }}>{proj.editingStyle}</h3>
-                  <Badge variant="gold">{proj.status.replace('_', ' ').toUpperCase()}</Badge>
+          {/* Active Retainer Contracts Section */}
+          {activeContracts.map((contract) => {
+            const delCount = contract.deliveredCount || 0;
+            const planned = contract.totalVideosPlanned || 8;
+            const pct = Math.min(100, Math.round((delCount / planned) * 100));
+
+            return (
+              <div key={contract._id} style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '2px solid var(--accent-gold)', padding: '20px', boxShadow: 'var(--shadow)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h3 className="font-display" style={{ fontSize: '18px' }}>RETAINER: {contract.packageTier?.toUpperCase()}</h3>
+                  <Badge variant="gold">{contract.status.toUpperCase()}</Badge>
                 </div>
 
-                <div style={{ marginBottom: '24px' }}>
-                  <Stepper steps={stepperSteps} currentStep={getStepIndex(proj.status)} />
+                <div style={{ fontSize: '13px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
+                  {contract.monthlyPrice} {contract.currency}/mo ({contract.frequency})
                 </div>
 
-                <div style={{ backgroundColor: 'var(--bg)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', marginBottom: '16px', fontSize: '13px' }}>
-                  <div><strong>Terms:</strong> {proj.price} {proj.currency} ({proj.packageTier?.toUpperCase()})</div>
-                  <div style={{ color: 'var(--ink-soft)', marginTop: '4px' }}><strong>Deadline:</strong> {new Date(proj.deadline).toLocaleDateString()}</div>
+                {/* Progress bar */}
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--ink-soft)', marginBottom: '4px' }}>
+                    <span>Deliverables: {delCount}/{planned}</span>
+                    <span className="font-mono">{pct}%</span>
+                  </div>
+                  <div style={{ height: '6px', backgroundColor: 'var(--bg)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: `${pct}%`, height: '100%', backgroundColor: 'var(--accent-gold)' }} />
+                  </div>
                 </div>
 
-                {proj.status === 'proposal_sent' && (
-                  <Button variant="primary" fullWidth iconRight={IconCheck} isLoading={submitting} onClick={() => handleAcceptProposal(proj._id)}>
-                    Accept Proposal
+                {contract.status === 'proposed' && (
+                  <Button variant="primary" fullWidth iconRight={IconCheck} isLoading={submitting} onClick={() => handleAcceptContract(contract._id)}>
+                    Accept Retainer Terms
                   </Button>
                 )}
 
-                {proj.status === 'delivered' && (
-                  <Button variant="primary" fullWidth iconRight={IconSparkles} isLoading={submitting} onClick={() => handleApproveDelivery(proj._id)}>
-                    Approve Delivery & Rate
-                  </Button>
+                {contract.deliverables && contract.deliverables.length > 0 && (
+                  <div style={{ display: 'grid', gap: '8px', marginTop: '12px' }}>
+                    {contract.deliverables.map((d) => (
+                      <div key={d._id} style={{ backgroundColor: 'var(--bg)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                        <div>
+                          <strong>#{d.sequenceNumber}: {d.title || `Video Render #${d.sequenceNumber}`}</strong>
+                        </div>
+                        {d.status === 'delivered' ? (
+                          <Button variant="primary" size="small" isLoading={submitting} onClick={() => handleApproveDeliverable(contract._id, d._id)}>
+                            Approve
+                          </Button>
+                        ) : (
+                          <Badge variant="success" size="small">APPROVED</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-            ))
+            );
+          })}
+
+          {/* Active One-Off Projects Section */}
+          {activeProjects.map((proj) => (
+            <div
+              key={proj._id}
+              style={{
+                backgroundColor: 'var(--surface)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--line)',
+                padding: '24px 20px',
+                boxShadow: 'var(--shadow)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 className="font-display" style={{ fontSize: '20px' }}>{proj.editingStyle}</h3>
+                <Badge variant="gold">{proj.status.replace('_', ' ').toUpperCase()}</Badge>
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <Stepper steps={stepperSteps} currentStep={getStepIndex(proj.status)} />
+              </div>
+
+              <div style={{ backgroundColor: 'var(--bg)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', marginBottom: '16px', fontSize: '13px' }}>
+                <div><strong>Terms:</strong> {proj.price} {proj.currency} ({proj.packageTier?.toUpperCase()})</div>
+                <div style={{ color: 'var(--ink-soft)', marginTop: '4px' }}><strong>Deadline:</strong> {new Date(proj.deadline).toLocaleDateString()}</div>
+              </div>
+
+              {proj.status === 'proposal_sent' && (
+                <Button variant="primary" fullWidth iconRight={IconCheck} isLoading={submitting} onClick={() => handleAcceptProposal(proj._id)}>
+                  Accept Proposal
+                </Button>
+              )}
+
+              {proj.status === 'delivered' && (
+                <Button variant="primary" fullWidth iconRight={IconSparkles} isLoading={submitting} onClick={() => handleApproveDelivery(proj._id)}>
+                  Approve Delivery & Rate
+                </Button>
+              )}
+            </div>
+          ))}
+
+          {activeProjects.length === 0 && activeContracts.length === 0 && (
+            <div style={{ backgroundColor: 'var(--surface)', padding: '36px 20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center' }}>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>No active proposals, retainers, or ongoing edits at this time.</p>
+            </div>
           )}
         </div>
       )}

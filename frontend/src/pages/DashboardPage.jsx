@@ -20,6 +20,7 @@ import {
   IconUser,
   IconCalendar,
   IconChevronRight,
+  IconFileText,
 } from '@icons/icons';
 
 export const DashboardPage = () => {
@@ -28,6 +29,7 @@ export const DashboardPage = () => {
 
   const [activeTab, setActiveTab] = useState('overview');
   const [projects, setProjects] = useState([]);
+  const [contracts, setContracts] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,9 @@ export const DashboardPage = () => {
 
   // Modals & Action State
   const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedContract, setSelectedContract] = useState(null);
   const [rateModalOpen, setRateModalOpen] = useState(false);
+  const [contractRateModalOpen, setContractRateModalOpen] = useState(false);
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
   const [ratingStars, setRatingStars] = useState(5);
   const [reviewText, setReviewText] = useState('');
@@ -57,13 +61,15 @@ export const DashboardPage = () => {
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      const [projRes, notifRes, ratRes] = await Promise.all([
+      const [projRes, contractRes, notifRes, ratRes] = await Promise.all([
         apiFetch('/api/projects').catch(() => ({ success: false, projects: [] })),
+        apiFetch('/api/contracts').catch(() => ({ success: false, contracts: [] })),
         apiFetch('/api/notifications').catch(() => ({ success: false, notifications: [] })),
         apiFetch('/api/ratings').catch(() => ({ success: false, ratings: [] })),
       ]);
 
       if (projRes.success) setProjects(projRes.projects);
+      if (contractRes.success) setContracts(contractRes.contracts);
       if (notifRes.success) setNotifications(notifRes.notifications);
       if (ratRes.success) setRatings(ratRes.ratings);
     } catch (err) {
@@ -110,6 +116,7 @@ export const DashboardPage = () => {
     { label: 'Approved & Completed', desc: 'Final Export' },
   ];
 
+  // Accept Project Proposal
   const handleAcceptProposal = async (projectId) => {
     try {
       setSubmitting(true);
@@ -125,6 +132,7 @@ export const DashboardPage = () => {
     }
   };
 
+  // Decline Project Proposal
   const handleDeclineProposal = async () => {
     if (!selectedProject) return;
     try {
@@ -142,6 +150,7 @@ export const DashboardPage = () => {
     }
   };
 
+  // Approve Project Delivery
   const handleApproveDelivery = async (projectId) => {
     try {
       setSubmitting(true);
@@ -159,6 +168,55 @@ export const DashboardPage = () => {
     }
   };
 
+  // Accept Retainer Contract
+  const handleAcceptContract = async (contractId) => {
+    try {
+      setSubmitting(true);
+      const res = await apiFetch(`/api/contracts/${contractId}/accept`, { method: 'POST' });
+      if (res.success) {
+        toast({ message: 'Retainer contract accepted! Deliverables tracking is active.', type: 'success' });
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Decline Retainer Contract
+  const handleDeclineContract = async (contractId) => {
+    try {
+      setSubmitting(true);
+      const res = await apiFetch(`/api/contracts/${contractId}/decline`, { method: 'POST' });
+      if (res.success) {
+        toast({ message: 'Retainer contract proposal declined.', type: 'info' });
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Approve Retainer Deliverable Video
+  const handleApproveDeliverable = async (contractId, deliverableId) => {
+    try {
+      setSubmitting(true);
+      const res = await apiFetch(`/api/contracts/${contractId}/deliverables/${deliverableId}/approve`, { method: 'POST' });
+      if (res.success) {
+        toast({ message: 'Video deliverable approved!', type: 'success' });
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Submit Rating for Project
   const handleSubmitRating = async () => {
     if (!selectedProject || !reviewText) {
       toast({ message: 'Please write a review before submitting.', type: 'error' });
@@ -169,6 +227,8 @@ export const DashboardPage = () => {
       const res = await apiFetch('/api/ratings', {
         method: 'POST',
         body: JSON.stringify({
+          subjectType: 'project',
+          subjectId: selectedProject._id,
           projectId: selectedProject._id,
           stars: ratingStars,
           review: reviewText,
@@ -178,6 +238,34 @@ export const DashboardPage = () => {
       if (res.success) {
         toast({ message: 'Thank you for your rating & review!', type: 'success' });
         setRateModalOpen(false);
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Submit Rating for Retainer Contract
+  const handleSubmitContractRating = async () => {
+    if (!selectedContract || !reviewText) {
+      toast({ message: 'Please write a review before submitting.', type: 'error' });
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const res = await apiFetch(`/api/contracts/${selectedContract._id}/rating`, {
+        method: 'POST',
+        body: JSON.stringify({
+          stars: ratingStars,
+          review: reviewText,
+        }),
+      });
+
+      if (res.success) {
+        toast({ message: 'Thank you for rating your retainer engagement!', type: 'success' });
+        setContractRateModalOpen(false);
         fetchDashboardData();
       }
     } catch (err) {
@@ -255,6 +343,7 @@ export const DashboardPage = () => {
 
   const dashboardTabs = [
     { id: 'overview', label: 'Active Overview' },
+    { id: 'contracts', label: 'My Retainer Contracts' },
     { id: 'calendar', label: 'Schedule & Deadlines' },
     { id: 'projects', label: 'My Projects' },
     { id: 'profile', label: 'Account Profile' },
@@ -468,6 +557,125 @@ export const DashboardPage = () => {
         </div>
       )}
 
+      {/* MY RETAINER CONTRACTS TAB */}
+      {activeTab === 'contracts' && (
+        <div style={{ display: 'grid', gap: '24px' }}>
+          <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>My Retainer Contracts ({contracts.length})</h2>
+          {contracts.length === 0 ? (
+            <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center', boxShadow: 'var(--shadow)' }}>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>No active or proposed retainer contracts found.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '24px' }}>
+              {contracts.map((contract) => {
+                const delCount = contract.deliveredCount || 0;
+                const planned = contract.totalVideosPlanned || 8;
+                const pct = Math.min(100, Math.round((delCount / planned) * 100));
+
+                return (
+                  <div
+                    key={contract._id}
+                    style={{
+                      backgroundColor: 'var(--surface)',
+                      borderRadius: 'var(--radius-lg)',
+                      border: `2px solid ${contract.status === 'active' ? 'var(--accent-gold)' : 'var(--line)'}`,
+                      padding: '28px',
+                      boxShadow: 'var(--shadow)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
+                      <div>
+                        <Badge variant={contract.status === 'active' ? 'gold' : contract.status === 'completed' ? 'success' : 'surface'}>
+                          {contract.status.toUpperCase()} RETAINER
+                        </Badge>
+                        <h3 className="font-display" style={{ fontSize: '22px', marginTop: '6px' }}>
+                          {contract.packageTier?.toUpperCase()} Tier — {contract.frequency}
+                        </h3>
+                        <p style={{ fontSize: '14px', color: 'var(--accent-gold)', marginTop: '2px', fontWeight: 700 }}>
+                          {contract.monthlyPrice} {contract.currency} / month ({planned} planned videos)
+                        </p>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        {contract.status === 'proposed' && (
+                          <>
+                            <Button variant="secondary" onClick={() => handleDeclineContract(contract._id)}>
+                              Decline
+                            </Button>
+                            <Button variant="primary" iconRight={IconCheck} isLoading={submitting} onClick={() => handleAcceptContract(contract._id)}>
+                              Accept Retainer Terms
+                            </Button>
+                          </>
+                        )}
+
+                        {contract.status === 'completed' && !contract.rated && (
+                          <Button
+                            variant="primary"
+                            iconRight={IconSparkles}
+                            onClick={() => {
+                              setSelectedContract(contract);
+                              setContractRateModalOpen(true);
+                            }}
+                          >
+                            Submit Retainer Review
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div style={{ marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--ink-soft)', marginBottom: '8px' }}>
+                        <span>Deliverables Handed Over: {delCount} of {planned} Videos</span>
+                        <span className="font-mono">{pct}%</span>
+                      </div>
+                      <div style={{ height: '8px', backgroundColor: 'var(--bg)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--line)' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', backgroundColor: 'var(--accent-gold)', transition: 'width 0.4s ease' }} />
+                      </div>
+                    </div>
+
+                    {/* Individual Deliverables List */}
+                    {contract.deliverables && contract.deliverables.length > 0 && (
+                      <div style={{ backgroundColor: 'var(--bg)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+                        <h4 className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', marginBottom: '12px' }}>DELIVERED VIDEO RENDERS:</h4>
+                        <div style={{ display: 'grid', gap: '10px' }}>
+                          {contract.deliverables.map((d) => (
+                            <div key={d._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)' }}>
+                              <div>
+                                <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>#{d.sequenceNumber}: {d.title || `Video Render #${d.sequenceNumber}`}</strong>
+                                {d.deliverableUrl && (
+                                  <a href={d.deliverableUrl} target="_blank" rel="noreferrer" style={{ marginLeft: '12px', color: 'var(--accent-gold)', fontSize: '13px', fontWeight: 600 }}>
+                                    Watch Video Render ↗
+                                  </a>
+                                )}
+                              </div>
+
+                              {d.status === 'delivered' ? (
+                                <Button
+                                  variant="primary"
+                                  size="small"
+                                  iconRight={IconCheck}
+                                  isLoading={submitting}
+                                  onClick={() => handleApproveDeliverable(contract._id, d._id)}
+                                >
+                                  Approve Video
+                                </Button>
+                              ) : (
+                                <Badge variant="success" size="small">APPROVED</Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* NOTION CALENDAR SCHEDULE TAB */}
       {activeTab === 'calendar' && (
         <NotionCalendar
@@ -599,7 +807,7 @@ export const DashboardPage = () => {
         </div>
       </Modal>
 
-      {/* Rating Modal */}
+      {/* Project Rating Modal */}
       <Modal isOpen={rateModalOpen} onClose={() => setRateModalOpen(false)} title="Rate Delivered Video Edit">
         <div style={{ textAlign: 'center', margin: '16px 0' }}>
           <StarRating rating={ratingStars} onChange={setRatingStars} readOnly={false} size={28} />
@@ -614,6 +822,25 @@ export const DashboardPage = () => {
         <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
           <Button variant="primary" fullWidth isLoading={submitting} onClick={handleSubmitRating}>
             Submit Review
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Retainer Contract Rating Modal */}
+      <Modal isOpen={contractRateModalOpen} onClose={() => setContractRateModalOpen(false)} title="Rate Retainer Contract Engagement">
+        <div style={{ textAlign: 'center', margin: '16px 0' }}>
+          <StarRating rating={ratingStars} onChange={setRatingStars} readOnly={false} size={28} />
+        </div>
+        <Textarea
+          label="Written Retainer Feedback & Review"
+          placeholder="Feedback on monthly retainer delivery quality and consistency..."
+          value={reviewText}
+          onChange={(e) => setReviewText(e.target.value)}
+          required
+        />
+        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <Button variant="primary" fullWidth isLoading={submitting} onClick={handleSubmitContractRating}>
+            Submit Retainer Review
           </Button>
         </div>
       </Modal>

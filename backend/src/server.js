@@ -19,6 +19,7 @@ import ratingRoutes from './routes/rating.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import portfolioRoutes from './routes/portfolio.routes.js';
+import contractRoutes from './routes/contract.routes.js';
 import { getAllPackageConfigs, getLiveExchangeRate } from './controllers/admin.controller.js';
 
 validateEnv();
@@ -97,6 +98,7 @@ app.use('/api/ratings', ratingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api', contractRoutes);
 app.get('/api/packages/exchange-rate', getLiveExchangeRate);
 app.get('/api/packages', getAllPackageConfigs);
 

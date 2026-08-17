@@ -2,11 +2,24 @@ import mongoose from 'mongoose';
 
 const ratingSchema = new mongoose.Schema(
   {
+    subjectType: {
+      type: String,
+      enum: ['project', 'contract'],
+      default: 'project',
+    },
+    subjectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
     projectId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project',
-      required: true,
-      unique: true,
+      default: null,
+    },
+    contractId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Contract',
+      default: null,
     },
     clientId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -1,5 +1,6 @@
 import { User } from '../models/User.js';
 import { Project } from '../models/Project.js';
+import { Contract } from '../models/Contract.js';
 import { Rating } from '../models/Rating.js';
 import { PackageConfig } from '../models/PackageConfig.js';
 import { Notification } from '../models/Notification.js';
@@ -129,6 +130,17 @@ export const getStats = async (req, res, next) => {
       ? (ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length).toFixed(1)
       : '5.0';
 
+    const allContracts = await Contract.find({});
+    const activeContracts = allContracts.filter((c) => c.status === 'active');
+
+    const recurringRevenueETB = activeContracts
+      .filter((c) => c.currency === 'ETB')
+      .reduce((sum, c) => sum + c.monthlyPrice, 0);
+
+    const recurringRevenueUSD = activeContracts
+      .filter((c) => c.currency === 'USD')
+      .reduce((sum, c) => sum + c.monthlyPrice, 0);
+
     const recentActivity = await Notification.find({}).sort({ createdAt: -1 }).limit(10);
 
     res.status(200).json({
@@ -136,6 +148,10 @@ export const getStats = async (req, res, next) => {
       stats: {
         revenueETB,
         revenueUSD,
+        recurringRevenueETB,
+        recurringRevenueUSD,
+        activeContractsCount: activeContracts.length,
+        totalContractsCount: allContracts.length,
         clientCount,
         statusCounts,
         conversionRate,

@@ -1,8 +1,10 @@
 import { Project } from '../models/Project.js';
+import { Contract } from '../models/Contract.js';
+import { Deliverable } from '../models/Deliverable.js';
 import { Rating } from '../models/Rating.js';
 import { Notification } from '../models/Notification.js';
 import { User } from '../models/User.js';
-import { bot, updateTelegramStatusCard } from './telegram.service.js';
+import { bot, updateTelegramStatusCard, updateContractTelegramStatusCard } from './telegram.service.js';
 import { sendVerificationEmail } from './email.service.js';
 import { Resend } from 'resend';
 import { config } from '../config/env.js';
@@ -37,6 +39,8 @@ const sendTransactionalEmail = async ({ toEmail, subject, htmlContent }) => {
     console.error('Transactional Email Error:', err.message);
   }
 };
+
+// --- ONE-OFF PROJECT LIFECYCLE ---
 
 export const createProposal = async (adminId, data) => {
   const { clientEmail, editingStyle, contentLength, packageTier, currency, price, referenceBrief, briefAttachmentUrl, deadline, notes } = data;
@@ -253,6 +257,8 @@ export const submitRating = async (projectId, clientId, stars, review) => {
   const client = await User.findById(clientId);
 
   const rating = await Rating.create({
+    subjectType: 'project',
+    subjectId: project._id,
     projectId: project._id,
     clientId: project.clientId,
     clientName: client?.name || project.clientName || 'Verified Client',
@@ -273,14 +279,295 @@ export const submitRating = async (projectId, clientId, stars, review) => {
     await Notification.create({
       userId: admin._id,
       type: 'rating_submitted',
-      message: `New ${stars}-star rating submitted by ${client.name} for ${project.editingStyle}.`,
+      message: `New ${stars}-star rating submitted by ${client?.name || 'Client'} for ${project.editingStyle}.`,
       projectId: project._id,
     });
 
     const tgMessage = `<b>NEW RATING SUBMITTED</b>\n\n` +
       `Rating: <b>${stars} / 5 Stars</b>\n` +
-      `Client: <b>${client.name}</b>\n` +
+      `Client: <b>${client?.name || 'Client'}</b>\n` +
       `Style: <b>${project.editingStyle}</b>\n` +
+      `Review: "${review}"`;
+    await sendTelegramNotification(admin.telegramChatId, tgMessage);
+  }
+
+  return rating;
+};
+
+// --- RETAINER CONTRACT LIFECYCLE ENGINE ---
+
+const getPlannedVideosFromFrequency = (frequency, durationMonths = 1) => {
+  let perMonth = 8;
+  switch (frequency) {
+    case 'weekly-1': perMonth = 4; break;
+    case 'weekly-2': perMonth = 8; break;
+    case 'weekly-3-4': perMonth = 14; break;
+    case 'daily-1': perMonth = 30; break;
+    case 'daily-2': perMonth = 60; break;
+    default: perMonth = 8;
+  }
+  return perMonth * (durationMonths || 1);
+};
+
+export const createContractProposal = async (adminId, data) => {
+  const { clientEmail, packageTier, contentLength, frequency, currency, monthlyPrice, startDate, durationMonths, notes } = data;
+
+  const client = await User.findOne({ email: clientEmail.toLowerCase() });
+  if (!client) {
+    throw new Error(`Client email ${clientEmail} is not registered in the system.`);
+  }
+
+  const totalVideosPlanned = getPlannedVideosFromFrequency(frequency, durationMonths);
+
+  const contract = await Contract.create({
+    clientId: client._id,
+    createdByAdminId: adminId,
+    status: 'proposed',
+    packageTier,
+    contentLength: contentLength || 'short',
+    frequency: frequency || 'weekly-2',
+    currency: currency || 'ETB',
+    monthlyPrice: Number(monthlyPrice),
+    startDate: new Date(startDate || Date.now()),
+    durationMonths: Number(durationMonths) || 1,
+    totalVideosPlanned,
+    clientName: client.name,
+    clientEmail: client.email,
+    notes: notes || '',
+    proposedAt: new Date(),
+  });
+
+  // Notify Client
+  await Notification.create({
+    userId: client._id,
+    type: 'proposal_sent',
+    message: `New Retainer Contract proposed: ${packageTier.toUpperCase()} (${frequency}) at ${monthlyPrice} ${currency}/mo.`,
+  });
+
+  if (client.telegramChatId) {
+    await updateContractTelegramStatusCard(contract, client.telegramChatId, 0);
+  }
+
+  const emailHtml = `
+    <div style="font-family: sans-serif; padding: 24px; background: #FBEFE1; color: #451D13; border-radius: 16px;">
+      <h2 style="font-family: serif; color: #451D13;">New Retainer Contract Proposal Received</h2>
+      <p>Hello ${client.name},</p>
+      <p>Alpha Cut has issued a new retainer contract proposal for your account:</p>
+      <ul>
+        <li><strong>Package Tier:</strong> ${packageTier.toUpperCase()}</li>
+        <li><strong>Frequency:</strong> ${frequency} (${totalVideosPlanned} total planned videos)</li>
+        <li><strong>Monthly Price:</strong> ${monthlyPrice} ${currency}</li>
+        <li><strong>Start Date:</strong> ${new Date(startDate).toLocaleDateString()}</li>
+      </ul>
+      <p>Log into your client dashboard to review and accept the retainer contract terms.</p>
+    </div>
+  `;
+  await sendTransactionalEmail({
+    toEmail: client.email,
+    subject: `Alpha Cut — Retainer Contract Proposal (${packageTier.toUpperCase()})`,
+    htmlContent: emailHtml,
+  });
+
+  return contract;
+};
+
+export const acceptContract = async (contractId, clientId) => {
+  const contract = await Contract.findOne({ _id: contractId, clientId });
+  if (!contract) throw new Error('Contract not found or access denied.');
+  if (contract.status !== 'proposed') throw new Error(`Cannot accept contract in status: ${contract.status}`);
+
+  contract.status = 'active';
+  contract.acceptedAt = new Date();
+  await contract.save();
+
+  const client = await User.findById(clientId);
+  if (client?.telegramChatId) {
+    await updateContractTelegramStatusCard(contract, client.telegramChatId, 0);
+  }
+
+  // Notify Admins
+  const admins = await User.find({ role: 'admin' });
+  for (const admin of admins) {
+    await Notification.create({
+      userId: admin._id,
+      type: 'proposal_accepted',
+      message: `Client ${contract.clientName} accepted retainer contract (${contract.packageTier.toUpperCase()}, ${contract.monthlyPrice} ${contract.currency}/mo).`,
+    });
+
+    const tgMessage = `<b>RETAINER CONTRACT ACCEPTED BY CLIENT</b>\n\n` +
+      `Client: <b>${contract.clientName}</b>\n` +
+      `Tier: <b>${contract.packageTier.toUpperCase()} (${contract.frequency})</b>\n` +
+      `Monthly Revenue: <b>${contract.monthlyPrice} ${contract.currency}</b>\n\n` +
+      `Contract is now ACTIVE. Deliverables tracking enabled.`;
+    await sendTelegramNotification(admin.telegramChatId, tgMessage);
+  }
+
+  return contract;
+};
+
+export const declineContract = async (contractId, clientId) => {
+  const contract = await Contract.findOne({ _id: contractId, clientId });
+  if (!contract) throw new Error('Contract not found or access denied.');
+  if (contract.status !== 'proposed') throw new Error(`Cannot decline contract in status: ${contract.status}`);
+
+  contract.status = 'declined';
+  contract.declinedAt = new Date();
+  await contract.save();
+
+  const client = await User.findById(clientId);
+  if (client?.telegramChatId) {
+    await updateContractTelegramStatusCard(contract, client.telegramChatId, 0);
+  }
+
+  // Notify Admins
+  const admins = await User.find({ role: 'admin' });
+  for (const admin of admins) {
+    await Notification.create({
+      userId: admin._id,
+      type: 'proposal_declined',
+      message: `Client ${contract.clientName} declined retainer contract proposal.`,
+    });
+  }
+
+  return contract;
+};
+
+export const addDeliverable = async (contractId, adminId, data) => {
+  const { title, deliverableUrl, notes } = data;
+  const contract = await Contract.findById(contractId);
+  if (!contract) throw new Error('Contract not found.');
+  if (contract.status !== 'active') throw new Error(`Cannot add deliverables to contract in status: ${contract.status}`);
+
+  const existingCount = await Deliverable.countDocuments({ contractId });
+  const sequenceNumber = existingCount + 1;
+
+  const deliverable = await Deliverable.create({
+    contractId,
+    sequenceNumber,
+    title: title || `Deliverable #${sequenceNumber}`,
+    deliverableUrl,
+    notes: notes || '',
+    status: 'delivered',
+    deliveredAt: new Date(),
+  });
+
+  const client = await User.findById(contract.clientId);
+  if (client) {
+    await Notification.create({
+      userId: client._id,
+      type: 'work_delivered',
+      message: `New video deliverable #${sequenceNumber} uploaded under your retainer contract!`,
+    });
+
+    if (client.telegramChatId) {
+      await updateContractTelegramStatusCard(contract, client.telegramChatId, sequenceNumber);
+    }
+
+    const emailHtml = `
+      <div style="font-family: sans-serif; padding: 24px; background: #FBEFE1; color: #451D13; border-radius: 16px;">
+        <h2 style="font-family: serif; color: #451D13;">New Retainer Video Deliverable Available</h2>
+        <p>Hello ${client.name},</p>
+        <p>Alpha Cut has uploaded Deliverable #${sequenceNumber} for your active retainer contract.</p>
+        <p>Log into your client workspace to review and approve the render.</p>
+      </div>
+    `;
+    await sendTransactionalEmail({
+      toEmail: client.email,
+      subject: `Alpha Cut — Deliverable #${sequenceNumber} Ready for Review`,
+      htmlContent: emailHtml,
+    });
+  }
+
+  return deliverable;
+};
+
+export const approveDeliverable = async (contractId, deliverableId, clientId) => {
+  const contract = await Contract.findOne({ _id: contractId, clientId });
+  if (!contract) throw new Error('Contract not found or access denied.');
+
+  const deliverable = await Deliverable.findOne({ _id: deliverableId, contractId });
+  if (!deliverable) throw new Error('Deliverable not found.');
+
+  deliverable.status = 'approved';
+  deliverable.approvedAt = new Date();
+  await deliverable.save();
+
+  // Notify Admin (In-App Only to prevent Telegram notification spam for daily videos)
+  const admins = await User.find({ role: 'admin' });
+  for (const admin of admins) {
+    await Notification.create({
+      userId: admin._id,
+      type: 'delivery_approved',
+      message: `Client ${contract.clientName} approved deliverable #${deliverable.sequenceNumber} under contract.`,
+    });
+  }
+
+  return deliverable;
+};
+
+export const completeContract = async (contractId, adminId) => {
+  const contract = await Contract.findById(contractId);
+  if (!contract) throw new Error('Contract not found.');
+  if (contract.status !== 'active') throw new Error(`Cannot complete contract in status: ${contract.status}`);
+
+  contract.status = 'completed';
+  contract.completedAt = new Date();
+  await contract.save();
+
+  const client = await User.findById(contract.clientId);
+  if (client) {
+    await Notification.create({
+      userId: client._id,
+      type: 'delivery_approved',
+      message: `Your retainer contract term is officially COMPLETED! Rating unlocked.`,
+    });
+
+    if (client.telegramChatId) {
+      const delCount = await Deliverable.countDocuments({ contractId: contract._id });
+      await updateContractTelegramStatusCard(contract, client.telegramChatId, delCount);
+    }
+  }
+
+  return contract;
+};
+
+export const submitContractRating = async (contractId, clientId, stars, review) => {
+  const contract = await Contract.findOne({ _id: contractId, clientId });
+  if (!contract) throw new Error('Contract not found or access denied.');
+  if (contract.status !== 'completed') throw new Error('Rating is only allowed for completed retainer contracts.');
+  if (contract.rated) throw new Error('Contract has already been rated.');
+
+  const client = await User.findById(clientId);
+
+  const rating = await Rating.create({
+    subjectType: 'contract',
+    subjectId: contract._id,
+    contractId: contract._id,
+    clientId: contract.clientId,
+    clientName: client?.name || contract.clientName || 'Verified Client',
+    clientTitle: 'Retainer Client Partner',
+    clientAvatarUrl: client?.avatarUrl || null,
+    stars,
+    review,
+    editingStyle: `${contract.packageTier.toUpperCase()} Retainer (${contract.frequency})`,
+    packageTier: contract.packageTier,
+  });
+
+  contract.rated = true;
+  await contract.save();
+
+  // Notify Admins
+  const admins = await User.find({ role: 'admin' });
+  for (const admin of admins) {
+    await Notification.create({
+      userId: admin._id,
+      type: 'rating_submitted',
+      message: `New ${stars}-star retainer rating submitted by ${client?.name || 'Client'}.`,
+    });
+
+    const tgMessage = `<b>NEW RETAINER CONTRACT RATING</b>\n\n` +
+      `Rating: <b>${stars} / 5 Stars</b>\n` +
+      `Client: <b>${client?.name || 'Client'}</b>\n` +
       `Review: "${review}"`;
     await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }

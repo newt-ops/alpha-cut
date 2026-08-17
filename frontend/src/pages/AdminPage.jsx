@@ -38,6 +38,7 @@ export const AdminPage = () => {
   // Stats & Data State
   const [stats, setStats] = useState(null);
   const [projects, setProjects] = useState([]);
+  const [contracts, setContracts] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [clients, setClients] = useState([]);
   const [packages, setPackages] = useState([]);
@@ -48,7 +49,10 @@ export const AdminPage = () => {
   // Client Filter Search State
   const [clientFilterText, setClientFilterText] = useState('');
 
-  // New Proposal Form State
+  // Proposal Form Branching State ('project' | 'contract')
+  const [proposalType, setProposalType] = useState('project');
+
+  // New Proposal Form State (One-off Project)
   const [clientSearchText, setClientSearchText] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -61,6 +65,21 @@ export const AdminPage = () => {
   const [deadline, setDeadline] = useState('');
   const [notes, setNotes] = useState('');
   const [submittingProposal, setSubmittingProposal] = useState(false);
+
+  // New Retainer Contract Form State
+  const [contractFrequency, setContractFrequency] = useState('weekly-2');
+  const [contractStartDate, setContractStartDate] = useState('');
+  const [contractDurationMonths, setContractDurationMonths] = useState('1');
+  const [contractMonthlyPrice, setContractMonthlyPrice] = useState('7200');
+
+  // Add Deliverable Modal State
+  const [addDeliverableModalOpen, setAddDeliverableModalOpen] = useState(false);
+  const [selectedContractForDeliverable, setSelectedContractForDeliverable] = useState(null);
+  const [deliverableTitle, setDeliverableTitle] = useState('');
+  const [deliverableUrl, setDeliverableUrl] = useState('');
+  const [deliverableNotes, setDeliverableNotes] = useState('');
+  const [uploadingDeliverable, setUploadingDeliverable] = useState(false);
+  const [submittingDeliverable, setSubmittingDeliverable] = useState(false);
 
   // Portfolio Management Form & Modal State
   const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
@@ -97,9 +116,10 @@ export const AdminPage = () => {
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, projRes, ratRes, clientRes, pkgRes, portRes, rateRes] = await Promise.all([
+      const [statsRes, projRes, contractRes, ratRes, clientRes, pkgRes, portRes, rateRes] = await Promise.all([
         apiFetch('/api/admin/stats').catch(() => ({ success: false })),
         apiFetch('/api/admin/projects').catch(() => ({ success: false })),
+        apiFetch('/api/admin/contracts').catch(() => ({ success: false, contracts: [] })),
         apiFetch('/api/ratings').catch(() => ({ success: false })),
         apiFetch('/api/admin/clients').catch(() => ({ success: false, clients: [] })),
         apiFetch('/api/admin/packages').catch(() => ({ success: false, configs: [] })),
@@ -109,6 +129,7 @@ export const AdminPage = () => {
 
       if (statsRes.success) setStats(statsRes.stats);
       if (projRes.success) setProjects(projRes.projects);
+      if (contractRes.success) setContracts(contractRes.contracts);
       if (ratRes.success) setRatings(ratRes.ratings);
       if (clientRes.success) setClients(clientRes.clients);
       if (portRes.success) setPortfolioItems(portRes.items);
@@ -148,6 +169,31 @@ export const AdminPage = () => {
     fetchAdminData();
   }, [fetchAdminData]);
 
+  // Auto-calculate suggested monthly price based on frequency and selected tier
+  useEffect(() => {
+    let videosPerMonth = 8;
+    switch (contractFrequency) {
+      case 'weekly-1': videosPerMonth = 4; break;
+      case 'weekly-2': videosPerMonth = 8; break;
+      case 'weekly-3-4': videosPerMonth = 14; break;
+      case 'daily-1': videosPerMonth = 30; break;
+      case 'daily-2': videosPerMonth = 60; break;
+      default: videosPerMonth = 8;
+    }
+
+    let minRate = 900;
+    if (packageTier === 'basic') minRate = Number(basicMin) || 500;
+    else if (packageTier === 'professional') minRate = Number(professionalMin) || 900;
+    else if (packageTier === 'premium') minRate = Number(premiumMin) || 1600;
+
+    let computedPriceETB = videosPerMonth * minRate;
+    if (currency === 'USD') {
+      setContractMonthlyPrice((Math.round(computedPriceETB * exchangeRate.etbToUsd)).toString());
+    } else {
+      setContractMonthlyPrice(computedPriceETB.toString());
+    }
+  }, [contractFrequency, packageTier, currency, basicMin, professionalMin, premiumMin, exchangeRate]);
+
   // Client Typeahead Search
   useEffect(() => {
     if (!clientSearchText || clientSearchText.trim().length === 0) {
@@ -166,7 +212,7 @@ export const AdminPage = () => {
     return () => clearTimeout(timer);
   }, [clientSearchText, apiFetch]);
 
-  // Submit Proposal
+  // Submit One-off Project Proposal
   const handleCreateProposal = async (e) => {
     e.preventDefault();
     if (!selectedClient) {
@@ -211,6 +257,97 @@ export const AdminPage = () => {
     }
   };
 
+  // Submit Retainer Contract Proposal
+  const handleCreateContractProposal = async (e) => {
+    e.preventDefault();
+    if (!selectedClient) {
+      toast({ message: 'Please select a registered client from the email search list.', type: 'error' });
+      return;
+    }
+    if (!contractMonthlyPrice || !contractStartDate) {
+      toast({ message: 'Please provide monthly price and start date.', type: 'error' });
+      return;
+    }
+
+    try {
+      setSubmittingProposal(true);
+      const res = await apiFetch('/api/admin/contracts', {
+        method: 'POST',
+        body: JSON.stringify({
+          clientEmail: selectedClient.email,
+          packageTier,
+          contentLength,
+          frequency: contractFrequency,
+          currency,
+          monthlyPrice: Number(contractMonthlyPrice),
+          startDate: contractStartDate,
+          durationMonths: Number(contractDurationMonths) || 1,
+          notes,
+        }),
+      });
+
+      if (res.success) {
+        toast({ message: `Retainer contract proposal sent to ${selectedClient.name}!`, type: 'success' });
+        setSelectedClient(null);
+        setClientSearchText('');
+        setNotes('');
+        fetchAdminData();
+        setActiveTab('contracts');
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmittingProposal(false);
+    }
+  };
+
+  // Add Deliverable Video under Retainer Contract
+  const handleAddDeliverableSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedContractForDeliverable || !deliverableUrl) {
+      toast({ message: 'Please provide a deliverable video link or upload file.', type: 'error' });
+      return;
+    }
+
+    try {
+      setSubmittingDeliverable(true);
+      const res = await apiFetch(`/api/admin/contracts/${selectedContractForDeliverable._id}/deliverables`, {
+        method: 'POST',
+        body: JSON.stringify({
+          title: deliverableTitle,
+          deliverableUrl,
+          notes: deliverableNotes,
+        }),
+      });
+
+      if (res.success) {
+        toast({ message: 'Deliverable video added and client notified!', type: 'success' });
+        setAddDeliverableModalOpen(false);
+        setDeliverableTitle('');
+        setDeliverableUrl('');
+        setDeliverableNotes('');
+        fetchAdminData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmittingDeliverable(false);
+    }
+  };
+
+  // Complete Retainer Contract Term
+  const handleCompleteContract = async (contractId) => {
+    try {
+      const res = await apiFetch(`/api/admin/contracts/${contractId}/complete`, { method: 'POST' });
+      if (res.success) {
+        toast({ message: 'Retainer contract marked as COMPLETED! Rating unlocked for client.', type: 'success' });
+        fetchAdminData();
+      }
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    }
+  };
+
   // Portfolio Cover Cloudinary Upload Handler
   const handlePortfolioCoverUpload = async (file) => {
     try {
@@ -239,6 +376,37 @@ export const AdminPage = () => {
       toast({ message: err.message || 'Thumbnail upload failed', type: 'error' });
     } finally {
       setUploadingCover(false);
+    }
+  };
+
+  // Deliverable Cloudinary Video Render Upload Handler
+  const handleDeliverableUpload = async (file) => {
+    try {
+      setUploadingDeliverable(true);
+      const sigRes = await apiFetch('/api/uploads/signature', { method: 'POST' });
+      if (!sigRes.success) throw new Error('Failed to obtain upload signature');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', sigRes.apiKey);
+      formData.append('timestamp', sigRes.timestamp);
+      formData.append('signature', sigRes.signature);
+      formData.append('folder', sigRes.folder);
+
+      const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${sigRes.cloudName}/video/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const cloudData = await cloudRes.json();
+      if (cloudData.secure_url) {
+        setDeliverableUrl(cloudData.secure_url);
+        toast({ message: 'Video deliverable uploaded to Cloudinary!', type: 'success' });
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Video upload failed', type: 'error' });
+    } finally {
+      setUploadingDeliverable(false);
     }
   };
 
@@ -438,7 +606,9 @@ export const AdminPage = () => {
   const getStatusBadgeVariant = (status) => {
     switch (status) {
       case 'proposal_sent': return 'gold';
+      case 'proposed': return 'gold';
       case 'in_progress': return 'maroon';
+      case 'active': return 'maroon';
       case 'delivered': return 'surface';
       case 'completed': return 'success';
       case 'declined': return 'maroon';
@@ -463,89 +633,79 @@ export const AdminPage = () => {
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gap: '32px' }}>
           {/* Metric Cards Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             <div
               style={{
                 backgroundColor: 'var(--surface)',
-                padding: '28px 24px',
+                padding: '24px 20px',
                 borderRadius: 'var(--radius-lg)',
                 border: '1px solid var(--line)',
                 borderTop: '3px solid var(--accent-gold)',
                 boxShadow: 'var(--shadow)',
               }}
             >
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 DELIVERED REVENUE (ETB)
               </span>
-              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '8px', color: 'var(--ink)' }}>
+              <h3 className="font-display" style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
                 {stats?.revenueETB?.toLocaleString() || 0} ETB
               </h3>
-              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '6px' }}>
-                Booked from delivered & completed edits
-              </p>
             </div>
 
             <div
               style={{
                 backgroundColor: 'var(--surface)',
-                padding: '28px 24px',
+                padding: '24px 20px',
                 borderRadius: 'var(--radius-lg)',
                 border: '1px solid var(--line)',
                 borderTop: '3px solid var(--accent-gold)',
                 boxShadow: 'var(--shadow)',
               }}
             >
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 DELIVERED REVENUE (USD)
               </span>
-              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '8px', color: 'var(--ink)' }}>
+              <h3 className="font-display" style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
                 ${stats?.revenueUSD?.toLocaleString() || 0} USD
               </h3>
-              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '6px' }}>
-                Booked from delivered & completed edits
-              </p>
             </div>
 
             <div
               style={{
                 backgroundColor: 'var(--surface)',
-                padding: '28px 24px',
+                padding: '24px 20px',
                 borderRadius: 'var(--radius-lg)',
                 border: '1px solid var(--line)',
-                borderTop: '3px solid var(--accent-gold)',
+                borderTop: '3px solid #38A169',
                 boxShadow: 'var(--shadow)',
               }}
             >
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                REGISTERED CLIENTS
+              <span className="font-mono" style={{ fontSize: '10px', color: '#38A169', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                RECURRING MONTHLY (ETB)
               </span>
-              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '8px', color: 'var(--ink)' }}>
-                {stats?.clientCount || 0}
+              <h3 className="font-display" style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
+                {stats?.recurringRevenueETB?.toLocaleString() || 0} ETB
               </h3>
-              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '6px' }}>
-                Total client user accounts
-              </p>
+              <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{stats?.activeContractsCount || 0} active retainers</span>
             </div>
 
             <div
               style={{
                 backgroundColor: 'var(--surface)',
-                padding: '28px 24px',
+                padding: '24px 20px',
                 borderRadius: 'var(--radius-lg)',
                 border: '1px solid var(--line)',
-                borderTop: '3px solid var(--accent-gold)',
+                borderTop: '3px solid #38A169',
                 boxShadow: 'var(--shadow)',
               }}
             >
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                PROPOSAL CONVERSION RATE
+              <span className="font-mono" style={{ fontSize: '10px', color: '#38A169', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                RECURRING MONTHLY (USD)
               </span>
-              <h3 className="font-display" style={{ fontSize: '32px', fontWeight: 800, marginTop: '8px', color: 'var(--ink)' }}>
-                {stats?.conversionRate || '0%'}
+              <h3 className="font-display" style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
+                ${stats?.recurringRevenueUSD?.toLocaleString() || 0} USD
               </h3>
-              <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '6px' }}>
-                Accepted vs total proposals issued
-              </p>
+              <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{stats?.activeContractsCount || 0} active retainers</span>
             </div>
           </div>
 
@@ -586,6 +746,125 @@ export const AdminPage = () => {
         </div>
       )}
 
+      {/* RETAINER CONTRACTS MANAGEMENT CONSOLE TAB */}
+      {activeTab === 'contracts' && (
+        <div style={{ display: 'grid', gap: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>Retainer Contracts Management Console</h2>
+              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '2px' }}>
+                Track active recurring retainer agreements, add video deliverables, and manage retainer completion.
+              </p>
+            </div>
+            <Button variant="primary" iconRight={IconPlus} onClick={() => setActiveTab('proposal')}>
+              New Retainer Contract
+            </Button>
+          </div>
+
+          {contracts.length === 0 ? (
+            <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center', boxShadow: 'var(--shadow)' }}>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>No retainer contracts created yet.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '20px' }}>
+              {contracts.map((contract) => {
+                const delCount = contract.deliveredCount || 0;
+                const planned = contract.totalVideosPlanned || 8;
+                const pct = Math.min(100, Math.round((delCount / planned) * 100));
+
+                return (
+                  <div
+                    key={contract._id}
+                    style={{
+                      backgroundColor: 'var(--surface)',
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1px solid var(--line)',
+                      padding: '24px 28px',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                      <div>
+                        <Badge variant={getStatusBadgeVariant(contract.status)}>
+                          RETAINER • {contract.status.toUpperCase()}
+                        </Badge>
+                        <h3 className="font-display" style={{ fontSize: '20px', marginTop: '6px' }}>
+                          {contract.clientName} ({contract.clientEmail})
+                        </h3>
+                        <span style={{ fontSize: '13px', color: 'var(--accent-gold)', fontWeight: 700 }}>
+                          {contract.monthlyPrice} {contract.currency} / month ({contract.packageTier?.toUpperCase()} — {contract.frequency})
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        {contract.status === 'active' && (
+                          <>
+                            <Button
+                              variant="primary"
+                              size="small"
+                              iconRight={IconPlus}
+                              onClick={() => {
+                                setSelectedContractForDeliverable(contract);
+                                setAddDeliverableModalOpen(true);
+                              }}
+                            >
+                              Add Deliverable Video
+                            </Button>
+
+                            <Button
+                              variant="secondary"
+                              size="small"
+                              onClick={() => handleCompleteContract(contract._id)}
+                            >
+                              Mark Completed
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--ink-soft)', marginBottom: '6px' }}>
+                        <span>Deliverables Progress: {delCount} / {planned} Videos Handed Over</span>
+                        <span className="font-mono">{pct}%</span>
+                      </div>
+                      <div style={{ height: '8px', backgroundColor: 'var(--bg)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--line)' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', backgroundColor: 'var(--accent-gold)', transition: 'width 0.4s ease' }} />
+                      </div>
+                    </div>
+
+                    {/* Deliverables List */}
+                    {contract.deliverables && contract.deliverables.length > 0 && (
+                      <div style={{ backgroundColor: 'var(--bg)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', marginTop: '16px' }}>
+                        <h4 className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', marginBottom: '10px' }}>HANDED OVER DELIVERABLES ({contract.deliverables.length}):</h4>
+                        <div style={{ display: 'grid', gap: '8px' }}>
+                          {contract.deliverables.map((d) => (
+                            <div key={d._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', borderBottom: '1px solid var(--line)', paddingBottom: '6px' }}>
+                              <div>
+                                <strong>#{d.sequenceNumber}: {d.title || `Video #${d.sequenceNumber}`}</strong>
+                                {d.deliverableUrl && (
+                                  <a href={d.deliverableUrl} target="_blank" rel="noreferrer" style={{ marginLeft: '10px', color: 'var(--accent-gold)', fontSize: '12px' }}>
+                                    View Render Link ↗
+                                  </a>
+                                )}
+                              </div>
+                              <Badge variant={d.status === 'approved' ? 'success' : 'surface'} size="small">
+                                {d.status.toUpperCase()}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* NOTION-STYLE CALENDAR SCHEDULE TAB */}
       {activeTab === 'calendar' && (
         <NotionCalendar
@@ -597,12 +876,34 @@ export const AdminPage = () => {
         />
       )}
 
-      {/* CREATE PROPOSAL FORM TAB */}
+      {/* CREATE PROPOSAL FORM TAB (BRANCHES TO PROJECT OR CONTRACT) */}
       {activeTab === 'proposal' && (
         <div style={{ maxWidth: '640px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 30px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
-          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '20px', color: 'var(--ink)' }}>Issue New Client Proposal</h2>
+          {/* Proposal Type Switcher */}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', backgroundColor: 'var(--bg)', padding: '6px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+            <Button
+              variant={proposalType === 'project' ? 'primary' : 'ghost'}
+              fullWidth
+              size="small"
+              onClick={() => setProposalType('project')}
+            >
+              One-Off Project Proposal
+            </Button>
+            <Button
+              variant={proposalType === 'contract' ? 'primary' : 'ghost'}
+              fullWidth
+              size="small"
+              onClick={() => setProposalType('contract')}
+            >
+              Recurring Retainer Contract
+            </Button>
+          </div>
 
-          <form onSubmit={handleCreateProposal}>
+          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '20px', color: 'var(--ink)' }}>
+            {proposalType === 'project' ? 'Issue One-Off Project Proposal' : 'Issue Recurring Retainer Contract'}
+          </h2>
+
+          <form onSubmit={proposalType === 'project' ? handleCreateProposal : handleCreateContractProposal}>
             <div style={{ position: 'relative', marginBottom: '24px' }}>
               {!selectedClient ? (
                 <>
@@ -702,57 +1003,122 @@ export const AdminPage = () => {
               )}
             </div>
 
-            <Select
-              label="Editing Style"
-              options={EDITING_STYLES.map((s) => ({ label: s.name, value: s.name }))}
-              value={editingStyle}
-              onChange={setEditingStyle}
-            />
+            {proposalType === 'project' ? (
+              <>
+                <Select
+                  label="Editing Style"
+                  options={EDITING_STYLES.map((s) => ({ label: s.name, value: s.name }))}
+                  value={editingStyle}
+                  onChange={setEditingStyle}
+                />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-              <Select
-                label="Content Length"
-                options={[{ label: 'Short-Form (9:16)', value: 'short' }, { label: 'Long-Form (16:9)', value: 'long' }]}
-                value={contentLength}
-                onChange={setContentLength}
-              />
-              <Select
-                label="Package Tier"
-                options={[
-                  { label: 'Basic Tier', value: 'basic' },
-                  { label: 'Professional Tier (Popular)', value: 'professional' },
-                  { label: 'Premium Tier', value: 'premium' },
-                ]}
-                value={packageTier}
-                onChange={setPackageTier}
-              />
-            </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <Select
+                    label="Content Length"
+                    options={[{ label: 'Short-Form (9:16)', value: 'short' }, { label: 'Long-Form (16:9)', value: 'long' }]}
+                    value={contentLength}
+                    onChange={setContentLength}
+                  />
+                  <Select
+                    label="Package Tier"
+                    options={[
+                      { label: 'Basic Tier', value: 'basic' },
+                      { label: 'Professional Tier (Popular)', value: 'professional' },
+                      { label: 'Premium Tier', value: 'premium' },
+                    ]}
+                    value={packageTier}
+                    onChange={setPackageTier}
+                  />
+                </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '16px' }}>
-              <Select
-                label="Currency"
-                options={[{ label: 'ETB', value: 'ETB' }, { label: 'USD', value: 'USD' }]}
-                value={currency}
-                onChange={setCurrency}
-              />
-              <Input
-                label="Agreed Price"
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
-              />
-            </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '16px' }}>
+                  <Select
+                    label="Currency"
+                    options={[{ label: 'ETB', value: 'ETB' }, { label: 'USD', value: 'USD' }]}
+                    value={currency}
+                    onChange={setCurrency}
+                  />
+                  <Input
+                    label="Agreed Price"
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    required
+                  />
+                </div>
 
-            <DatePicker
-              label="Project Deadline"
-              value={deadline}
-              onChange={setDeadline}
-              required
-            />
+                <DatePicker
+                  label="Project Deadline"
+                  value={deadline}
+                  onChange={setDeadline}
+                  required
+                />
+              </>
+            ) : (
+              <>
+                {/* RETAINER CONTRACT FORM FIELDS */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <Select
+                    label="Package Tier"
+                    options={[
+                      { label: 'Basic Tier', value: 'basic' },
+                      { label: 'Professional Tier', value: 'professional' },
+                      { label: 'Premium Tier', value: 'premium' },
+                    ]}
+                    value={packageTier}
+                    onChange={setPackageTier}
+                  />
+                  <Select
+                    label="Publishing Frequency"
+                    options={[
+                      { label: '1 Video / Week (4/mo)', value: 'weekly-1' },
+                      { label: '2 Videos / Week (8/mo)', value: 'weekly-2' },
+                      { label: '3-4 Videos / Week (14/mo)', value: 'weekly-3-4' },
+                      { label: '1 Video / Day (30/mo)', value: 'daily-1' },
+                      { label: '2 Videos / Day (60/mo)', value: 'daily-2' },
+                    ]}
+                    value={contractFrequency}
+                    onChange={setContractFrequency}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '16px' }}>
+                  <Select
+                    label="Currency"
+                    options={[{ label: 'ETB', value: 'ETB' }, { label: 'USD', value: 'USD' }]}
+                    value={currency}
+                    onChange={setCurrency}
+                  />
+                  <Input
+                    label="Monthly Agreed Price"
+                    type="number"
+                    value={contractMonthlyPrice}
+                    onChange={(e) => setContractMonthlyPrice(e.target.value)}
+                    helperText="Pre-filled from pricing engine, admin override allowed"
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <DatePicker
+                    label="Retainer Start Date"
+                    value={contractStartDate}
+                    onChange={setContractStartDate}
+                    required
+                  />
+                  <Input
+                    label="Duration (Months)"
+                    type="number"
+                    value={contractDurationMonths}
+                    onChange={(e) => setContractDurationMonths(e.target.value)}
+                    required
+                  />
+                </div>
+              </>
+            )}
 
             <Textarea
-              label="Reference / Brief Notes (External Drive / Instructions)"
+              label="Reference / Brief Notes (External Drive / Scope)"
               placeholder="Enter external Google Drive or project brief notes..."
               value={referenceBrief}
               onChange={(e) => setReferenceBrief(e.target.value)}
@@ -760,7 +1126,7 @@ export const AdminPage = () => {
 
             <div style={{ marginTop: '24px' }}>
               <Button type="submit" variant="primary" fullWidth isLoading={submittingProposal} iconRight={IconSparkles}>
-                Send Proposal to Client
+                {proposalType === 'project' ? 'Send Project Proposal' : 'Send Retainer Contract Proposal'}
               </Button>
             </div>
           </form>
@@ -1210,6 +1576,56 @@ export const AdminPage = () => {
           )}
         </div>
       )}
+
+      {/* ADD DELIVERABLE MODAL */}
+      <Modal
+        isOpen={addDeliverableModalOpen}
+        onClose={() => setAddDeliverableModalOpen(false)}
+        title={`Add Deliverable Video — ${selectedContractForDeliverable?.clientName}`}
+      >
+        <form onSubmit={handleAddDeliverableSubmit} style={{ display: 'grid', gap: '16px' }}>
+          <Input
+            label="Deliverable Video Title (Optional)"
+            placeholder="e.g. Reel #4 — Sound FX & Kinetic Captions"
+            value={deliverableTitle}
+            onChange={(e) => setDeliverableTitle(e.target.value)}
+          />
+
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
+              Video Render Upload (Cloudinary Signed Upload)
+            </label>
+            <Dropzone
+              onFileSelect={handleDeliverableUpload}
+              isLoading={uploadingDeliverable}
+              accept="video/*,image/*"
+              label="Drag & drop video render file here..."
+            />
+          </div>
+
+          <Input
+            label="Or Enter Direct Video URL"
+            placeholder="https://res.cloudinary.com/..."
+            value={deliverableUrl}
+            onChange={(e) => setDeliverableUrl(e.target.value)}
+            required
+          />
+
+          <Textarea
+            label="Deliverable Notes"
+            placeholder="e.g. Rendered in 4K 9:16 format with custom motion transitions..."
+            value={deliverableNotes}
+            onChange={(e) => setDeliverableNotes(e.target.value)}
+          />
+
+          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <Button variant="secondary" onClick={() => setAddDeliverableModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" isLoading={submittingDeliverable} iconRight={IconCheck}>
+              Add Deliverable & Notify Client
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* PORTFOLIO ITEM CREATE / EDIT MODAL */}
       <Modal

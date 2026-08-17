@@ -18,6 +18,7 @@ export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollap
   const menuItems = [
     { id: 'overview', label: 'Analytics & Revenue', icon: IconBarChart },
     { id: 'board', label: 'Proposals & Projects', icon: IconFolder },
+    { id: 'contracts', label: 'Retainer Contracts', icon: IconFileText },
     { id: 'calendar', label: 'Calendar Schedule', icon: IconCalendar },
     { id: 'proposal', label: 'Create Proposal', icon: IconPlus },
     { id: 'clients', label: 'Registered Clients', icon: IconUsers },
