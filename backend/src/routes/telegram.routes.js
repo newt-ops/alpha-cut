@@ -89,7 +89,28 @@ router.post('/webapp/auth', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid Telegram User ID' });
     }
 
-    const user = await User.findOne({ telegramChatId: chatId });
+    let user = await User.findOne({ telegramChatId: chatId });
+
+    // Auto-bind if user is already authenticated via Web JWT token in header
+    if (!user && req.headers.authorization) {
+      try {
+        const token = req.headers.authorization.replace('Bearer ', '');
+        const jwt = (await import('jsonwebtoken')).default;
+        const decoded = jwt.verify(token, config.jwtSecret);
+        if (decoded?.id) {
+          const authUser = await User.findById(decoded.id);
+          if (authUser) {
+            authUser.telegramChatId = chatId;
+            authUser.telegramLinkedAt = new Date();
+            await authUser.save();
+            user = authUser;
+          }
+        }
+      } catch (err) {
+        // Token verification error
+      }
+    }
+
     if (!user) {
       return res.status(200).json({
         success: false,
@@ -98,6 +119,62 @@ router.post('/webapp/auth', async (req, res, next) => {
         message: 'Telegram account is not linked to any registered Alpha Cut user profile.',
       });
     }
+
+    const { accessToken, refreshToken } = generateTokens(user);
+    setRefreshCookie(res, refreshToken);
+
+    return res.status(200).json({
+      success: true,
+      accessToken,
+      user,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Link 6-Digit Code directly inside Telegram Mini App
+router.post('/webapp/link-code', async (req, res, next) => {
+  try {
+    const { code, initData } = req.body;
+    if (!code) {
+      return res.status(400).json({ success: false, message: '6-digit code is required' });
+    }
+
+    let chatId = null;
+    if (initData) {
+      const urlParams = new URLSearchParams(initData);
+      const userParam = urlParams.get('user');
+      if (userParam) {
+        const telegramUser = JSON.parse(userParam);
+        chatId = telegramUser.id ? telegramUser.id.toString() : null;
+      }
+    }
+
+    const pending = await PendingLink.findOne({
+      code: code.trim(),
+      type: 'code',
+      used: false,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!pending) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired 6-digit code.' });
+    }
+
+    const user = await User.findById(pending.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User account not found.' });
+    }
+
+    if (chatId) {
+      user.telegramChatId = chatId;
+      user.telegramLinkedAt = new Date();
+      await user.save();
+    }
+
+    pending.used = true;
+    await pending.save();
 
     const { accessToken, refreshToken } = generateTokens(user);
     setRefreshCookie(res, refreshToken);

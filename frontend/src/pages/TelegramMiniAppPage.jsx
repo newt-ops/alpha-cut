@@ -82,45 +82,54 @@ export const TelegramMiniAppPage = () => {
       const tg = window.Telegram?.WebApp;
       const initData = tg?.initData;
 
-      if (!initData) {
-        try {
-          const meRes = await customFetch('/api/auth/me');
-          if (meRes.success) {
-            setUser(meRes.user);
-            setIsAuthenticated(true);
-            await fetchDashboardData();
-          } else {
-            setUnlinked(true);
-          }
-        } catch (err) {
-          setUnlinked(true);
-        } finally {
-          setLoading(false);
-        }
-        return;
-      }
-
+      // 1. FIRST: Check existing Web JWT session (if already logged in on web platform)
       try {
-        const authRes = await customFetch('/api/telegram/webapp/auth', {
-          method: 'POST',
-          body: JSON.stringify({ initData }),
-        });
-
-        if (authRes.success) {
-          setUser(authRes.user);
+        const meRes = await customFetch('/api/auth/me');
+        if (meRes.success && meRes.user) {
+          setUser(meRes.user);
           setIsAuthenticated(true);
           await fetchDashboardData();
-        } else if (authRes.unlinked) {
-          setUnlinked(true);
-          setTelegramUser(authRes.telegramUser);
-        } else {
-          setUnlinked(true);
+
+          // If initData is present, auto-bind Telegram Chat ID to this web user silently
+          if (initData) {
+            await customFetch('/api/telegram/webapp/auth', {
+              method: 'POST',
+              body: JSON.stringify({ initData }),
+            }).catch(() => {});
+          }
+
+          setLoading(false);
+          return;
         }
       } catch (err) {
-        setUnlinked(true);
-      } finally {
-        setLoading(false);
+        // Not logged in via existing JWT
       }
+
+      // 2. SECOND: Attempt Telegram WebApp Signature Authentication using initData
+      if (initData) {
+        try {
+          const authRes = await customFetch('/api/telegram/webapp/auth', {
+            method: 'POST',
+            body: JSON.stringify({ initData }),
+          });
+
+          if (authRes.success && authRes.accessToken) {
+            localStorage.setItem('token', authRes.accessToken);
+            setUser(authRes.user);
+            setIsAuthenticated(true);
+            await fetchDashboardData();
+            setLoading(false);
+            return;
+          } else if (authRes.unlinked) {
+            setTelegramUser(authRes.telegramUser);
+          }
+        } catch (err) {
+          // Telegram WebApp auth failed
+        }
+      }
+
+      setUnlinked(true);
+      setLoading(false);
     };
 
     authenticateMiniApp();
@@ -135,14 +144,21 @@ export const TelegramMiniAppPage = () => {
 
     try {
       setSubmittingLink(true);
-      const res = await customFetch('/api/telegram/link/code', {
+      const tg = window.Telegram?.WebApp;
+      const initData = tg?.initData;
+
+      const res = await customFetch('/api/telegram/webapp/link-code', {
         method: 'POST',
-        body: JSON.stringify({ code: linkCode }),
+        body: JSON.stringify({ code: linkCode, initData }),
       });
 
-      if (res.success) {
-        toast({ message: 'Account linked successfully!', type: 'success' });
-        window.location.reload();
+      if (res.success && res.accessToken) {
+        localStorage.setItem('token', res.accessToken);
+        setUser(res.user);
+        setIsAuthenticated(true);
+        setUnlinked(false);
+        toast({ message: 'Telegram account connected successfully!', type: 'success' });
+        await fetchDashboardData();
       }
     } catch (err) {
       toast({ message: err.message || 'Failed to link account', type: 'error' });
