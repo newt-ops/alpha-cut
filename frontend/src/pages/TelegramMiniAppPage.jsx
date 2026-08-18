@@ -11,6 +11,7 @@ import {
   triggerHapticNotification,
   showTelegramConfirm,
 } from '../utils/telegramSdk';
+import { StarRating } from '@components/ui/StarRating';
 import {
   IconCheck,
   IconExternalLink,
@@ -21,6 +22,7 @@ import {
   IconSliders,
   IconClock,
   IconFilm,
+  IconStar,
 } from '@icons/icons';
 
 export const TelegramMiniAppPage = () => {
@@ -50,6 +52,13 @@ export const TelegramMiniAppPage = () => {
   const [revisionProject, setRevisionProject] = useState(null);
   const [revisionNotes, setRevisionNotes] = useState('');
   const [submittingRevision, setSubmittingRevision] = useState(false);
+
+  // Rating Modal State
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingProject, setRatingProject] = useState(null);
+  const [ratingStars, setRatingStars] = useState(5);
+  const [ratingReview, setRatingReview] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   const parseStartParam = (startParam, fetchedProjects, fetchedContracts) => {
     if (!startParam) return;
@@ -273,14 +282,60 @@ export const TelegramMiniAppPage = () => {
       const res = await customFetch(`/api/projects/${projectId}/approve`, { method: 'POST' });
       if (res.success) {
         triggerHapticNotification('success');
-        toast({ message: 'Delivery approved!', type: 'success' });
-        fetchDashboardData();
+        toast({ message: 'Delivery approved! Please share your rating below.', type: 'success' });
+        await fetchDashboardData();
+
+        const approvedProj = projects.find((p) => p._id === projectId) || res.project;
+        if (approvedProj) {
+          handleOpenRatingModal(approvedProj);
+        }
       }
     } catch (err) {
       triggerHapticNotification('error');
       toast({ message: err.message, type: 'error' });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOpenRatingModal = (project) => {
+    triggerHaptic('light');
+    setRatingProject(project);
+    setRatingStars(5);
+    setRatingReview('');
+    setShowRatingModal(true);
+  };
+
+  const handleSubmitRatingModal = async (e) => {
+    e.preventDefault();
+    if (!ratingStars) {
+      toast({ message: 'Please select a star rating', type: 'error' });
+      return;
+    }
+
+    try {
+      setSubmittingRating(true);
+      triggerHaptic('medium');
+      const res = await customFetch('/api/ratings', {
+        method: 'POST',
+        body: JSON.stringify({
+          projectId: ratingProject?._id,
+          stars: ratingStars,
+          review: ratingReview.trim(),
+        }),
+      });
+
+      if (res.success) {
+        triggerHapticNotification('success');
+        toast({ message: 'Thank you! Rating & review published successfully.', type: 'success' });
+        setShowRatingModal(false);
+        fetchDashboardData();
+      }
+    } catch (err) {
+      triggerHapticNotification('error');
+      toast({ message: err.message || 'Failed to submit rating', type: 'error' });
+    } finally {
+      setSubmittingRating(false);
     }
   };
 
@@ -700,6 +755,14 @@ export const TelegramMiniAppPage = () => {
                 </div>
               )}
 
+              {(p.status === 'completed' || p.status === 'approved') && !p.rated && (
+                <div style={{ marginTop: '12px' }}>
+                  <Button variant="secondary" size="small" fullWidth iconRight={IconStar} onClick={() => handleOpenRatingModal(p)}>
+                    Rate Experience
+                  </Button>
+                </div>
+              )}
+
               {p.status === 'revision_requested' && (
                 <div style={{ marginTop: '10px', fontSize: '12px', color: TELEGRAM_BLUE, fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <IconSliders size={14} />
@@ -838,6 +901,75 @@ export const TelegramMiniAppPage = () => {
             >
               <IconCheck size={16} />
               <span>{submittingRevision ? 'Sending...' : 'Send Notes'}</span>
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* RATING & REVIEW MODAL */}
+      <Modal isOpen={showRatingModal} onClose={() => setShowRatingModal(false)} title="Rate Your Experience">
+        <form onSubmit={handleSubmitRatingModal} style={{ display: 'grid', gap: '20px', textAlign: 'center' }}>
+          <div>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)', marginBottom: '4px' }}>
+              {ratingProject?.editingStyle || 'Video Delivery'}
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
+              How satisfied are you with this video edit?
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
+            <StarRating rating={ratingStars} onChange={(stars) => { triggerHaptic('light'); setRatingStars(stars); }} readOnly={false} size={32} />
+          </div>
+
+          <div style={{ textAlign: 'left' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ink-soft)', marginBottom: '6px' }}>
+              Your Feedback (Optional)
+            </label>
+            <textarea
+              rows={3}
+              value={ratingReview}
+              onChange={(e) => setRatingReview(e.target.value)}
+              placeholder="Share your experience working with Alpha Cut..."
+              style={{
+                width: '100%',
+                backgroundColor: 'var(--bg)',
+                color: 'var(--ink)',
+                border: '1px solid var(--line)',
+                borderRadius: 'var(--radius-md)',
+                padding: '10px 12px',
+                fontSize: '13px',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                resize: 'vertical',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Button type="button" variant="secondary" onClick={() => setShowRatingModal(false)}>
+              Skip
+            </Button>
+            <button
+              type="submit"
+              disabled={submittingRating}
+              style={{
+                padding: '10px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: TELEGRAM_BLUE,
+                color: '#FFF',
+                border: 'none',
+                fontWeight: 600,
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <IconStar size={16} />
+              <span>{submittingRating ? 'Publishing...' : 'Publish Rating'}</span>
             </button>
           </div>
         </form>

@@ -6,7 +6,7 @@ import { StarRating } from '@components/ui/StarRating';
 import { useToast } from '@components/ui/Toast';
 import { IconCheck, IconStar, IconSparkles, IconArrowRight } from '@icons/icons';
 
-const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '';
+import { customFetch } from '../utils/api';
 
 export const RateProjectPage = () => {
   const { projectId } = useParams();
@@ -26,7 +26,7 @@ export const RateProjectPage = () => {
     const fetchProject = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE}/api/projects/${projectId}/rating-info`).then((r) => r.json());
+        const res = await customFetch(`/api/projects/${projectId}/rating-info`);
         if (res.success && res.project) {
           setProject(res.project);
           if (res.project.rated) {
@@ -56,19 +56,14 @@ export const RateProjectPage = () => {
 
     try {
       setSubmitting(true);
-      const token = localStorage.getItem('alpha_cut_token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch(`${API_BASE}/api/ratings`, {
+      const res = await customFetch('/api/ratings', {
         method: 'POST',
-        headers,
         body: JSON.stringify({
           projectId,
           stars,
           review: review.trim(),
         }),
-      }).then((r) => r.json());
+      });
 
       if (res.success) {
         toast({ message: 'Thank you! Your project review has been published.', type: 'success' });
