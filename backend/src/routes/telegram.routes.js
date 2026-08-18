@@ -89,7 +89,13 @@ router.post('/webapp/auth', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid Telegram User ID' });
     }
 
-    let user = await User.findOne({ telegramChatId: chatId });
+    let user = await User.findOne({
+      $or: [
+        { telegramChatId: chatId },
+        { telegramChatId: Number(chatId) },
+        { telegramChatId: String(chatId) },
+      ],
+    });
 
     // Auto-bind if user is already authenticated via Web JWT token in header
     if (!user && req.headers.authorization) {
@@ -118,6 +124,53 @@ router.post('/webapp/auth', async (req, res, next) => {
         telegramUser,
         message: 'Telegram account is not linked to any registered Alpha Cut user profile.',
       });
+    }
+
+    const { accessToken, refreshToken } = generateTokens(user);
+    setRefreshCookie(res, refreshToken);
+
+    return res.status(200).json({
+      success: true,
+      accessToken,
+      user,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Link Web Account using Email & Password directly inside Telegram Mini App
+router.post('/webapp/link-email', async (req, res, next) => {
+  try {
+    const { email, password, initData } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    let chatId = null;
+    if (initData) {
+      const urlParams = new URLSearchParams(initData);
+      const userParam = urlParams.get('user');
+      if (userParam) {
+        const telegramUser = JSON.parse(userParam);
+        chatId = telegramUser.id ? telegramUser.id.toString() : null;
+      }
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+    }
+
+    if (chatId) {
+      user.telegramChatId = chatId;
+      user.telegramLinkedAt = new Date();
+      await user.save();
     }
 
     const { accessToken, refreshToken } = generateTokens(user);
