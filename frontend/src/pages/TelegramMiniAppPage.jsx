@@ -2,11 +2,18 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { TelegramAppLayout } from '@components/layout/TelegramAppLayout';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
-import { Stepper } from '@components/ui/Stepper';
 import { Modal } from '@components/ui/Modal';
 import { Input } from '@components/ui/Input';
 import { customFetch } from '../utils/api';
 import { useToast } from '@components/ui/Toast';
+import {
+  triggerHaptic,
+  triggerHapticNotification,
+  triggerHapticSelection,
+  showTelegramConfirm,
+  showTelegramAlert,
+} from '../utils/telegramSdk';
+import { EDITING_STYLES } from '../data/editingStyles';
 import {
   IconCheck,
   IconSparkles,
@@ -14,6 +21,8 @@ import {
   IconShield,
   IconUser,
   IconFileText,
+  IconZap,
+  IconSliders,
 } from '@icons/icons';
 
 export const TelegramMiniAppPage = () => {
@@ -23,6 +32,9 @@ export const TelegramMiniAppPage = () => {
   const [user, setUser] = useState(null);
   const [unlinked, setUnlinked] = useState(false);
   const [telegramUser, setTelegramUser] = useState(null);
+
+  // Active Bottom Navigation Tab: 'work' | 'packages' | 'styles' | 'account'
+  const [activeNavTab, setActiveNavTab] = useState('work');
 
   // Data State
   const [projects, setProjects] = useState([]);
@@ -34,6 +46,15 @@ export const TelegramMiniAppPage = () => {
   const [linkCode, setLinkCode] = useState('');
   const [submittingLink, setSubmittingLink] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Currency State for Packages Tab
+  const [selectedCurrency, setSelectedCurrency] = useState('ETB');
+
+  // Revision Modal State
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [revisionProject, setRevisionProject] = useState(null);
+  const [revisionNotes, setRevisionNotes] = useState('');
+  const [submittingRevision, setSubmittingRevision] = useState(false);
 
   const parseStartParam = (startParam, fetchedProjects, fetchedContracts) => {
     if (!startParam) return;
@@ -77,20 +98,20 @@ export const TelegramMiniAppPage = () => {
   }, [toast]);
 
   useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-      try {
-        tg.ready();
-        tg.expand();
-      } catch (e) {}
-    }
-
     const authenticateMiniApp = async () => {
       setLoading(true);
+      const tg = window.Telegram?.WebApp;
+      if (tg) {
+        try {
+          tg.ready();
+          tg.expand();
+        } catch (e) {}
+      }
+
       const initData = tg?.initData;
       const startParam = tg?.initDataUnsafe?.start_param || new URLSearchParams(window.location.search).get('startapp');
 
-      // 1. FIRST: Check existing Web JWT session (if already logged in on web platform)
+      // 1. FIRST: Check existing Web JWT session
       try {
         const meRes = await customFetch('/api/auth/me');
         if (meRes.success && meRes.user) {
@@ -148,7 +169,7 @@ export const TelegramMiniAppPage = () => {
                   return;
                 }
               } catch (linkErr) {
-                // Auto deep-link code match failed, fall through to manual form
+                // Auto deep-link code match failed
               }
             }
           }
@@ -166,8 +187,10 @@ export const TelegramMiniAppPage = () => {
 
   const handleLinkAccount = async (e) => {
     e.preventDefault();
+    triggerHaptic('medium');
     if (!linkCode || linkCode.trim().length !== 6) {
       toast({ message: 'Please enter a valid 6-digit code', type: 'error' });
+      triggerHapticNotification('error');
       return;
     }
 
@@ -186,10 +209,12 @@ export const TelegramMiniAppPage = () => {
         setUser(res.user);
         setIsAuthenticated(true);
         setUnlinked(false);
+        triggerHapticNotification('success');
         toast({ message: 'Telegram account connected successfully!', type: 'success' });
         await fetchDashboardData();
       }
     } catch (err) {
+      triggerHapticNotification('error');
       toast({ message: err.message || 'Failed to link account', type: 'error' });
     } finally {
       setSubmittingLink(false);
@@ -197,14 +222,20 @@ export const TelegramMiniAppPage = () => {
   };
 
   const handleAcceptProposal = async (projectId) => {
+    const confirmed = await showTelegramConfirm('Are you sure you want to accept this proposal?');
+    if (!confirmed) return;
+
     try {
+      triggerHaptic('medium');
       setSubmitting(true);
       const res = await customFetch(`/api/projects/${projectId}/accept`, { method: 'POST' });
       if (res.success) {
-        toast({ message: 'Proposal accepted! Project is in progress.', type: 'success' });
+        triggerHapticNotification('success');
+        toast({ message: 'Proposal accepted! Project is now in progress.', type: 'success' });
         fetchDashboardData();
       }
     } catch (err) {
+      triggerHapticNotification('error');
       toast({ message: err.message, type: 'error' });
     } finally {
       setSubmitting(false);
@@ -212,14 +243,20 @@ export const TelegramMiniAppPage = () => {
   };
 
   const handleDeclineProposal = async (projectId) => {
+    const confirmed = await showTelegramConfirm('Decline this proposal offer?');
+    if (!confirmed) return;
+
     try {
+      triggerHaptic('light');
       setSubmitting(true);
       const res = await customFetch(`/api/projects/${projectId}/decline`, { method: 'POST' });
       if (res.success) {
+        triggerHapticNotification('warning');
         toast({ message: 'Proposal declined.', type: 'info' });
         fetchDashboardData();
       }
     } catch (err) {
+      triggerHapticNotification('error');
       toast({ message: err.message, type: 'error' });
     } finally {
       setSubmitting(false);
@@ -227,29 +264,77 @@ export const TelegramMiniAppPage = () => {
   };
 
   const handleApproveDelivery = async (projectId) => {
+    const confirmed = await showTelegramConfirm('Confirm & approve video delivery?');
+    if (!confirmed) return;
+
     try {
+      triggerHaptic('heavy');
       setSubmitting(true);
       const res = await customFetch(`/api/projects/${projectId}/approve`, { method: 'POST' });
       if (res.success) {
+        triggerHapticNotification('success');
         toast({ message: 'Delivery approved!', type: 'success' });
         fetchDashboardData();
       }
     } catch (err) {
+      triggerHapticNotification('error');
       toast({ message: err.message, type: 'error' });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleAcceptContract = async (contractId) => {
+  const handleOpenRevisionModal = (project) => {
+    triggerHaptic('light');
+    setRevisionProject(project);
+    setRevisionNotes('');
+    setShowRevisionModal(true);
+  };
+
+  const handleSubmitRevisionRequest = async (e) => {
+    e.preventDefault();
+    if (!revisionNotes || !revisionNotes.trim()) {
+      toast({ message: 'Please enter revision notes for the editors', type: 'error' });
+      return;
+    }
+
     try {
+      setSubmittingRevision(true);
+      triggerHaptic('medium');
+      const res = await customFetch(`/api/projects/${revisionProject._id}/revision`, {
+        method: 'POST',
+        body: JSON.stringify({ revisionNotes }),
+      });
+
+      if (res.success) {
+        triggerHapticNotification('success');
+        toast({ message: 'Revision notes sent to editors on Telegram!', type: 'success' });
+        setShowRevisionModal(false);
+        fetchDashboardData();
+      }
+    } catch (err) {
+      triggerHapticNotification('error');
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmittingRevision(false);
+    }
+  };
+
+  const handleAcceptContract = async (contractId) => {
+    const confirmed = await showTelegramConfirm('Accept monthly retainer terms?');
+    if (!confirmed) return;
+
+    try {
+      triggerHaptic('medium');
       setSubmitting(true);
       const res = await customFetch(`/api/contracts/${contractId}/accept`, { method: 'POST' });
       if (res.success) {
+        triggerHapticNotification('success');
         toast({ message: 'Retainer contract terms accepted!', type: 'success' });
         fetchDashboardData();
       }
     } catch (err) {
+      triggerHapticNotification('error');
       toast({ message: err.message, type: 'error' });
     } finally {
       setSubmitting(false);
@@ -258,25 +343,45 @@ export const TelegramMiniAppPage = () => {
 
   const handleApproveDeliverable = async (contractId, deliverableId) => {
     try {
+      triggerHaptic('medium');
       setSubmitting(true);
       const res = await customFetch(`/api/contracts/${contractId}/deliverables/${deliverableId}/approve`, { method: 'POST' });
       if (res.success) {
-        toast({ message: 'Deliverable video approved!', type: 'success' });
+        triggerHapticNotification('success');
+        toast({ message: 'Deliverable render approved!', type: 'success' });
         fetchDashboardData();
       }
     } catch (err) {
+      triggerHapticNotification('error');
       toast({ message: err.message, type: 'error' });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const activeProjects = projects.filter((p) => p.status === 'proposal_sent' || p.status === 'in_progress' || p.status === 'delivered');
+  const handleUnlink = async () => {
+    const confirmed = await showTelegramConfirm('Disconnect Telegram account from this device?');
+    if (!confirmed) return;
+
+    try {
+      triggerHaptic('warning');
+      await customFetch('/api/telegram/unlink', { method: 'POST' });
+      localStorage.removeItem('token');
+      setIsAuthenticated(false);
+      setUnlinked(true);
+      triggerHapticNotification('warning');
+      toast({ message: 'Telegram account disconnected.', type: 'info' });
+    } catch (err) {
+      toast({ message: err.message, type: 'error' });
+    }
+  };
+
+  const activeProjects = projects.filter((p) => p.status === 'proposal_sent' || p.status === 'in_progress' || p.status === 'delivered' || p.status === 'revision_requested');
   const activeContracts = contracts.filter((c) => c.status === 'proposed' || c.status === 'active');
 
   if (loading) {
     return (
-      <TelegramAppLayout>
+      <TelegramAppLayout activeTab={activeNavTab} onTabChange={setActiveNavTab}>
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           <Badge variant="gold">Mini App Launch</Badge>
           <h2 className="font-display" style={{ fontSize: '22px', marginTop: '12px' }}>Loading Workspace...</h2>
@@ -287,7 +392,7 @@ export const TelegramMiniAppPage = () => {
 
   if (unlinked && !isAuthenticated) {
     return (
-      <TelegramAppLayout>
+      <TelegramAppLayout activeTab={activeNavTab} onTabChange={setActiveNavTab}>
         <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
           <Badge variant="gold">Telegram Integration</Badge>
           <h2 className="font-display" style={{ fontSize: '24px', marginTop: '12px', marginBottom: '8px' }}>
@@ -323,7 +428,8 @@ export const TelegramMiniAppPage = () => {
   }
 
   return (
-    <TelegramAppLayout>
+    <TelegramAppLayout activeTab={activeNavTab} onTabChange={setActiveNavTab}>
+      {/* Header Banner */}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <Badge variant="gold">Action Console</Badge>
@@ -331,124 +437,267 @@ export const TelegramMiniAppPage = () => {
         </div>
         <a href="https://alpha-cut-nine.vercel.app/dashboard" target="_blank" rel="noreferrer">
           <Button variant="secondary" size="small" iconRight={IconExternalLink}>
-            Full Dashboard
+            Web
           </Button>
         </a>
       </div>
 
-      {/* TARGET SPECIFIC DEEP-LINK ACTION PANEL */}
-      {targetItem && (
-        <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '2px solid var(--accent-gold)', padding: '20px', marginBottom: '24px', boxShadow: 'var(--shadow)' }}>
-          <Badge variant="gold">DEEP-LINKED TASK</Badge>
-          <h3 className="font-display" style={{ fontSize: '20px', marginTop: '6px', marginBottom: '8px' }}>
-            {targetItem.editingStyle || `${targetItem.packageTier?.toUpperCase()} Retainer`}
-          </h3>
+      {/* TAB 1: WORK & PROPOSALS */}
+      {activeNavTab === 'work' && (
+        <div style={{ display: 'grid', gap: '16px' }}>
+          {/* TARGET SPECIFIC DEEP-LINK ACTION PANEL */}
+          {targetItem && (
+            <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '2px solid var(--accent-gold)', padding: '20px', marginBottom: '8px', boxShadow: 'var(--shadow)' }}>
+              <Badge variant="gold">DEEP-LINKED TASK</Badge>
+              <h3 className="font-display" style={{ fontSize: '20px', marginTop: '6px', marginBottom: '8px' }}>
+                {targetItem.editingStyle || `${targetItem.packageTier?.toUpperCase()} Retainer`}
+              </h3>
 
-          <div style={{ backgroundColor: 'var(--bg)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', fontSize: '13px', marginBottom: '16px' }}>
-            <div><strong>Terms:</strong> {targetItem.price || targetItem.monthlyPrice} {targetItem.currency}</div>
-            {targetItem.deadline && <div style={{ marginTop: '4px', color: 'var(--ink-soft)' }}><strong>Deadline:</strong> {new Date(targetItem.deadline).toLocaleDateString()}</div>}
-            {targetItem.referenceBrief && <div style={{ marginTop: '6px', color: 'var(--ink-soft)' }}><strong>Brief:</strong> {targetItem.referenceBrief}</div>}
-          </div>
+              <div style={{ backgroundColor: 'var(--bg)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', fontSize: '13px', marginBottom: '16px' }}>
+                <div><strong>Terms:</strong> {targetItem.price || targetItem.monthlyPrice} {targetItem.currency}</div>
+                {targetItem.deadline && <div style={{ marginTop: '4px', color: 'var(--ink-soft)' }}><strong>Deadline:</strong> {new Date(targetItem.deadline).toLocaleDateString()}</div>}
+                {targetItem.referenceBrief && <div style={{ marginTop: '6px', color: 'var(--ink-soft)' }}><strong>Brief:</strong> {targetItem.referenceBrief}</div>}
+              </div>
 
-          {targetItem.status === 'proposal_sent' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <Button variant="secondary" isLoading={submitting} onClick={() => handleDeclineProposal(targetItem._id)}>
-                Decline
-              </Button>
-              <Button variant="primary" iconRight={IconCheck} isLoading={submitting} onClick={() => handleAcceptProposal(targetItem._id)}>
-                Accept Terms
-              </Button>
+              {targetItem.status === 'proposal_sent' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <Button variant="secondary" isLoading={submitting} onClick={() => handleDeclineProposal(targetItem._id)}>
+                    Decline
+                  </Button>
+                  <Button variant="primary" iconRight={IconCheck} isLoading={submitting} onClick={() => handleAcceptProposal(targetItem._id)}>
+                    Accept Terms
+                  </Button>
+                </div>
+              )}
+
+              {targetItem.status === 'delivered' && (
+                <div style={{ display: 'grid', gap: '10px' }}>
+                  <Button variant="primary" fullWidth iconRight={IconCheck} isLoading={submitting} onClick={() => handleApproveDelivery(targetItem._id)}>
+                    Confirm & Approve Delivery
+                  </Button>
+                  <Button variant="secondary" fullWidth iconRight={IconSliders} onClick={() => handleOpenRevisionModal(targetItem)}>
+                    Request Revisions
+                  </Button>
+                </div>
+              )}
+
+              {targetItem.status === 'proposed' && (
+                <Button variant="primary" fullWidth iconRight={IconCheck} isLoading={submitting} onClick={() => handleAcceptContract(targetItem._id)}>
+                  Accept Retainer Terms
+                </Button>
+              )}
             </div>
           )}
 
-          {targetItem.status === 'delivered' && (
-            <Button variant="primary" fullWidth iconRight={IconCheck} isLoading={submitting} onClick={() => handleApproveDelivery(targetItem._id)}>
-              Confirm & Approve Delivery
-            </Button>
-          )}
+          <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>Active Work & Proposals</h3>
 
-          {targetItem.status === 'proposed' && (
-            <Button variant="primary" fullWidth iconRight={IconCheck} isLoading={submitting} onClick={() => handleAcceptContract(targetItem._id)}>
-              Accept Retainer Terms
-            </Button>
+          {/* RETAINER CONTRACTS */}
+          {activeContracts.map((c) => (
+            <div key={c._id} style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <strong style={{ fontSize: '15px' }}>{c.packageTier?.toUpperCase()} Retainer ({c.frequency})</strong>
+                <Badge variant="gold">{c.status.toUpperCase()}</Badge>
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--accent-gold)', fontWeight: 600 }}>{c.monthlyPrice} {c.currency} / month</div>
+
+              {c.deliverables && c.deliverables.length > 0 && (
+                <div style={{ marginTop: '12px', display: 'grid', gap: '8px' }}>
+                  {c.deliverables.map((d) => (
+                    <div key={d._id} style={{ backgroundColor: 'var(--bg)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                      <span>#{d.sequenceNumber}: {d.title || `Render #${d.sequenceNumber}`}</span>
+                      {d.status === 'delivered' ? (
+                        <Button variant="primary" size="small" isLoading={submitting} onClick={() => handleApproveDeliverable(c._id, d._id)}>
+                          Approve
+                        </Button>
+                      ) : (
+                        <Badge variant="success" size="small">APPROVED</Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* ACTIVE PROJECTS */}
+          {activeProjects.map((p) => (
+            <div key={p._id} style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <strong style={{ fontSize: '15px' }}>{p.editingStyle}</strong>
+                <Badge variant="gold">{p.status.toUpperCase()}</Badge>
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
+                Terms: {p.price} {p.currency} • Deadline: {new Date(p.deadline).toLocaleDateString()}
+              </div>
+
+              {p.status === 'proposal_sent' && (
+                <div style={{ marginTop: '12px', display: 'flex', gap: '10px' }}>
+                  <Button variant="secondary" size="small" onClick={() => handleDeclineProposal(p._id)}>Decline</Button>
+                  <Button variant="primary" size="small" iconRight={IconCheck} onClick={() => handleAcceptProposal(p._id)}>Accept</Button>
+                </div>
+              )}
+
+              {p.status === 'delivered' && (
+                <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <Button variant="secondary" size="small" iconRight={IconSliders} onClick={() => handleOpenRevisionModal(p)}>Revisions</Button>
+                  <Button variant="primary" size="small" iconRight={IconCheck} onClick={() => handleApproveDelivery(p._id)}>Approve</Button>
+                </div>
+              )}
+
+              {p.status === 'revision_requested' && (
+                <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--accent-gold)', fontStyle: 'italic' }}>
+                  Revision notes submitted to editors. Updates will be sent on Telegram.
+                </div>
+              )}
+            </div>
+          ))}
+
+          {activeProjects.length === 0 && activeContracts.length === 0 && (
+            <div style={{ backgroundColor: 'var(--surface)', padding: '30px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center' }}>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '13px' }}>No active proposal tasks or ongoing edits.</p>
+            </div>
           )}
         </div>
       )}
 
-      {/* SUMMARY READ-ONLY ACTIVE WORK SNAPSHOT */}
-      <div style={{ display: 'grid', gap: '16px' }}>
-        <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>Active Work Snapshot</h3>
-
-        {activeContracts.map((c) => (
-          <div key={c._id} style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <strong style={{ fontSize: '15px' }}>{c.packageTier?.toUpperCase()} Retainer ({c.frequency})</strong>
-              <Badge variant="gold">{c.status.toUpperCase()}</Badge>
+      {/* TAB 2: PACKAGES & RATES */}
+      {activeNavTab === 'packages' && (
+        <div style={{ display: 'grid', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>Package Rate Cards</h3>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <Button
+                variant={selectedCurrency === 'ETB' ? 'primary' : 'secondary'}
+                size="small"
+                onClick={() => { triggerHaptic('light'); setSelectedCurrency('ETB'); }}
+              >
+                ETB (Br)
+              </Button>
+              <Button
+                variant={selectedCurrency === 'USD' ? 'primary' : 'secondary'}
+                size="small"
+                onClick={() => { triggerHaptic('light'); setSelectedCurrency('USD'); }}
+              >
+                USD ($)
+              </Button>
             </div>
-            <div style={{ fontSize: '13px', color: 'var(--accent-gold)', fontWeight: 600 }}>{c.monthlyPrice} {c.currency} / month</div>
-
-            {c.deliverables && c.deliverables.length > 0 && (
-              <div style={{ marginTop: '12px', display: 'grid', gap: '8px' }}>
-                {c.deliverables.map((d) => (
-                  <div key={d._id} style={{ backgroundColor: 'var(--bg)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
-                    <span>#{d.sequenceNumber}: {d.title || `Render #${d.sequenceNumber}`}</span>
-                    {d.status === 'delivered' ? (
-                      <Button variant="primary" size="small" isLoading={submitting} onClick={() => handleApproveDeliverable(c._id, d._id)}>
-                        Approve
-                      </Button>
-                    ) : (
-                      <Badge variant="success" size="small">APPROVED</Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        ))}
 
-        {activeProjects.map((p) => (
-          <div key={p._id} style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <strong style={{ fontSize: '15px' }}>{p.editingStyle}</strong>
-              <Badge variant="gold">{p.status.toUpperCase()}</Badge>
+          <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <strong style={{ fontSize: '16px' }}>Basic Edit Tier</strong>
+              <span style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>{selectedCurrency === 'ETB' ? '500 – 800 ETB' : '$10 – $15 USD'} / video</span>
             </div>
-            <div style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
-              Terms: {p.price} {p.currency} • Deadline: {new Date(p.deadline).toLocaleDateString()}
+            <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+              Clean subtitles, standard pacing, basic audio polish, 1 revision. Ideal for quick social clips.
+            </p>
+          </div>
+
+          <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '2px solid var(--accent-gold)', padding: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <strong style={{ fontSize: '16px' }}>Professional Tier ⭐ (Recommended)</strong>
+              <span style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>{selectedCurrency === 'ETB' ? '1,000 – 1,500 ETB' : '$20 – $30 USD'} / video</span>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+              Kinetic typography, dynamic b-roll overlays, custom sound effects, 2 revisions.
+            </p>
+          </div>
+
+          <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <strong style={{ fontSize: '16px' }}>Premium Edit Tier 💎</strong>
+              <span style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>{selectedCurrency === 'ETB' ? '1,600 – 2,400 ETB' : '$35 – $50 USD'} / video</span>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+              Custom 2D/3D motion graphics, advanced visual breakdowns, sound design mix, 3 revisions.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: SIGNATURE EDITING STYLES */}
+      {activeNavTab === 'styles' && (
+        <div style={{ display: 'grid', gap: '16px' }}>
+          <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>Signature Editing Styles</h3>
+          {EDITING_STYLES.map((style) => (
+            <div key={style.id} style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <strong style={{ fontSize: '16px' }}>{style.name}</strong>
+                <Badge variant="gold">{style.format || '9:16 Shorts'}</Badge>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--accent-gold)', marginBottom: '8px', fontWeight: 600 }}>
+                Pacing: {style.pacing || 'Kinetic / Fast'}
+              </div>
+              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5, margin: 0 }}>
+                {style.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* TAB 4: ACCOUNT & PROFILE */}
+      {activeNavTab === 'account' && (
+        <div style={{ display: 'grid', gap: '16px' }}>
+          <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>Account Settings</h3>
+          <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '18px', color: '#000' }}>
+                {user?.name?.charAt(0) || 'U'}
+              </div>
+              <div>
+                <strong style={{ fontSize: '16px', display: 'block' }}>{user?.name}</strong>
+                <span style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>{user?.email}</span>
+              </div>
             </div>
 
-            {p.status === 'proposal_sent' && (
-              <div style={{ marginTop: '12px', display: 'flex', gap: '10px' }}>
-                <Button variant="secondary" size="small" onClick={() => handleDeclineProposal(p._id)}>Decline</Button>
-                <Button variant="primary" size="small" iconRight={IconCheck} onClick={() => handleAcceptProposal(p._id)}>Accept</Button>
-              </div>
-            )}
+            <div style={{ backgroundColor: 'var(--bg)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)', fontSize: '13px', marginBottom: '20px' }}>
+              <div><strong>Role:</strong> {user?.role?.toUpperCase()}</div>
+              <div style={{ marginTop: '4px' }}><strong>Status:</strong> <span style={{ color: '#4ade80' }}>Connected to Telegram</span></div>
+            </div>
 
-            {p.status === 'delivered' && (
-              <div style={{ marginTop: '12px' }}>
-                <Button variant="primary" size="small" fullWidth iconRight={IconCheck} onClick={() => handleApproveDelivery(p._id)}>Confirm Delivery</Button>
-              </div>
-            )}
+            <Button variant="secondary" fullWidth onClick={handleUnlink}>
+              Disconnect Telegram Account
+            </Button>
           </div>
-        ))}
+        </div>
+      )}
 
-        {activeProjects.length === 0 && activeContracts.length === 0 && (
-          <div style={{ backgroundColor: 'var(--surface)', padding: '30px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center' }}>
-            <p style={{ color: 'var(--ink-soft)', fontSize: '13px' }}>No active proposal tasks or ongoing edits.</p>
+      {/* REVISION REQUEST MODAL */}
+      <Modal isOpen={showRevisionModal} onClose={() => setShowRevisionModal(false)} title="Request Video Revision">
+        <form onSubmit={handleSubmitRevisionRequest} style={{ display: 'grid', gap: '16px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+            Provide specific timestamps and edits you would like updated for <strong>{revisionProject?.editingStyle}</strong>:
+          </p>
+          <textarea
+            rows={4}
+            value={revisionNotes}
+            onChange={(e) => setRevisionNotes(e.target.value)}
+            placeholder="e.g. 0:12 fix subtitle typo, 0:24 change b-roll overlay..."
+            style={{
+              width: '100%',
+              backgroundColor: 'var(--bg)',
+              color: 'var(--ink)',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius-md)',
+              padding: '12px',
+              fontSize: '13px',
+              fontFamily: 'inherit',
+              boxSizing: 'border-box',
+              resize: 'vertical',
+            }}
+            required
+          />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <Button type="button" variant="secondary" onClick={() => setShowRevisionModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" isLoading={submittingRevision} iconRight={IconCheck}>
+              Send Notes
+            </Button>
           </div>
-        )}
-      </div>
-
-      {/* External Full Dashboard Redirection Footer */}
-      <div style={{ marginTop: '28px', textAlign: 'center', paddingTop: '20px', borderTop: '1px solid var(--line)' }}>
-        <p style={{ fontSize: '12px', color: 'var(--ink-soft)', marginBottom: '12px' }}>
-          For full history, pricing calculators, profile settings, and review submission:
-        </p>
-        <a href="https://alpha-cut-nine.vercel.app/dashboard" target="_blank" rel="noreferrer">
-          <Button variant="secondary" size="small" iconRight={IconExternalLink}>
-            Open Alpha Cut Web Platform
-          </Button>
-        </a>
-      </div>
+        </form>
+      </Modal>
     </TelegramAppLayout>
   );
 };
