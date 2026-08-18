@@ -12,7 +12,7 @@ const router = express.Router();
 router.get('/status', getChapaStatus);
 router.post('/toggle-test-mode', requireAuth, requireAdmin, toggleChapaTestMode);
 router.post('/initialize', requireAuth, initializeChapaPayment);
-router.get('/verify/:txRef', requireAuth, verifyChapaPayment);
+router.get('/verify/:txRef', verifyChapaPayment);
 router.post('/webhook', verifyChapaPayment);
 
 export default router;

@@ -89,6 +89,28 @@ export const DashboardPage = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  // Handle Chapa Payment Gateway Return Redirect Verification
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get('payment');
+    const txRef = urlParams.get('tx_ref');
+
+    if (payment === 'success' && txRef) {
+      const verifyReturnPayment = async () => {
+        try {
+          const res = await apiFetch(`/api/payments/chapa/verify/${txRef}`);
+          if (res.success) {
+            toast({ message: '💳 Payment verified successfully via Chapa!', type: 'success' });
+            fetchDashboardData();
+          }
+        } catch (err) {
+          // Ignore
+        }
+      };
+      verifyReturnPayment();
+    }
+  }, [apiFetch, fetchDashboardData, toast]);
+
   const handlePayWithChapa = async (itemType, itemId) => {
     try {
       setPayingChapaId(itemId);

@@ -95,7 +95,15 @@ export const initializeChapaPayment = async (req, res, next) => {
 export const verifyChapaPayment = async (req, res, next) => {
   try {
     const { txRef } = req.params;
-    const { itemType, itemId } = req.query;
+    let { itemType, itemId } = req.query;
+
+    if ((!itemType || !itemId) && txRef) {
+      const parts = txRef.split('-');
+      if (parts.length >= 4 && parts[0] === 'AC' && parts[1] === 'PAY') {
+        itemType = parts[2];
+        itemId = parts[3];
+      }
+    }
 
     const verification = await chapaService.verifyPayment(txRef);
     if (!verification.success) {
