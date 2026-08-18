@@ -13,6 +13,10 @@ export const Tabs = ({ tabs = [], activeTab, onChange, className = '' }) => {
         backgroundColor: 'var(--surface)',
         border: '1px solid var(--line)',
         borderRadius: 'var(--radius-md)',
+        maxWidth: '100%',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        boxSizing: 'border-box',
       }}
     >
       {tabs.map((tab) => {

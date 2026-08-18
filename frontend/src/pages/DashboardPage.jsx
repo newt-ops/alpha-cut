@@ -408,42 +408,47 @@ export const DashboardPage = () => {
 
   return (
     <div style={{ padding: '20px 0 60px 0' }} className="dashboard-page">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={user?.name}
-              style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-gold)' }}
-            />
-          ) : (
-            <div
-              style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(201, 160, 107, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--accent-gold)',
-                fontWeight: 800,
-                fontSize: '22px',
-                border: '2px solid var(--accent-gold)',
-              }}
-            >
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'C'}
-            </div>
-          )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={user?.name}
+                style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-gold)' }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(201, 160, 107, 0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--accent-gold)',
+                  fontWeight: 800,
+                  fontSize: '22px',
+                  border: '2px solid var(--accent-gold)',
+                }}
+              >
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'C'}
+              </div>
+            )}
 
-          <div>
-            <Badge variant="gold">Client Workspace</Badge>
-            <h1 className="font-display" style={{ fontSize: '32px', marginTop: '4px' }}>
-              Welcome, {user?.name}
-            </h1>
+            <div>
+              <Badge variant="gold">Client Workspace</Badge>
+              <h1 className="font-display" style={{ fontSize: 'clamp(22px, 5vw, 32px)', marginTop: '4px', color: 'var(--ink)', fontWeight: 800 }}>
+                Welcome, {user?.name}
+              </h1>
+            </div>
           </div>
         </div>
-        <Tabs tabs={dashboardTabs} activeTab={activeTab} onChange={setActiveTab} />
+
+        <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <Tabs tabs={dashboardTabs} activeTab={activeTab} onChange={setActiveTab} />
+        </div>
       </div>
 
       {/* OVERVIEW TAB — Contained Cards with Expandable Details */}
@@ -585,7 +590,7 @@ export const DashboardPage = () => {
                       {/* COMPACT CONTAINED CARD HEADER */}
                       <div
                         style={{
-                          padding: '24px 28px',
+                          padding: '20px 16px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -597,7 +602,7 @@ export const DashboardPage = () => {
                         }}
                         onClick={() => toggleExpandProject(proj._id)}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
                           <div
                             style={{
                               width: '44px',
@@ -609,13 +614,14 @@ export const DashboardPage = () => {
                               justifyContent: 'center',
                               color: 'var(--accent-gold)',
                               fontWeight: 800,
+                              flexShrink: 0,
                             }}
                           >
                             <IconFilm size={22} color="var(--accent-gold)" />
                           </div>
                           <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <h3 className="font-display" style={{ fontSize: '20px', color: 'var(--ink)' }}>{proj.editingStyle}</h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                              <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>{proj.editingStyle}</h3>
                               <Badge variant={proj.status === 'completed' ? 'success' : 'gold'}>
                                 {proj.status.replace('_', ' ').toUpperCase()}
                               </Badge>
@@ -627,7 +633,7 @@ export const DashboardPage = () => {
                         </div>
 
                         {/* Quick Action Controls */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-start', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
                           {proj.status === 'proposal_sent' && (
                             <Button
                               variant="primary"

@@ -3,17 +3,20 @@ import { IconCheck } from '@icons/icons';
 
 export const Stepper = ({ steps = [], currentStep = 0, className = '' }) => {
   return (
-    <div
-      className={`custom-stepper-container ${className}`}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        position: 'relative',
-        padding: '10px 0',
-      }}
-    >
+    <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', padding: '6px 0' }}>
+      <div
+        className={`custom-stepper-container ${className}`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          minWidth: '440px',
+          position: 'relative',
+          padding: '10px 0',
+          boxSizing: 'border-box',
+        }}
+      >
       {steps.map((step, index) => {
         const isCompleted = index < currentStep;
         const isActive = index === currentStep;
@@ -88,6 +91,7 @@ export const Stepper = ({ steps = [], currentStep = 0, className = '' }) => {
           </React.Fragment>
         );
       })}
+      </div>
     </div>
   );
 };
