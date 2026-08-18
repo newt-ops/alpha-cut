@@ -68,20 +68,24 @@ export const initializeChapaPayment = async (req, res, next) => {
       if (!contract) return res.status(404).json({ success: false, message: 'Retainer contract not found.' });
       amount = Number(contract.monthlyPrice) || 0;
       currency = contract.currency || 'ETB';
-      title = `${contract.packageTier?.toUpperCase()} Retainer Payment (${contract.frequency})`;
     } else {
       const project = await Project.findOne({ _id: itemId, clientId: req.user._id });
       if (!project) return res.status(404).json({ success: false, message: 'Project proposal not found.' });
       amount = Number(project.price) || 0;
       currency = project.currency || 'ETB';
-      title = `${project.editingStyle} Video Proposal Payment`;
     }
 
     if (amount <= 0) {
       return res.status(400).json({ success: false, message: 'Agreed price must be greater than 0 to initialize Chapa payment.' });
     }
 
-    const txRef = `AC-PAY-${itemType}-${itemId}-${Date.now()}`;
+    // Strict Chapa API limits: tx_ref max 50 chars, title max 16 chars, description max 50 chars
+    const shortType = itemType === 'contract' ? 'cont' : 'proj';
+    const shortTime = Date.now().toString().slice(-6);
+    const txRef = `AC-PAY-${shortType}-${itemId}-${shortTime}`; // 39 characters max
+    const title = 'Alpha Cut'; // 9 characters max (Chapa limit is 16)
+    const description = `Video Handoff #${itemId.toString().slice(-6)}`; // 22 characters max (Chapa limit is 50)
+
     const returnUrl = `${config.clientUrl}/dashboard?payment=success&tx_ref=${txRef}&itemType=${itemType}&itemId=${itemId}`;
     const callbackUrl = `${config.serverUrl}/api/payments/webhook`;
 
@@ -108,7 +112,7 @@ export const initializeChapaPayment = async (req, res, next) => {
       lastName,
       txRef,
       title,
-      description: `Payment for ${title}`,
+      description,
       returnUrl,
       callbackUrl,
     });
@@ -133,7 +137,7 @@ export const confirmProjectPayment = async (txRef, chapaPayload = {}) => {
   if (!itemType || !itemId) {
     const parts = txRef.split('-');
     if (parts.length >= 4 && parts[0] === 'AC' && parts[1] === 'PAY') {
-      itemType = parts[2];
+      itemType = parts[2] === 'cont' ? 'contract' : 'project';
       itemId = parts[3];
     }
   }
