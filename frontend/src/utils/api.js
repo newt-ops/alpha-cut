@@ -9,9 +9,11 @@ export const getApiUrl = (endpoint) => {
 
 export const customFetch = async (endpoint, options = {}) => {
   const url = getApiUrl(endpoint);
+  const token = localStorage.getItem('token');
   const headers = {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
 
