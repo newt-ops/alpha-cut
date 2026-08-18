@@ -89,12 +89,12 @@ export const initializeChapaPayment = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Agreed price must be greater than 0 to initialize Chapa payment.' });
     }
 
-    // Strict Chapa API limits: tx_ref max 50 chars, title max 16 chars, description max 50 chars
+    // Strict Chapa API limits: tx_ref max 50 chars, title max 16 chars, description max 50 chars (alphanumeric, spaces, hyphens, dots only)
     const shortType = itemType === 'contract' ? 'cont' : 'proj';
     const shortTime = Date.now().toString().slice(-6);
     const txRef = `AC-PAY-${shortType}-${itemId}-${shortTime}`; // 39 characters max
     const title = 'Alpha Cut'; // 9 characters max (Chapa limit is 16)
-    const description = `Video Handoff #${itemId.toString().slice(-6)}`; // 22 characters max (Chapa limit is 50)
+    const description = 'Video Handoff Payment'; // 21 characters max (alphanumeric & spaces only)
 
     const returnUrl = `${config.clientUrl}/dashboard?payment=success&tx_ref=${txRef}&itemType=${itemType}&itemId=${itemId}`;
     const callbackUrl = `${config.serverUrl}/api/payments/webhook`;
