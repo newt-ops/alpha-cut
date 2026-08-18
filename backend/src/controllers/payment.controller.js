@@ -1,12 +1,22 @@
+import crypto from 'crypto';
 import { Project } from '../models/Project.js';
 import { Contract } from '../models/Contract.js';
 import { User } from '../models/User.js';
 import { Notification } from '../models/Notification.js';
+import { Payment } from '../models/Payment.js';
 import { config } from '../config/env.js';
 import * as chapaService from '../services/chapa.service.js';
 import { sendTelegramNotification } from '../services/telegram.service.js';
 
-let isTestModeActive = config.enableChapaTestMode;
+let isTestModeActive = config.chapaEnabled;
+
+// Public Feature Flags Endpoint
+export const getFeatureFlags = async (req, res) => {
+  res.status(200).json({
+    success: true,
+    chapaEnabled: isTestModeActive,
+  });
+};
 
 // Check Chapa Payment Status & Feature Flag
 export const getChapaStatus = async (req, res) => {
@@ -34,16 +44,17 @@ export const toggleChapaTestMode = async (req, res) => {
   res.status(200).json({
     success: true,
     enabled: isTestModeActive,
+    chapaEnabled: isTestModeActive,
     hasSecretKey: !!config.chapaSecretKey && !config.chapaSecretKey.includes('alphacut1234567890'),
-    message: `Chapa payment test mode has been ${isTestModeActive ? 'ENABLED' : 'DISABLED'}.`,
+    message: `Chapa payment feature has been ${isTestModeActive ? 'ENABLED' : 'DISABLED'}.`,
   });
 };
 
-// Client: Initialize Chapa Payment (for Project or Contract)
+// Client: Initialize Chapa Payment (Ownership checked, creates Payment record)
 export const initializeChapaPayment = async (req, res, next) => {
   try {
     if (!isTestModeActive) {
-      return res.status(403).json({ success: false, message: 'Chapa payment test mode is currently disabled.' });
+      return res.status(403).json({ success: false, message: 'Chapa payments are currently disabled.' });
     }
 
     const { itemType, itemId } = req.body;
@@ -67,7 +78,18 @@ export const initializeChapaPayment = async (req, res, next) => {
 
     const txRef = `AC-PAY-${itemType}-${itemId}-${Date.now()}`;
     const returnUrl = `${config.clientUrl}/dashboard?payment=success&tx_ref=${txRef}&itemType=${itemType}&itemId=${itemId}`;
-    const callbackUrl = `${config.serverUrl}/api/payments/chapa/webhook`;
+    const callbackUrl = `${config.serverUrl}/api/payments/webhook`;
+
+    // Create Payment Record (Pending)
+    await Payment.create({
+      subjectType: itemType === 'contract' ? 'contract' : 'project',
+      subjectId: itemId,
+      clientId: req.user._id,
+      amount,
+      currency,
+      txRef,
+      status: 'pending',
+    });
 
     const nameParts = (req.user.name || 'Client Partner').split(' ');
     const firstName = nameParts[0] || 'Client';
@@ -90,68 +112,123 @@ export const initializeChapaPayment = async (req, res, next) => {
       success: true,
       checkoutUrl: result.checkoutUrl,
       txRef: result.txRef,
-      isMock: result.isMock,
+      isMock: !result.isLiveApi,
     });
   } catch (err) {
     next(err);
   }
 };
 
-// Client / Webhook: Verify Chapa Payment
+// Helper: Process Verified Payment Success
+const processSuccessfulPayment = async (txRef, chapaPayload = {}) => {
+  let payment = await Payment.findOne({ txRef });
+  let itemType = payment?.subjectType;
+  let itemId = payment?.subjectId;
+
+  if (!itemType || !itemId) {
+    const parts = txRef.split('-');
+    if (parts.length >= 4 && parts[0] === 'AC' && parts[1] === 'PAY') {
+      itemType = parts[2];
+      itemId = parts[3];
+    }
+  }
+
+  // Update Payment Record
+  if (payment) {
+    payment.status = 'success';
+    payment.verifiedAt = new Date();
+    payment.chapaReference = chapaPayload.reference || chapaPayload.chapa_reference || null;
+    await payment.save();
+  }
+
+  // Mark paid status on Project or Contract
+  if (itemType === 'contract' && itemId) {
+    const contract = await Contract.findById(itemId);
+    if (contract) {
+      contract.paymentStatus = 'paid';
+      contract.paidAt = new Date();
+      await contract.save();
+    }
+  } else if (itemId) {
+    const project = await Project.findById(itemId);
+    if (project) {
+      project.paid = true;
+      project.paidAt = new Date();
+      await project.save();
+    }
+  }
+
+  // Notify Admins
+  const admins = await User.find({ role: 'admin' });
+  for (const admin of admins) {
+    await Notification.create({
+      userId: admin._id,
+      type: 'payment_received',
+      message: `💳 Payment verified for ${itemType || 'item'} #${itemId || txRef}.`,
+    });
+
+    const tgMessage = `💳 <b>CHAPA PAYMENT VERIFIED</b>\nRef: <code>${txRef}</code>\nItem: ${itemType || 'Project'} #${itemId || ''}`;
+    await sendTelegramNotification(admin.telegramChatId, tgMessage);
+  }
+
+  return { itemType, itemId };
+};
+
+// Client Server-Side Direct Verification
 export const verifyChapaPayment = async (req, res, next) => {
   try {
     const { txRef } = req.params;
-    let { itemType, itemId } = req.query;
-
-    if ((!itemType || !itemId) && txRef) {
-      const parts = txRef.split('-');
-      if (parts.length >= 4 && parts[0] === 'AC' && parts[1] === 'PAY') {
-        itemType = parts[2];
-        itemId = parts[3];
-      }
-    }
 
     const verification = await chapaService.verifyPayment(txRef);
     if (!verification.success) {
       return res.status(400).json({ success: false, message: 'Chapa payment verification failed.' });
     }
 
-    // Mark paid status on Project or Contract
-    if (itemType === 'contract' && itemId) {
-      const contract = await Contract.findById(itemId);
-      if (contract) {
-        contract.paymentStatus = 'paid';
-        contract.paidAt = new Date();
-        await contract.save();
-      }
-    } else if (itemId) {
-      const project = await Project.findById(itemId);
-      if (project) {
-        project.paid = true;
-        project.paidAt = new Date();
-        await project.save();
-      }
-    }
-
-    // Notify Admins
-    const admins = await User.find({ role: 'admin' });
-    for (const admin of admins) {
-      await Notification.create({
-        userId: admin._id,
-        type: 'payment_received',
-        message: `💳 [CHAPA TEST MODE] Payment verified for ${itemType || 'item'} #${itemId || txRef}.`,
-      });
-
-      const tgMessage = `💳 <b>CHAPA PAYMENT RECEIVED (TEST MODE)</b>\nRef: <code>${txRef}</code>\nItem: ${itemType || 'Project'} #${itemId || ''}`;
-      await sendTelegramNotification(admin.telegramChatId, tgMessage);
-    }
+    const { itemType, itemId } = await processSuccessfulPayment(txRef, verification.chapaData);
 
     res.status(200).json({
       success: true,
       status: 'paid',
       txRef,
+      itemType,
+      itemId,
       verification,
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Public Chapa Webhook Handler (Verified with HMAC-SHA256 timing-safe comparison)
+export const handleChapaWebhook = async (req, res, next) => {
+  try {
+    const signature = req.headers['chapa-signature'] || req.headers['x-chapa-signature'];
+    const webhookSecret = config.chapaWebhookSecret;
+
+    // Verify HMAC-SHA256 Signature using timingSafeEqual
+    if (webhookSecret && signature) {
+      const rawBody = req.rawBody || JSON.stringify(req.body);
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(rawBody)
+        .digest('hex');
+
+      const sigBuffer = Buffer.from(signature, 'utf8');
+      const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
+
+      if (sigBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
+        console.warn('Chapa Webhook: Invalid Signature');
+        return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
+      }
+    }
+
+    const txRef = req.body?.tx_ref || req.body?.trx_ref;
+    if (!txRef) {
+      return res.status(400).json({ success: false, message: 'Missing transaction reference' });
+    }
+
+    await processSuccessfulPayment(txRef, req.body);
+    res.status(200).json({ success: true, message: 'Webhook processed successfully' });
   } catch (err) {
     next(err);
   }

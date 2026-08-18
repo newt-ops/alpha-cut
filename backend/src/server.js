@@ -83,12 +83,27 @@ const limiter = rateLimit({
 });
 
 app.use(limiter);
-app.use(express.json({ limit: '10mb' }));
+app.use(
+  express.json({
+    limit: '10mb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 
 if (config.nodeEnv === 'development') {
   app.use(morgan('dev'));
 }
+
+// Public Feature Flags Endpoint
+app.get('/api/public/feature-flags', (req, res) => {
+  res.status(200).json({
+    success: true,
+    chapaEnabled: config.chapaEnabled,
+  });
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -99,6 +114,7 @@ app.use('/api/ratings', ratingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/payments/chapa', paymentRoutes);
 app.use('/api', contractRoutes);
 app.get('/api/packages/exchange-rate', getLiveExchangeRate);
