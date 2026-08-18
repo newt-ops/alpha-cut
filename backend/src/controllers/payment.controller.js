@@ -63,13 +63,24 @@ export const initializeChapaPayment = async (req, res, next) => {
     let currency = 'ETB';
     let title = 'Alpha Cut Video Handoff';
 
+    let project = null;
+    let contract = null;
+
     if (itemType === 'contract') {
-      const contract = await Contract.findOne({ _id: itemId, clientId: req.user._id });
+      if (req.user.role === 'admin') {
+        contract = await Contract.findById(itemId);
+      } else {
+        contract = await Contract.findOne({ _id: itemId, clientId: req.user._id });
+      }
       if (!contract) return res.status(404).json({ success: false, message: 'Retainer contract not found.' });
       amount = Number(contract.monthlyPrice) || 0;
       currency = contract.currency || 'ETB';
     } else {
-      const project = await Project.findOne({ _id: itemId, clientId: req.user._id });
+      if (req.user.role === 'admin') {
+        project = await Project.findById(itemId);
+      } else {
+        project = await Project.findOne({ _id: itemId, clientId: req.user._id });
+      }
       if (!project) return res.status(404).json({ success: false, message: 'Project proposal not found.' });
       amount = Number(project.price) || 0;
       currency = project.currency || 'ETB';
@@ -90,24 +101,28 @@ export const initializeChapaPayment = async (req, res, next) => {
     const callbackUrl = `${config.serverUrl}/api/payments/webhook`;
 
     // Create Payment Record (Pending)
+    const targetClientId = project?.clientId || contract?.clientId || req.user._id;
     await Payment.create({
       subjectType: itemType === 'contract' ? 'contract' : 'project',
       subjectId: itemId,
-      clientId: req.user._id,
+      clientId: targetClientId,
       amount,
       currency,
       txRef,
       status: 'pending',
     });
 
-    const nameParts = (req.user.name || 'Client Partner').split(' ');
+    const payerName = req.user.name || project?.clientName || contract?.clientName || 'Client Partner';
+    const payerEmail = req.user.email || project?.clientEmail || contract?.clientEmail || 'client@alphacut.com';
+
+    const nameParts = payerName.split(' ');
     const firstName = nameParts[0] || 'Client';
     const lastName = nameParts.slice(1).join(' ') || 'Partner';
 
     const result = await chapaService.initializePayment({
       amount,
       currency,
-      email: req.user.email,
+      email: payerEmail,
       firstName,
       lastName,
       txRef,
