@@ -31,9 +31,6 @@ export const TelegramMiniAppPage = () => {
   const [targetType, setTargetType] = useState('summary');
 
   // Account Linking Form State
-  const [loginMode, setLoginMode] = useState('email'); // 'email' or 'code'
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [linkCode, setLinkCode] = useState('');
   const [submittingLink, setSubmittingLink] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -84,6 +81,7 @@ export const TelegramMiniAppPage = () => {
       setLoading(true);
       const tg = window.Telegram?.WebApp;
       const initData = tg?.initData;
+      const startParam = tg?.initDataUnsafe?.start_param || new URLSearchParams(window.location.search).get('startapp');
 
       // 1. FIRST: Check existing Web JWT session (if already logged in on web platform)
       try {
@@ -93,7 +91,6 @@ export const TelegramMiniAppPage = () => {
           setIsAuthenticated(true);
           await fetchDashboardData();
 
-          // If initData is present, auto-bind Telegram Chat ID to this web user silently
           if (initData) {
             await customFetch('/api/telegram/webapp/auth', {
               method: 'POST',
@@ -125,6 +122,28 @@ export const TelegramMiniAppPage = () => {
             return;
           } else if (authRes.unlinked) {
             setTelegramUser(authRes.telegramUser);
+
+            // Auto-submit 6-digit link code if passed in start_param (e.g. startapp=code_123456 or 123456)
+            if (startParam && (startParam.startsWith('code_') || /^\d{6}$/.test(startParam))) {
+              const extractedCode = startParam.replace('code_', '');
+              try {
+                const linkRes = await customFetch('/api/telegram/webapp/link-code', {
+                  method: 'POST',
+                  body: JSON.stringify({ code: extractedCode, initData }),
+                });
+
+                if (linkRes.success && linkRes.accessToken) {
+                  localStorage.setItem('token', linkRes.accessToken);
+                  setUser(linkRes.user);
+                  setIsAuthenticated(true);
+                  await fetchDashboardData();
+                  setLoading(false);
+                  return;
+                }
+              } catch (linkErr) {
+                // Auto deep-link code match failed, fall through to manual form
+              }
+            }
           }
         } catch (err) {
           // Telegram WebApp auth failed
@@ -137,38 +156,6 @@ export const TelegramMiniAppPage = () => {
 
     authenticateMiniApp();
   }, [fetchDashboardData]);
-
-  const handleLinkEmail = async (e) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast({ message: 'Please enter your account email and password', type: 'error' });
-      return;
-    }
-
-    try {
-      setSubmittingLink(true);
-      const tg = window.Telegram?.WebApp;
-      const initData = tg?.initData;
-
-      const res = await customFetch('/api/telegram/webapp/link-email', {
-        method: 'POST',
-        body: JSON.stringify({ email, password, initData }),
-      });
-
-      if (res.success && res.accessToken) {
-        localStorage.setItem('token', res.accessToken);
-        setUser(res.user);
-        setIsAuthenticated(true);
-        setUnlinked(false);
-        toast({ message: `Welcome back, ${res.user.name}! Account connected.`, type: 'success' });
-        await fetchDashboardData();
-      }
-    } catch (err) {
-      toast({ message: err.message || 'Failed to connect with email/password', type: 'error' });
-    } finally {
-      setSubmittingLink(false);
-    }
-  };
 
   const handleLinkAccount = async (e) => {
     e.preventDefault();
@@ -294,95 +281,33 @@ export const TelegramMiniAppPage = () => {
   if (unlinked && !isAuthenticated) {
     return (
       <TelegramAppLayout>
-        <div style={{ textAlign: 'center', padding: '28px 16px', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
+        <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
           <Badge variant="gold">Telegram Integration</Badge>
-          <h2 className="font-display" style={{ fontSize: '22px', marginTop: '10px', marginBottom: '6px' }}>
+          <h2 className="font-display" style={{ fontSize: '24px', marginTop: '12px', marginBottom: '8px' }}>
             Connect Your Account
           </h2>
-          <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '20px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.6, marginBottom: '24px' }}>
             {telegramUser?.first_name ? `Welcome, ${telegramUser.first_name}. ` : ''}
-            Sign in with your web platform credentials or enter a 6-digit code to connect.
+            To access your video proposals and approve deliverables inside Telegram, enter your 6-digit code from your web dashboard below.
           </p>
 
-          {/* Mode Switcher Tabs */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '20px', maxWidth: '400px', margin: '0 auto 20px' }}>
-            <button
-              type="button"
-              onClick={() => setLoginMode('email')}
-              style={{
-                padding: '10px',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '13px',
-                fontWeight: 600,
-                border: '1px solid var(--line)',
-                backgroundColor: loginMode === 'email' ? 'var(--accent-gold)' : 'var(--bg)',
-                color: loginMode === 'email' ? '#000' : 'var(--ink)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              🔑 Email & Password
-            </button>
-            <button
-              type="button"
-              onClick={() => setLoginMode('code')}
-              style={{
-                padding: '10px',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '13px',
-                fontWeight: 600,
-                border: '1px solid var(--line)',
-                backgroundColor: loginMode === 'code' ? 'var(--accent-gold)' : 'var(--bg)',
-                color: loginMode === 'code' ? '#000' : 'var(--ink)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              🔢 6-Digit Code
-            </button>
-          </div>
+          <form onSubmit={handleLinkAccount} style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
+            <Input
+              label="Enter 6-Digit Code from Web Dashboard"
+              placeholder="e.g. 123456"
+              value={linkCode}
+              onChange={(e) => setLinkCode(e.target.value)}
+              required
+            />
+            <Button type="submit" variant="primary" fullWidth isLoading={submittingLink} iconRight={IconCheck}>
+              Connect Account
+            </Button>
+          </form>
 
-          {loginMode === 'email' ? (
-            <form onSubmit={handleLinkEmail} style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
-              <Input
-                label="Web Account Email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Input
-                label="Password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <Button type="submit" variant="primary" fullWidth isLoading={submittingLink} iconRight={IconCheck}>
-                Sign In & Connect Telegram
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleLinkAccount} style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
-              <Input
-                label="Enter 6-Digit Code"
-                placeholder="e.g. 123456"
-                value={linkCode}
-                onChange={(e) => setLinkCode(e.target.value)}
-                required
-              />
-              <Button type="submit" variant="primary" fullWidth isLoading={submittingLink} iconRight={IconCheck}>
-                Connect Account
-              </Button>
-            </form>
-          )}
-
-          <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--line)', fontSize: '13px', color: 'var(--ink-soft)' }}>
-            Don't have an account yet?{' '}
-            <a href="https://alpha-cut-nine.vercel.app/signup" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
-              Register on Web Platform
+          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--line)', fontSize: '13px', color: 'var(--ink-soft)' }}>
+            Need your 6-digit connection code?{' '}
+            <a href="https://alpha-cut-nine.vercel.app/dashboard" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
+              Open Web Dashboard
             </a>
           </div>
         </div>
