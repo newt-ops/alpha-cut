@@ -453,12 +453,20 @@ export const TelegramMiniAppPage = () => {
       {/* Telegram Native Header Bar */}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface)', padding: '14px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: TELEGRAM_BLUE, color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '16px' }}>
-            {user?.name?.charAt(0) || 'U'}
-          </div>
+          {(user?.avatarUrl || telegramUser?.photo_url) ? (
+            <img
+              src={user?.avatarUrl || telegramUser?.photo_url}
+              alt={user?.name || 'User'}
+              style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${TELEGRAM_BLUE}` }}
+            />
+          ) : (
+            <div style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: TELEGRAM_BLUE, color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '16px' }}>
+              {user?.name?.charAt(0) || 'U'}
+            </div>
+          )}
           <div>
             <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>{user?.name}</div>
-            <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{user?.role?.toUpperCase()} • Synchronized</div>
+            <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{user?.role?.toUpperCase()} • Active Workspace</div>
           </div>
         </div>
         <a href="https://alpha-cut-nine.vercel.app/dashboard" target="_blank" rel="noreferrer">
@@ -710,19 +718,27 @@ export const TelegramMiniAppPage = () => {
         </div>
       )}
 
-      {/* TAB 2: DB PROFILE & METRICS */}
+      {/* TAB 2: PROFILE & METRICS */}
       {activeNavTab === 'profile' && (
         <div style={{ display: 'grid', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ink)' }}>
             <IconUser size={20} color={TELEGRAM_BLUE} />
-            <h3 className="font-display" style={{ fontSize: '18px', margin: 0 }}>MongoDB User Profile</h3>
+            <h3 className="font-display" style={{ fontSize: '18px', margin: 0 }}>Account & Profile</h3>
           </div>
 
           <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-              <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: TELEGRAM_BLUE, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '22px', color: '#FFF' }}>
-                {user?.name?.charAt(0) || 'U'}
-              </div>
+              {(user?.avatarUrl || telegramUser?.photo_url) ? (
+                <img
+                  src={user?.avatarUrl || telegramUser?.photo_url}
+                  alt={user?.name || 'User'}
+                  style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${TELEGRAM_BLUE}` }}
+                />
+              ) : (
+                <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: TELEGRAM_BLUE, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '22px', color: '#FFF' }}>
+                  {user?.name?.charAt(0) || 'U'}
+                </div>
+              )}
               <div>
                 <strong style={{ fontSize: '18px', display: 'block' }}>{user?.name}</strong>
                 <span style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>{user?.email}</span>
@@ -732,7 +748,7 @@ export const TelegramMiniAppPage = () => {
               </div>
             </div>
 
-            {/* LIVE DB METRICS CARDS */}
+            {/* METRICS CARDS */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
               <div style={{ backgroundColor: 'var(--bg)', padding: '12px 8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', textAlign: 'center' }}>
                 <div style={{ fontSize: '20px', fontWeight: 700, color: TELEGRAM_BLUE }}>{activeProjects.length}</div>
@@ -748,20 +764,20 @@ export const TelegramMiniAppPage = () => {
               </div>
             </div>
 
-            {/* MONGO DB CONNECTION DETAILS */}
+            {/* ACCOUNT CONNECTION DETAILS */}
             <div style={{ backgroundColor: 'var(--bg)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', fontSize: '13px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: 'var(--ink-soft)' }}>Telegram Chat ID:</span>
-                <strong>{user?.telegramChatId || 'Linked'}</strong>
+                <span style={{ color: 'var(--ink-soft)' }}>Telegram Account:</span>
+                <strong>{user?.telegramChatId ? `ID #${user.telegramChatId}` : 'Connected'}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: 'var(--ink-soft)' }}>Linked At:</span>
+                <span style={{ color: 'var(--ink-soft)' }}>Connected Since:</span>
                 <strong>{user?.telegramLinkedAt ? new Date(user.telegramLinkedAt).toLocaleDateString() : 'Active'}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--ink-soft)' }}>DB Synchronization:</span>
+                <span style={{ color: 'var(--ink-soft)' }}>Account Status:</span>
                 <span style={{ color: '#4ade80', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <IconShield size={14} /> Real-Time MongoDB
+                  <IconShield size={14} /> Verified Member
                 </span>
               </div>
             </div>

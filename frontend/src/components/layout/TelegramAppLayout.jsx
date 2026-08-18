@@ -34,7 +34,7 @@ export const TelegramAppLayout = ({ children, activeTab = 'work', onTabChange })
 
   const navItems = [
     { id: 'work', label: 'Proposals & Work', icon: IconZap },
-    { id: 'profile', label: 'DB Profile', icon: IconUser },
+    { id: 'profile', label: 'Profile', icon: IconUser },
   ];
 
   return (
