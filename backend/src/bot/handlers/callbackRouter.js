@@ -10,6 +10,17 @@ import { buildPackagesMessage } from '../commands/packages.js';
 import { buildStylesMessage } from '../commands/styles.js';
 import { CLIENT_URL, MINI_APP_URL } from '../config/commands.js';
 
+const safeEditMessageText = async (ctx, text, extra) => {
+  try {
+    return await ctx.editMessageText(text, extra);
+  } catch (err) {
+    if (err.message && err.message.includes('message is not modified')) {
+      return; // Ignore duplicate edit requests
+    }
+    throw err;
+  }
+};
+
 export const handleCallbackQuery = async (ctx) => {
   const data = ctx.callbackQuery.data;
   if (!data) return;
@@ -25,14 +36,16 @@ export const handleCallbackQuery = async (ctx) => {
 
     if (data === 'menu:main') {
       const menuKb = user?.role === 'admin' ? getAdminMenuKeyboard() : getClientMenuKeyboard();
-      return ctx.editMessageText(
+      return safeEditMessageText(
+        ctx,
         user?.role === 'admin' ? '⚡ <b>Alpha Cut Admin ERP Menu</b>' : '🎬 <b>Alpha Cut Client Control Menu</b>',
         { parse_mode: 'HTML', ...menuKb }
       );
     }
 
     if (data === 'menu:support') {
-      return ctx.editMessageText(
+      return safeEditMessageText(
+        ctx,
         `💬 <b>ALPHA CUT SUPPORT & INQUIRIES</b>\n\n` +
           `Need help with a project or have custom retainer requirements?\n\n` +
           `• <b>Email:</b> <code>alphacutagency@gmail.com</code>\n` +
@@ -45,7 +58,7 @@ export const handleCallbackQuery = async (ctx) => {
     // --- SECURITY GUARD: ADMIN ONLY ACTIONS ---
     if (data.startsWith('admin_menu:')) {
       if (!user || user.role !== 'admin') {
-        return ctx.editMessageText('⚠️ <b>Access Denied:</b> This action requires Administrator privileges.', {
+        return safeEditMessageText(ctx, '⚠️ <b>Access Denied:</b> This action requires Administrator privileges.', {
           parse_mode: 'HTML',
           ...getUnlinkedMenuKeyboard(),
         });
@@ -54,7 +67,7 @@ export const handleCallbackQuery = async (ctx) => {
       if (data === 'admin_menu:proposals') {
         const pendingProposals = await Project.find({ status: 'proposal_sent' }).sort({ createdAt: -1 });
         if (pendingProposals.length === 0) {
-          return ctx.editMessageText('ℹ️ No pending client proposals currently awaiting review.', {
+          return safeEditMessageText(ctx, 'ℹ️ No pending client proposals currently awaiting review.', {
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Back to Admin Menu', 'menu:main')]]),
           });
@@ -65,7 +78,7 @@ export const handleCallbackQuery = async (ctx) => {
           msg += `${idx + 1}. <b>${p.editingStyle}</b> (${p.clientName})\n   Rate: <b>${p.price} ${p.currency}</b> | Deadline: ${new Date(p.deadline).toLocaleDateString()}\n\n`;
         });
 
-        return ctx.editMessageText(msg, {
+        return safeEditMessageText(ctx, msg, {
           parse_mode: 'HTML',
           ...Markup.inlineKeyboard([
             [Markup.button.url('🚀 Manage in Admin Portal', `${CLIENT_URL}/admin`)],
@@ -77,7 +90,7 @@ export const handleCallbackQuery = async (ctx) => {
       if (data === 'admin_menu:contracts') {
         const activeContracts = await Contract.find({ status: 'active' }).sort({ createdAt: -1 });
         if (activeContracts.length === 0) {
-          return ctx.editMessageText('ℹ️ No active retainer contracts currently running.', {
+          return safeEditMessageText(ctx, 'ℹ️ No active retainer contracts currently running.', {
             parse_mode: 'HTML',
             ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Back to Admin Menu', 'menu:main')]]),
           });
@@ -88,7 +101,7 @@ export const handleCallbackQuery = async (ctx) => {
           msg += `${idx + 1}. <b>${c.clientName}</b> (${c.packageTier?.toUpperCase()})\n   Rate: <b>${c.monthlyPrice} ${c.currency}/mo</b> (${c.frequency})\n\n`;
         });
 
-        return ctx.editMessageText(msg, {
+        return safeEditMessageText(ctx, msg, {
           parse_mode: 'HTML',
           ...Markup.inlineKeyboard([
             [Markup.button.url('🚀 Manage Retainers in Admin Portal', `${CLIENT_URL}/admin`)],
@@ -110,7 +123,7 @@ export const handleCallbackQuery = async (ctx) => {
           `• <b>Projects Completed:</b> ${completedCount}\n\n` +
           `<i>Open your Web Admin Portal for detailed revenue charts and client CRM.</i>`;
 
-        return ctx.editMessageText(msg, {
+        return safeEditMessageText(ctx, msg, {
           parse_mode: 'HTML',
           ...Markup.inlineKeyboard([
             [Markup.button.url('🚀 Open Admin ERP Dashboard', `${CLIENT_URL}/admin`)],
@@ -123,7 +136,7 @@ export const handleCallbackQuery = async (ctx) => {
     // --- CLIENT WORK TRACKER ---
     if (data === 'menu:work' || data === 'menu:projects') {
       if (!user) {
-        return ctx.editMessageText('⚠️ Please link your account first to track work.', {
+        return safeEditMessageText(ctx, '⚠️ Please link your account first to track work.', {
           parse_mode: 'HTML',
           ...getUnlinkedMenuKeyboard(),
         });
@@ -134,7 +147,7 @@ export const handleCallbackQuery = async (ctx) => {
       const contracts = await Contract.find({ clientId: user._id }).sort({ createdAt: -1 });
 
       if (projects.length === 0 && contracts.length === 0) {
-        return ctx.editMessageText('ℹ️ You have no project proposals or retainer contracts yet.', {
+        return safeEditMessageText(ctx, 'ℹ️ You have no project proposals or retainer contracts yet.', {
           parse_mode: 'HTML',
           ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Back to Menu', 'menu:main')]]),
         });
@@ -149,7 +162,7 @@ export const handleCallbackQuery = async (ctx) => {
         msg += `🎬 <b>${p.editingStyle}</b> [${p.status.toUpperCase()}]\n   Terms: ${p.price} ${p.currency}\n\n`;
       });
 
-      return ctx.editMessageText(msg, {
+      return safeEditMessageText(ctx, msg, {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([
           [Markup.button.webApp('🚀 Open Mini App Workspace', MINI_APP_URL)],
@@ -194,13 +207,13 @@ export const handleCallbackQuery = async (ctx) => {
         [Markup.button.callback('⬅️ Back to Menu', 'menu:main')],
       ]);
 
-      return ctx.editMessageText(updatedText, { parse_mode: 'HTML', ...keyboard });
+      return safeEditMessageText(ctx, updatedText, { parse_mode: 'HTML', ...keyboard });
     }
 
     if (data.startsWith('menu:packages') || data.startsWith('packages:currency:')) {
       const curr = data.includes('currency:usd') ? 'USD' : 'ETB';
       const msgText = await buildPackagesMessage(curr);
-      return ctx.editMessageText(msgText, {
+      return safeEditMessageText(ctx, msgText, {
         parse_mode: 'HTML',
         ...getClientPackageKeyboard(curr),
       });
@@ -209,7 +222,7 @@ export const handleCallbackQuery = async (ctx) => {
     if (data.startsWith('menu:styles:')) {
       const pageIdx = parseInt(data.split(':')[2] || '0', 10);
       const { msgText, safePageIdx, totalPages } = buildStylesMessage(pageIdx);
-      return ctx.editMessageText(msgText, {
+      return safeEditMessageText(ctx, msgText, {
         parse_mode: 'HTML',
         ...getClientStylesPaginationKeyboard(safePageIdx, totalPages),
       });
@@ -222,7 +235,7 @@ export const handleCallbackQuery = async (ctx) => {
         `• <b>Email:</b> <code>alphacutagency@gmail.com</code>\n` +
         `• <b>Web Platform:</b> ${CLIENT_URL}`;
 
-      return ctx.editMessageText(msg, {
+      return safeEditMessageText(ctx, msg, {
         parse_mode: 'HTML',
         ...getSupportKeyboard(),
       });

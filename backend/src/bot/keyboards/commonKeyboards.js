@@ -14,7 +14,7 @@ export const getBackButton = (target = 'menu:main') => {
 
 export const getSupportKeyboard = () => {
   return Markup.inlineKeyboard([
-    [Markup.button.url('✉️ Email Founders', 'mailto:alphacutagency@gmail.com')],
+    [Markup.button.webApp('🚀 Open Mini App Workspace', MINI_APP_URL)],
     [Markup.button.url('🌐 Open Web Platform', CLIENT_URL)],
     [Markup.button.callback('⬅️ Back to Menu', 'menu:main')],
   ]);
