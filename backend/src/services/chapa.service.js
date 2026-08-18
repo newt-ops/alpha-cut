@@ -42,7 +42,7 @@ export const initializePayment = async ({
     }),
   });
 
-  const data = await response.json();
+  const data = await response.json().catch(() => ({ status: 'error', message: 'Failed to parse JSON response from Chapa API.' }));
 
   if (data.status === 'success' && data.data?.checkout_url) {
     return {
@@ -51,7 +51,13 @@ export const initializePayment = async ({
       txRef,
     };
   } else {
-    throw new Error(data.message || 'Chapa transaction initialization failed.');
+    const errorMsg = typeof data.message === 'string'
+      ? data.message
+      : typeof data.message === 'object'
+      ? JSON.stringify(data.message)
+      : 'Chapa transaction initialization failed.';
+    console.error('Chapa API Error Response:', { status: response.status, data });
+    throw new Error(errorMsg);
   }
 };
 

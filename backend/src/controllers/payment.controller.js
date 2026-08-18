@@ -66,15 +66,19 @@ export const initializeChapaPayment = async (req, res, next) => {
     if (itemType === 'contract') {
       const contract = await Contract.findOne({ _id: itemId, clientId: req.user._id });
       if (!contract) return res.status(404).json({ success: false, message: 'Retainer contract not found.' });
-      amount = contract.monthlyPrice;
+      amount = Number(contract.monthlyPrice) || 0;
       currency = contract.currency || 'ETB';
       title = `${contract.packageTier?.toUpperCase()} Retainer Payment (${contract.frequency})`;
     } else {
       const project = await Project.findOne({ _id: itemId, clientId: req.user._id });
       if (!project) return res.status(404).json({ success: false, message: 'Project proposal not found.' });
-      amount = project.price;
+      amount = Number(project.price) || 0;
       currency = project.currency || 'ETB';
       title = `${project.editingStyle} Video Proposal Payment`;
+    }
+
+    if (amount <= 0) {
+      return res.status(400).json({ success: false, message: 'Agreed price must be greater than 0 to initialize Chapa payment.' });
     }
 
     const txRef = `AC-PAY-${itemType}-${itemId}-${Date.now()}`;
@@ -115,7 +119,8 @@ export const initializeChapaPayment = async (req, res, next) => {
       txRef: result.txRef,
     });
   } catch (err) {
-    next(err);
+    console.error('initializeChapaPayment controller error:', err.message);
+    res.status(400).json({ success: false, message: err.message || 'Payment initialization failed.' });
   }
 };
 
