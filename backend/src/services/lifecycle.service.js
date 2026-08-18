@@ -4,7 +4,7 @@ import { Deliverable } from '../models/Deliverable.js';
 import { Rating } from '../models/Rating.js';
 import { Notification } from '../models/Notification.js';
 import { User } from '../models/User.js';
-import { bot, updateTelegramStatusCard, updateContractTelegramStatusCard, sendProposalNotificationTelegram, sendDeliveryNotificationTelegram } from './telegram.service.js';
+import { bot, updateTelegramStatusCard, updateContractTelegramStatusCard, sendProposalNotificationTelegram, sendDeliveryNotificationTelegram, sendRevisionNotificationTelegram } from './telegram.service.js';
 import { Resend } from 'resend';
 import { config } from '../config/env.js';
 
@@ -254,6 +254,9 @@ export const requestRevision = async (projectId, clientId, revisionNotes) => {
     const tgMessage = `🔄 <b>Revision Requested</b>\nClient: <b>${project.clientName}</b>\nProject: <i>${project.editingStyle}</i>\nNotes: "${revisionNotes}"`;
     await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
+
+  // Trigger detailed Admin Telegram alert card
+  await sendRevisionNotificationTelegram(project);
 
   return project;
 };

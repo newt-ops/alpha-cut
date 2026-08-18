@@ -6,7 +6,7 @@ import { Notification } from '../models/Notification.js';
 import { Payment } from '../models/Payment.js';
 import { config } from '../config/env.js';
 import * as chapaService from '../services/chapa.service.js';
-import { sendTelegramNotification } from '../services/telegram.service.js';
+import { sendTelegramNotification, sendPaymentReceiptNotificationTelegram } from '../services/telegram.service.js';
 import { acceptProposal, acceptContract } from '../services/lifecycle.service.js';
 
 let isTestModeActive = config.chapaEnabled;
@@ -186,6 +186,21 @@ export const confirmProjectPayment = async (txRef, chapaPayload = {}) => {
     payment.verifiedAt = new Date();
     payment.chapaReference = chapaPayload.reference || chapaPayload.chapa_reference || chapaPayload.tx_ref || null;
     await payment.save();
+
+    // Trigger Telegram Payment Receipt Notification
+    try {
+      const clientUser = await User.findById(payment.clientId);
+      await sendPaymentReceiptNotificationTelegram({
+        clientChatId: clientUser?.telegramChatId,
+        clientName: clientUser?.name || 'Client Partner',
+        amount: payment.amount,
+        currency: payment.currency,
+        txRef: payment.txRef,
+        title: itemType === 'contract' ? 'Retainer Contract Payment' : 'Project Proposal Payment',
+      });
+    } catch (err) {
+      console.error('Failed to send payment receipt notification:', err.message);
+    }
   }
 
   // Process subject acceptance & status transition
