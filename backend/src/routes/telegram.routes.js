@@ -157,12 +157,13 @@ router.post('/webapp/link-email', async (req, res, next) => {
       }
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
-    if (!user) {
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user || !user.passwordHash) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
 
-    const isMatch = await user.comparePassword(password);
+    const bcrypt = (await import('bcryptjs')).default;
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
