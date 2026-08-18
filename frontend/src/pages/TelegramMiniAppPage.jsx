@@ -77,9 +77,16 @@ export const TelegramMiniAppPage = () => {
   }, [toast]);
 
   useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      try {
+        tg.ready();
+        tg.expand();
+      } catch (e) {}
+    }
+
     const authenticateMiniApp = async () => {
       setLoading(true);
-      const tg = window.Telegram?.WebApp;
       const initData = tg?.initData;
       const startParam = tg?.initDataUnsafe?.start_param || new URLSearchParams(window.location.search).get('startapp');
 
