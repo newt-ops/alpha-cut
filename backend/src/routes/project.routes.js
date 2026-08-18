@@ -5,9 +5,13 @@ import {
   acceptProposal,
   declineProposal,
   approveDelivery,
+  requestRevision,
+  getProjectForRating,
 } from '../controllers/project.controller.js';
 
 const router = express.Router();
+
+router.get('/:id/rating-info', getProjectForRating);
 
 router.use(requireAuth);
 
@@ -15,5 +19,6 @@ router.get('/', getClientProjects);
 router.post('/:id/accept', acceptProposal);
 router.post('/:id/decline', declineProposal);
 router.post('/:id/approve', approveDelivery);
+router.post('/:id/revision', requestRevision);
 
 export default router;

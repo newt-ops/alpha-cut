@@ -229,11 +229,49 @@ export const approveDelivery = async (projectId, clientId) => {
   return project;
 };
 
+export const requestRevision = async (projectId, clientId, revisionNotes) => {
+  const project = await Project.findOne({ _id: projectId, clientId });
+  if (!project) throw new Error('Project not found or access denied.');
+  if (project.status !== 'delivered') throw new Error(`Revisions can only be requested for delivered projects.`);
+  if (!revisionNotes || !revisionNotes.trim()) throw new Error('Please provide specific revision notes.');
+
+  project.status = 'revision_requested';
+  project.revisionNotes = revisionNotes.trim();
+  project.revisionCount = (project.revisionCount || 0) + 1;
+  project.revisionRequestedAt = new Date();
+  await project.save();
+
+  // Notify Admins via App notification + Telegram
+  const admins = await User.find({ role: 'admin' });
+  for (const admin of admins) {
+    await Notification.create({
+      userId: admin._id,
+      type: 'revision_requested',
+      message: `Client ${project.clientName} requested revision for ${project.editingStyle}: "${revisionNotes.substring(0, 100)}..."`,
+      projectId: project._id,
+    });
+
+    const tgMessage = `🔄 <b>Revision Requested</b>\nClient: <b>${project.clientName}</b>\nProject: <i>${project.editingStyle}</i>\nNotes: "${revisionNotes}"`;
+    await sendTelegramNotification(admin.telegramChatId, tgMessage);
+  }
+
+  return project;
+};
+
 export const submitRating = async (projectId, clientId, stars, review) => {
   const project = await Project.findOne({ _id: projectId, clientId });
   if (!project) throw new Error('Project not found or access denied.');
-  if (project.status !== 'completed') throw new Error('Rating is only allowed for completed projects.');
+  if (project.status !== 'completed' && project.status !== 'delivered') {
+    throw new Error('Rating is only allowed for delivered or completed projects.');
+  }
   if (project.rated) throw new Error('Project has already been rated.');
+
+  if (project.status === 'delivered') {
+    project.status = 'completed';
+    project.completedAt = new Date();
+  }
+  project.rated = true;
+  await project.save();
 
   const client = await User.findById(clientId);
 

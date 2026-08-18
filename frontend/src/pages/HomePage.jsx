@@ -18,17 +18,18 @@ export const HomePage = () => {
   const [featuredReviews, setFeaturedReviews] = useState([]);
   const [avgRating, setAvgRating] = useState('5.0');
   const [totalReviews, setTotalReviews] = useState(12);
-
   const [packageTiers, setPackageTiers] = useState(PACKAGES_DATA.shortForm.tiers);
+  const [portfolioList, setPortfolioList] = useState(PORTFOLIO_ITEMS);
 
   useEffect(() => {
     const fetchLiveData = async () => {
       try {
         const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '';
-        const [pkgRes, rateRes, ratRes] = await Promise.all([
+        const [pkgRes, rateRes, ratRes, portRes] = await Promise.all([
           fetch(`${API_BASE}/api/packages`).then((r) => r.json()).catch(() => ({ success: false })),
           fetch(`${API_BASE}/api/packages/exchange-rate`).then((r) => r.json()).catch(() => ({ success: false })),
           fetch(`${API_BASE}/api/ratings?featured=true`).then((r) => r.json()).catch(() => ({ success: false })),
+          fetch(`${API_BASE}/api/portfolio`).then((r) => r.json()).catch(() => ({ success: false })),
         ]);
 
         let currentRate = 0.00778;
@@ -63,12 +64,19 @@ export const HomePage = () => {
           setAvgRating(ratRes.avgRating);
           setTotalReviews(ratRes.totalReviews);
         }
+
+        if (portRes.success && portRes.items && portRes.items.length > 0) {
+          setPortfolioList(portRes.items);
+        }
       } catch (err) {
         // Fallback to static defaults
       }
     };
     fetchLiveData();
   }, []);
+
+  const heroItem1 = portfolioList.find((p) => p.heroSlot === 1 || p.isHeroFeatured) || portfolioList[0];
+  const heroItem2 = portfolioList.find((p) => p.heroSlot === 2) || portfolioList[1] || portfolioList[0];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '90px' }} className="home-page-container">
@@ -154,9 +162,23 @@ export const HomePage = () => {
             flexWrap: 'wrap',
           }}
         >
-          <PhoneFrame title="Viral Educational Breakdown" styleName="Viral Animation" duration="0:58" />
+          <PhoneFrame
+            title={heroItem1?.title || 'Viral Educational Breakdown'}
+            styleName={heroItem1?.styleName || 'Viral Animation'}
+            duration={heroItem1?.duration || '0:58'}
+            videoUrl={heroItem1?.videoUrl || ''}
+            thumbnailUrl={heroItem1?.thumbnailUrl || ''}
+            formatLabel="9:16 FORMAT"
+          />
           <div className="desktop-only" style={{ marginTop: '30px' }}>
-            <PhoneFrame title="Cinematic Founder Story" styleName="Cinematic Short-Film" duration="1:15" />
+            <PhoneFrame
+              title={heroItem2?.title || 'Cinematic Founder Story'}
+              styleName={heroItem2?.styleName || 'Cinematic Short-Film'}
+              duration={heroItem2?.duration || '1:15'}
+              videoUrl={heroItem2?.videoUrl || ''}
+              thumbnailUrl={heroItem2?.thumbnailUrl || ''}
+              formatLabel="9:16 FORMAT"
+            />
           </div>
         </motion.div>
       </section>

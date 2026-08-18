@@ -43,10 +43,11 @@ export const Navbar = () => {
 
   return (
     <header
+      className="site-header"
       style={{
         position: 'sticky',
         top: 0,
-        zIndex: 900,
+        zIndex: 100,
         backgroundColor: 'var(--surface)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
@@ -65,7 +66,7 @@ export const Navbar = () => {
           justifyContent: 'space-between',
         }}
       >
-        <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+        <Link to="/" className="header-logo-link" onClick={() => setMobileMenuOpen(false)}>
           <Logo size="medium" />
         </Link>
 

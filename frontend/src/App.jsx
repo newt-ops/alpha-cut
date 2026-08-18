@@ -26,6 +26,7 @@ const ResetPasswordPage = lazy(() => import('@pages/ResetPasswordPage').then((m)
 const TelegramLinkPage = lazy(() => import('@pages/TelegramLinkPage').then((m) => ({ default: m.TelegramLinkPage })));
 const DashboardPage = lazy(() => import('@pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const AdminPage = lazy(() => import('@pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const RateProjectPage = lazy(() => import('@pages/RateProjectPage').then((m) => ({ default: m.RateProjectPage })));
 const TelegramMiniAppPage = lazy(() => import('@pages/TelegramMiniAppPage').then((m) => ({ default: m.TelegramMiniAppPage })));
 const DevComponentsPage = lazy(() => import('@pages/DevComponentsPage').then((m) => ({ default: m.DevComponentsPage })));
 
@@ -86,6 +87,7 @@ const AppRoutes = () => {
               <Route path="/packages" element={<PackagesPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/ratings" element={<RatingsPage />} />
+              <Route path="/rate-project/:projectId" element={<RateProjectPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />

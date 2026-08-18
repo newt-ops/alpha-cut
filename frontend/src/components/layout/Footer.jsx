@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '@components/ui/Logo';
+import { IconTiktok, IconInstagram, IconTelegram } from '@icons/icons';
 
 export const Footer = () => {
   return (
@@ -102,13 +103,83 @@ export const Footer = () => {
           </p>
           <a
             href="mailto:alphacutagency@gmail.com"
-            style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}
+            style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)', textDecoration: 'none' }}
           >
             alphacutagency@gmail.com
           </a>
           <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '16px' }}>
             Founders: Amir & Aymen
           </p>
+        </div>
+
+        {/* Social Media Links Column */}
+        <div>
+          <h4
+            className="font-mono"
+            style={{
+              fontSize: '12px',
+              color: 'var(--accent-gold)',
+              marginBottom: '16px',
+            }}
+          >
+            Follow & Connect
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <a
+              href="https://www.tiktok.com/@alphacut.ae"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                fontSize: '14px',
+                color: 'var(--ink-soft)',
+                textDecoration: 'none',
+                transition: 'color var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
+            >
+              <IconTiktok size={18} /> @alphacut.ae
+            </a>
+            <a
+              href="https://www.instagram.com/alphacut.ae"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                fontSize: '14px',
+                color: 'var(--ink-soft)',
+                textDecoration: 'none',
+                transition: 'color var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
+            >
+              <IconInstagram size={18} /> @alphacut.ae
+            </a>
+            <a
+              href="https://t.me/Alphacut_co"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                fontSize: '14px',
+                color: 'var(--ink-soft)',
+                textDecoration: 'none',
+                transition: 'color var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
+            >
+              <IconTelegram size={18} /> @Alphacut_co
+            </a>
+          </div>
         </div>
       </div>
 

@@ -14,7 +14,7 @@ const projectSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['proposal_sent', 'in_progress', 'declined', 'delivered', 'completed'],
+      enum: ['proposal_sent', 'in_progress', 'declined', 'delivered', 'revision_requested', 'completed'],
       default: 'proposal_sent',
     },
     clientName: {
@@ -71,6 +71,22 @@ const projectSchema = new mongoose.Schema(
     rated: {
       type: Boolean,
       default: false,
+    },
+    revisionNotes: {
+      type: String,
+      default: '',
+    },
+    revisionRequestedAt: {
+      type: Date,
+      default: null,
+    },
+    revisionCount: {
+      type: Number,
+      default: 0,
+    },
+    adminNotes: {
+      type: String,
+      default: '',
     },
     telegramStatusMessageId: {
       type: String,

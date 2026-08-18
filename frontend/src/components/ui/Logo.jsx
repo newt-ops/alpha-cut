@@ -5,12 +5,14 @@ export const Logo = ({ size = 'medium', showText = true, className = '' }) => {
   const { theme } = useTheme();
 
   const sizeMap = {
-    small: { img: 28, text: '16px' },
-    medium: { img: 38, text: '20px' },
-    large: { img: 52, text: '26px' },
+    small: { img: 22, text: '14px' },
+    medium: { img: 28, text: '17px' },
+    large: { img: 40, text: '22px' },
   };
 
   const { img: imgSize, text: textSize } = sizeMap[size] || sizeMap.medium;
+
+  const logoSrc = theme === 'dark' ? '/alpha-logo-dark.png' : '/alpha-logo-light.png';
 
   return (
     <div
@@ -25,8 +27,8 @@ export const Logo = ({ size = 'medium', showText = true, className = '' }) => {
       }}
     >
       <img
-        src="/logo.png"
-        alt="Alpha Cut Logo"
+        src={logoSrc}
+        alt="Alpha Cut"
         className="app-logo-img"
         style={{
           height: `${imgSize}px`,
@@ -37,7 +39,7 @@ export const Logo = ({ size = 'medium', showText = true, className = '' }) => {
       />
       {showText && (
         <span
-          className="font-display"
+          className="logo-text font-display"
           style={{
             fontSize: textSize,
             fontWeight: 800,

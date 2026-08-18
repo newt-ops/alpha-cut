@@ -124,6 +124,7 @@ export const PortfolioPage = () => {
               duration={item.duration}
               formatLabel="9:16 SHORT"
               videoUrl={item.videoUrl}
+              thumbnailUrl={item.thumbnailUrl}
             />
           );
         })}

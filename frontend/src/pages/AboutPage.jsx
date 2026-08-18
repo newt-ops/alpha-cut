@@ -3,6 +3,177 @@ import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { IconFilm, IconZap, IconShield, IconExternalLink } from '@icons/icons';
 
+const FounderCard = ({ founder }) => {
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const showOverlay = isRevealed || isHovered;
+
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        position: 'relative',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--line)',
+        backgroundColor: 'var(--surface)',
+        overflow: 'hidden',
+        boxShadow: 'var(--shadow)',
+        minHeight: '480px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        transition: 'transform var(--transition-fast), box-shadow var(--transition-smooth)',
+        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+      }}
+    >
+      {/* Full Background Portrait */}
+      <img
+        src={founder.image}
+        alt={`${founder.name} Portrait`}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center top',
+          transition: 'transform 600ms cubic-bezier(0.4, 0, 0.2, 1)',
+          transform: isHovered ? 'scale(1.04)' : 'scale(1)',
+        }}
+      />
+
+      {/* Default Bottom Scrim Bar (Visible when not revealed) */}
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          padding: '40px 24px 24px 24px',
+          background: 'linear-gradient(to top, rgba(15, 7, 4, 0.95) 0%, rgba(15, 7, 4, 0.75) 55%, transparent 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: '8px',
+          transition: 'opacity 300ms ease',
+          opacity: showOverlay ? 0 : 1,
+          pointerEvents: showOverlay ? 'none' : 'auto',
+        }}
+      >
+        <Badge variant="gold" size="small">{founder.role}</Badge>
+        <h2 className="font-display" style={{ fontSize: '32px', color: '#FBEFE1', margin: 0, fontWeight: 800 }}>
+          {founder.name}
+        </h2>
+        <p className="font-mono" style={{ fontSize: '12px', color: 'var(--accent-gold)', margin: 0, lineHeight: 1.4 }}>
+          {founder.specialty}
+        </p>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsRevealed(true);
+          }}
+          style={{
+            marginTop: '12px',
+            padding: '8px 16px',
+            borderRadius: '100px',
+            backgroundColor: 'rgba(201, 160, 107, 0.2)',
+            border: '1px solid var(--accent-gold)',
+            color: '#FBEFE1',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <span>Tap to Reveal Bio & Skills</span>
+          <IconSparkles size={14} color="var(--accent-gold)" />
+        </button>
+      </div>
+
+      {/* Interactive Glassmorphism Slide-Up Reveal Overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 3,
+          backgroundColor: 'rgba(23, 11, 6, 0.93)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          padding: '32px 28px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          transition: 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms ease',
+          transform: showOverlay ? 'translateY(0%)' : 'translateY(102%)',
+          opacity: showOverlay ? 1 : 0,
+        }}
+      >
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <Badge variant="gold" size="small">{founder.role}</Badge>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsRevealed(false);
+                setIsHovered(false);
+              }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '28px',
+                height: '28px',
+                color: '#FBEFE1',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title="Show Photo"
+            >
+              <IconClose size={14} />
+            </button>
+          </div>
+
+          <h2 className="font-display" style={{ fontSize: '28px', color: '#FBEFE1', marginBottom: '4px' }}>
+            {founder.name}
+          </h2>
+          <p className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', marginBottom: '16px' }}>
+            SPECIALTY: {founder.specialty}
+          </p>
+
+          <p style={{ fontSize: '14px', color: '#C9B8A8', lineHeight: 1.6, marginBottom: '20px' }}>
+            {founder.bio}
+          </p>
+        </div>
+
+        <div>
+          <h4 className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', marginBottom: '10px' }}>
+            CORE SKILLS & FOCUS:
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {founder.skills.map((skill, idx) => (
+              <Badge key={idx} variant="surface" size="small" style={{ backgroundColor: 'rgba(251, 239, 225, 0.1)', color: '#FBEFE1' }}>
+                {skill}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const AboutPage = () => {
   const [activeFounder, setActiveFounder] = useState('both');
 
@@ -12,6 +183,7 @@ export const AboutPage = () => {
       name: 'Amir',
       role: 'Co-Founder & Lead Video Editor',
       specialty: 'Kinetic Motion Graphics, Pacing & Visual Storytelling',
+      image: '/amir-portrait.jpg',
       bio: 'Amir leads creative direction and rhythm editing at Alpha Cut. Specializing in high-retention short-form cuts, kinetic typography, and visual pattern interrupts that turn raw video into viral content.',
       skills: ['Kinetic Typography', 'Sound Design (SFX)', 'Viral Pacing', 'Color Grading', 'Documentary B-Roll Sync'],
     },
@@ -20,6 +192,7 @@ export const AboutPage = () => {
       name: 'Aymen',
       role: 'Co-Founder, Full-Stack Developer & Video Editor',
       specialty: 'Technical Systems, App Development & SaaS Animations',
+      image: '/aymen-portrait.jpg',
       bio: 'Aymen bridges tech and creative craft — building full-stack web applications and crafting high-converting SaaS product animations, app walkthroughs, and UI motion graphics for startups.',
       skills: ['Full-Stack Web Engineering', 'SaaS Product Motion', 'UI Vector Animation', 'System Architecture', 'Client Dashboard Logic'],
     },
@@ -88,67 +261,7 @@ export const AboutPage = () => {
         {founders
           .filter((f) => activeFounder === 'both' || activeFounder === f.id)
           .map((founder) => (
-            <div
-              key={founder.id}
-              style={{
-                backgroundColor: 'var(--surface)',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--line)',
-                padding: '36px 30px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                boxShadow: 'var(--shadow)',
-              }}
-            >
-              <div>
-                {/* Photo Placeholder Frame */}
-                <div
-                  style={{
-                    width: '100%',
-                    height: '220px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--bg)',
-                    border: '1px dashed var(--line)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: '24px',
-                    textAlign: 'center',
-                  }}
-                >
-                  <IconFilm size={36} color="var(--accent-gold)" style={{ marginBottom: '8px' }} />
-                  <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>
-                    [FOUNDER PHOTO PLACEHOLDER]
-                  </span>
-                  <span style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                    {founder.name} portrait coming soon
-                  </span>
-                </div>
-
-                <Badge variant="gold" size="small">{founder.role}</Badge>
-                <h2 className="font-display" style={{ fontSize: '28px', marginTop: '8px', marginBottom: '4px' }}>
-                  {founder.name}
-                </h2>
-                <p className="font-mono" style={{ fontSize: '12px', color: 'var(--accent-gold)', marginBottom: '16px' }}>
-                  SPECIALTY: {founder.specialty}
-                </p>
-
-                <p style={{ fontSize: '15px', color: 'var(--ink-soft)', lineHeight: 1.6, marginBottom: '24px' }}>
-                  {founder.bio}
-                </p>
-
-                <h4 className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', marginBottom: '12px' }}>
-                  CORE SKILLS & FOCUS:
-                </h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {founder.skills.map((skill, idx) => (
-                    <Badge key={idx} variant="surface" size="small">{skill}</Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <FounderCard key={founder.id} founder={founder} />
           ))}
       </div>
 

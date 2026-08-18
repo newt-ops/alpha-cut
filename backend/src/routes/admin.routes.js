@@ -9,6 +9,8 @@ import {
   getStats,
   updatePackageConfig,
   getAllPackageConfigs,
+  updateProjectAdminNotes,
+  updateClientAdminNotes,
 } from '../controllers/admin.controller.js';
 
 const router = express.Router();
@@ -18,9 +20,11 @@ router.use(requireAdmin);
 
 router.get('/users/search', searchUsers);
 router.get('/clients', getAllClients);
+router.put('/clients/:id/notes', updateClientAdminNotes);
 router.post('/projects', createProposal);
 router.get('/projects', getAllProjects);
 router.post('/projects/:id/deliver', markDelivered);
+router.put('/projects/:id/notes', updateProjectAdminNotes);
 router.get('/stats', getStats);
 router.put('/packages', updatePackageConfig);
 router.get('/packages', getAllPackageConfigs);

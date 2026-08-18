@@ -21,6 +21,12 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('alpha_cut_theme', theme);
+
+    // Dynamically update favicon based on theme state
+    const faviconEl = document.getElementById('app-favicon');
+    if (faviconEl) {
+      faviconEl.setAttribute('href', theme === 'dark' ? '/favicon-dark.png' : '/favicon-light.png');
+    }
   }, [theme]);
 
   const toggleTheme = () => {

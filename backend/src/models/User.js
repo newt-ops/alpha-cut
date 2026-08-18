@@ -56,6 +56,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    adminNotes: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

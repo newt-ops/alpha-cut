@@ -39,3 +39,27 @@ export const approveDelivery = async (req, res, next) => {
     next(err);
   }
 };
+
+export const requestRevision = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { revisionNotes } = req.body;
+    const project = await lifecycleService.requestRevision(id, req.user._id, revisionNotes);
+    res.status(200).json({ success: true, project, message: 'Revision request sent successfully!' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getProjectForRating = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const project = await Project.findById(id).select('clientName editingStyle status rated createdAt deliverableUrl packageTier currency price');
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+    res.status(200).json({ success: true, project });
+  } catch (err) {
+    next(err);
+  }
+};

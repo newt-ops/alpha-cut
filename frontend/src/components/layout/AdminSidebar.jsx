@@ -20,7 +20,7 @@ import { Logo } from '@components/ui/Logo';
 export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollapse, isMobileDrawer = false }) => {
   const menuItems = [
     { id: 'overview', label: 'Analytics & Revenue', icon: IconBarChart },
-    { id: 'board', label: 'Proposals & Projects', icon: IconFolder },
+    { id: 'projects', label: 'Proposals & Projects', icon: IconFolder },
     { id: 'contracts', label: 'Retainer Contracts', icon: IconFileText },
     { id: 'calendar', label: 'Calendar Schedule', icon: IconCalendar },
     { id: 'proposal', label: 'Create Proposal', icon: IconPlus },
@@ -94,7 +94,7 @@ export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollap
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
+            const isActive = activeTab === item.id || (item.id === 'projects' && activeTab === 'board');
             return (
               <button
                 key={item.id}

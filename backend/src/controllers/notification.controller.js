@@ -24,3 +24,12 @@ export const markRead = async (req, res, next) => {
     next(err);
   }
 };
+
+export const markAllRead = async (req, res, next) => {
+  try {
+    await Notification.updateMany({ userId: req.user._id, read: false }, { read: true });
+    res.status(200).json({ success: true, message: 'All notifications marked as read' });
+  } catch (err) {
+    next(err);
+  }
+};

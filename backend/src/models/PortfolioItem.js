@@ -33,6 +33,14 @@ const portfolioItemSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    isHeroFeatured: {
+      type: Boolean,
+      default: false,
+    },
+    heroSlot: {
+      type: Number,
+      default: null,
+    },
     order: {
       type: Number,
       default: 0,

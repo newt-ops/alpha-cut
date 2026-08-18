@@ -1,20 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@components/ui/Badge';
-import { IconPlay, IconFilmReel } from '@icons/icons';
+import { IconPlay, IconFilmReel, IconClose, IconVolume, IconVolumeMute } from '@icons/icons';
+
+const parseYouTubeId = (url) => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? match[2] : null;
+};
 
 export const PhoneFrame = ({
   title = 'Sample Edit Title',
   styleName = 'Editing Style',
   duration = '0:60',
   formatLabel = '9:16 FORMAT',
+  videoUrl = '',
+  thumbnailUrl = '',
+  onPlay = null,
   className = '',
 }) => {
   const [rotateX, setRotateX] = useState(0);
   const [rotateY, setRotateY] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentVideoSrc, setCurrentVideoSrc] = useState(videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4');
+
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoUrl) {
+      setCurrentVideoSrc(videoUrl);
+    }
+  }, [videoUrl]);
+
+  const youtubeId = parseYouTubeId(currentVideoSrc);
+  const youtubeEmbedUrl = youtubeId ? `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=0&rel=0&modestbranding=1&controls=1` : null;
 
   const handleMouseMove = (e) => {
+    if (isPlaying) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
     const y = e.clientY - rect.top - rect.height / 2;
@@ -32,6 +57,35 @@ export const PhoneFrame = ({
     setIsHovered(false);
   };
 
+  const handleStartPlay = (e) => {
+    e.stopPropagation();
+    setIsPlaying(true);
+    if (onPlay) {
+      onPlay({ title, styleName, duration, videoUrl: currentVideoSrc, thumbnailUrl });
+    }
+  };
+
+  const handleVideoError = () => {
+    console.warn('Primary video URL failed to load in browser, switching to reliable fallback stream...');
+    if (currentVideoSrc !== 'https://www.w3schools.com/html/mov_bbb.mp4') {
+      setCurrentVideoSrc('https://www.w3schools.com/html/mov_bbb.mp4');
+    } else {
+      setCurrentVideoSrc('https://media.w3.org/2010/05/sintel/trailer_hd.mp4');
+    }
+  };
+
+  useEffect(() => {
+    if (isPlaying && videoRef.current && !youtubeEmbedUrl) {
+      videoRef.current.play().catch(() => {
+        if (videoRef.current) {
+          videoRef.current.muted = true;
+          setIsMuted(true);
+          videoRef.current.play().catch((err) => console.warn('Video playback failed:', err));
+        }
+      });
+    }
+  }, [isPlaying, youtubeEmbedUrl]);
+
   return (
     <div
       style={{ perspective: 1000, width: '100%', maxWidth: '280px', margin: '0 auto' }}
@@ -41,7 +95,8 @@ export const PhoneFrame = ({
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={handleMouseLeave}
-        animate={{ rotateX, rotateY, scale: isHovered ? 1.03 : 1 }}
+        onClick={handleStartPlay}
+        animate={{ rotateX: isPlaying ? 0 : rotateX, rotateY: isPlaying ? 0 : rotateY, scale: isHovered && !isPlaying ? 1.03 : 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         style={{
           position: 'relative',
@@ -76,6 +131,7 @@ export const PhoneFrame = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            pointerEvents: 'none',
           }}
         >
           <div
@@ -87,6 +143,124 @@ export const PhoneFrame = ({
             }}
           />
         </div>
+
+        {/* Real HTML5 / YouTube Video Overlay when playing */}
+        {isPlaying ? (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 6, backgroundColor: '#000' }}>
+            {youtubeEmbedUrl ? (
+              <iframe
+                src={youtubeEmbedUrl}
+                title={title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  objectFit: 'cover',
+                }}
+              />
+            ) : (
+              <video
+                ref={videoRef}
+                src={currentVideoSrc}
+                autoPlay
+                loop
+                playsInline
+                muted={isMuted}
+                onError={handleVideoError}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+            )}
+
+            {/* Video Controls Bar inside Phone */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '32px',
+                left: '12px',
+                right: '12px',
+                zIndex: 15,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+              }}
+            >
+              {!youtubeEmbedUrl && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMuted(!isMuted);
+                  }}
+                  style={{
+                    background: 'rgba(0,0,0,0.75)',
+                    color: '#FBEFE1',
+                    border: '1px solid var(--accent-gold)',
+                    borderRadius: '100px',
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(8px)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  {isMuted ? <IconVolumeMute size={14} color="var(--accent-gold)" /> : <IconVolume size={14} color="var(--accent-gold)" />}
+                  <span>{isMuted ? 'Muted' : 'Sound ON'}</span>
+                </button>
+              )}
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsPlaying(false);
+                }}
+                style={{
+                  background: 'rgba(0,0,0,0.75)',
+                  color: '#FBEFE1',
+                  border: '1px solid var(--accent-gold)',
+                  borderRadius: '100px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  marginLeft: 'auto',
+                }}
+              >
+                <IconClose size={14} color="var(--accent-gold)" />
+                <span>Close</span>
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Optional Cover Thumbnail Image */}
+        {thumbnailUrl && !isPlaying ? (
+          <img
+            src={thumbnailUrl}
+            alt={title}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: 0.65,
+              zIndex: 1,
+            }}
+          />
+        ) : null}
 
         {/* Header Tags inside Phone */}
         <div
@@ -101,7 +275,7 @@ export const PhoneFrame = ({
           <Badge variant="gold" size="small">
             {formatLabel}
           </Badge>
-          <span className="font-mono" style={{ fontSize: '11px', color: 'rgba(251, 239, 225, 0.6)' }}>
+          <span className="font-mono" style={{ fontSize: '11px', color: 'rgba(251, 239, 225, 0.9)', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
             {duration}
           </span>
         </div>
@@ -124,12 +298,13 @@ export const PhoneFrame = ({
               width: '56px',
               height: '56px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(201, 160, 107, 0.2)',
+              backgroundColor: 'rgba(201, 160, 107, 0.25)',
               border: '1.5px solid var(--accent-gold)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               backdropFilter: 'blur(8px)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
             }}
           >
             <IconPlay size={24} color="var(--accent-gold)" />
@@ -141,9 +316,10 @@ export const PhoneFrame = ({
               color: 'var(--accent-gold)',
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
+              textShadow: '0 2px 4px rgba(0,0,0,0.8)',
             }}
           >
-            Preview Sample Edit
+            {videoUrl ? 'Click to Play Video' : 'Preview Sample Edit'}
           </span>
         </div>
 
@@ -153,9 +329,9 @@ export const PhoneFrame = ({
             zIndex: 2,
             padding: '12px',
             borderRadius: '16px',
-            backgroundColor: 'rgba(36, 18, 9, 0.85)',
+            backgroundColor: 'rgba(36, 18, 9, 0.9)',
             backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(251, 239, 225, 0.1)',
+            border: '1px solid rgba(251, 239, 225, 0.15)',
           }}
         >
           <span

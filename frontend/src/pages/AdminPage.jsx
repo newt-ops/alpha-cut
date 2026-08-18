@@ -12,6 +12,12 @@ import { NotionCalendar } from '@components/calendar/NotionCalendar';
 import { EDITING_STYLES } from '../data/editingStyles';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
+import { AdminHeaderBar } from '@components/admin/AdminHeaderBar';
+import { AdminSectionHeader } from '@components/admin/AdminSectionHeader';
+import { AnalyticsCharts } from '@components/admin/AnalyticsCharts';
+import { DataTable } from '@components/admin/DataTable';
+import { ProjectsKanbanBoard } from '@components/admin/ProjectsKanbanBoard';
+import { Stepper } from '@components/ui/Stepper';
 import {
   IconSearch,
   IconUser,
@@ -41,10 +47,28 @@ export const AdminPage = () => {
   const [contracts, setContracts] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [clients, setClients] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [packages, setPackages] = useState([]);
   const [portfolioItems, setPortfolioItems] = useState([]);
   const [exchangeRate, setExchangeRate] = useState({ usdToEtb: 128.5, etbToUsd: 0.00778 });
   const [loading, setLoading] = useState(true);
+
+  // New Full System Dashboard State
+  const [proposalModalOpen, setProposalModalOpen] = useState(false);
+  const [projectViewMode, setProjectViewMode] = useState('table'); // 'table' | 'kanban'
+  const [projectFilterTab, setProjectFilterTab] = useState('all');
+  const [contractFilterTab, setContractFilterTab] = useState('all');
+  const [clientModalOpen, setClientModalOpen] = useState(false);
+  const [selectedClientForDetail, setSelectedClientForDetail] = useState(null);
+  const [adminNotesText, setAdminNotesText] = useState('');
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [portfolioStyleFilter, setPortfolioStyleFilter] = useState('all');
+  const [portfolioFormatFilter, setPortfolioFormatFilter] = useState('all');
+  const [reviewStarFilter, setReviewStarFilter] = useState('all');
+
+  const handleOpenProposalModal = () => {
+    setProposalModalOpen(true);
+  };
 
   // Client Filter Search State
   const [clientFilterText, setClientFilterText] = useState('');
@@ -91,6 +115,7 @@ export const AdminPage = () => {
   const [portClientType, setPortClientType] = useState('Tech Creator');
   const [portVideoUrl, setPortVideoUrl] = useState('');
   const [portThumbnailUrl, setPortThumbnailUrl] = useState('');
+  const [portHeroSlot, setPortHeroSlot] = useState(0);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [submittingPortfolio, setSubmittingPortfolio] = useState(false);
 
@@ -116,7 +141,7 @@ export const AdminPage = () => {
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, projRes, contractRes, ratRes, clientRes, pkgRes, portRes, rateRes] = await Promise.all([
+      const [statsRes, projRes, contractRes, ratRes, clientRes, pkgRes, portRes, rateRes, notifRes] = await Promise.all([
         apiFetch('/api/admin/stats').catch(() => ({ success: false })),
         apiFetch('/api/admin/projects').catch(() => ({ success: false })),
         apiFetch('/api/admin/contracts').catch(() => ({ success: false, contracts: [] })),
@@ -125,6 +150,7 @@ export const AdminPage = () => {
         apiFetch('/api/admin/packages').catch(() => ({ success: false, configs: [] })),
         apiFetch('/api/portfolio').catch(() => ({ success: false, items: [] })),
         apiFetch('/api/packages/exchange-rate').catch(() => ({ success: false })),
+        apiFetch('/api/notifications').catch(() => ({ success: false, notifications: [] })),
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
@@ -133,6 +159,7 @@ export const AdminPage = () => {
       if (ratRes.success) setRatings(ratRes.ratings);
       if (clientRes.success) setClients(clientRes.clients);
       if (portRes.success) setPortfolioItems(portRes.items);
+      if (notifRes.success) setNotifications(notifRes.notifications);
 
       if (rateRes.success && rateRes.usdToEtb) {
         setExchangeRate({ usdToEtb: rateRes.usdToEtb, etbToUsd: rateRes.etbToUsd });
@@ -169,6 +196,61 @@ export const AdminPage = () => {
   useEffect(() => {
     fetchAdminData();
   }, [fetchAdminData]);
+
+  // Mark all activity notifications as read
+  const handleMarkAllNotificationsRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    toast({ message: 'All notifications marked as read', type: 'info' });
+    try {
+      await apiFetch('/api/notifications/read-all', { method: 'POST' });
+    } catch (err) {
+      // Backend route pending deployment fallback
+    }
+  };
+
+  // Save private CRM notes for a project
+  const handleSaveProjectNotes = async (projectId, adminNotes) => {
+    try {
+      setSavingNotes(true);
+      const res = await apiFetch(`/api/admin/projects/${projectId}/notes`, {
+        method: 'PUT',
+        body: JSON.stringify({ adminNotes }),
+      });
+      if (res.success) {
+        toast({ message: 'Private project notes saved!', type: 'success' });
+        fetchAdminData();
+        if (selectedProjectForDetail && selectedProjectForDetail._id === projectId) {
+          setSelectedProjectForDetail((prev) => ({ ...prev, adminNotes }));
+        }
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Failed to save notes', type: 'error' });
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
+  // Save private CRM notes for a client
+  const handleSaveClientNotes = async (clientId, adminNotes) => {
+    try {
+      setSavingNotes(true);
+      const res = await apiFetch(`/api/admin/clients/${clientId}/notes`, {
+        method: 'PUT',
+        body: JSON.stringify({ adminNotes }),
+      });
+      if (res.success) {
+        toast({ message: 'Private client CRM notes saved!', type: 'success' });
+        fetchAdminData();
+        if (selectedClientForDetail && selectedClientForDetail._id === clientId) {
+          setSelectedClientForDetail((prev) => ({ ...prev, adminNotes }));
+        }
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Failed to save notes', type: 'error' });
+    } finally {
+      setSavingNotes(false);
+    }
+  };
 
   // Auto-calculate suggested monthly price based on frequency and selected tier
   useEffect(() => {
@@ -248,8 +330,9 @@ export const AdminPage = () => {
         setClientSearchText('');
         setReferenceBrief('');
         setNotes('');
+        setProposalModalOpen(false);
         fetchAdminData();
-        setActiveTab('board');
+        setActiveTab('projects');
       }
     } catch (err) {
       toast({ message: err.message, type: 'error' });
@@ -292,6 +375,7 @@ export const AdminPage = () => {
         setSelectedClient(null);
         setClientSearchText('');
         setNotes('');
+        setProposalModalOpen(false);
         fetchAdminData();
         setActiveTab('contracts');
       }
@@ -450,6 +534,7 @@ export const AdminPage = () => {
       setPortClientType(item.clientType || 'Tech Creator');
       setPortVideoUrl(item.videoUrl || '');
       setPortThumbnailUrl(item.thumbnailUrl || '');
+      setPortHeroSlot(item.heroSlot || (item.isHeroFeatured ? 1 : 0));
     } else {
       setEditingPortfolioId(null);
       setPortTitle('');
@@ -459,6 +544,7 @@ export const AdminPage = () => {
       setPortClientType('Tech Creator');
       setPortVideoUrl('');
       setPortThumbnailUrl('');
+      setPortHeroSlot(0);
     }
     setPortfolioModalOpen(true);
   };
@@ -473,6 +559,7 @@ export const AdminPage = () => {
 
     try {
       setSubmittingPortfolio(true);
+      const selectedSlot = Number(portHeroSlot) || 0;
       const payload = {
         title: portTitle,
         styleName: portStyleName,
@@ -481,6 +568,8 @@ export const AdminPage = () => {
         clientType: portClientType,
         videoUrl: portVideoUrl,
         thumbnailUrl: portThumbnailUrl,
+        heroSlot: selectedSlot > 0 ? selectedSlot : null,
+        isHeroFeatured: selectedSlot > 0,
       };
 
       let res;
@@ -659,129 +748,576 @@ export const AdminPage = () => {
   );
 
   return (
-    <AdminLayout activeTab={activeTab} onChangeTab={setActiveTab}>
-      {/* OVERVIEW / ANALYTICS TAB */}
-      {activeTab === 'overview' && (
-        <div style={{ display: 'grid', gap: '32px' }}>
-          {/* Metric Cards Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-            <div
-              style={{
-                backgroundColor: 'var(--surface)',
-                padding: '24px 20px',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--line)',
-                borderTop: '3px solid var(--accent-gold)',
-                boxShadow: 'var(--shadow)',
-              }}
-            >
-              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                TOTAL EARNED REVENUE (ETB)
-              </span>
-              <h3 className="font-display" style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
-                {stats?.revenueETB?.toLocaleString() || 0} ETB
-              </h3>
-              <span style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '4px' }}>
-                Projects: {stats?.projRevenueETB?.toLocaleString() || 0} ETB • Retainers: {stats?.contractRevenueETB?.toLocaleString() || 0} ETB
-              </span>
-            </div>
+    <AdminLayout
+      activeTab={activeTab}
+      onChangeTab={setActiveTab}
+      clients={clients}
+      projects={projects}
+      contracts={contracts}
+      notifications={notifications}
+      onSelectRecord={({ type, item }) => {
+        if (type === 'project') {
+          setActiveTab('projects');
+          setSelectedProjectForDetail(item);
+          setAdminNotesText(item.adminNotes || '');
+          setDetailModalOpen(true);
+        } else if (type === 'contract') {
+          setActiveTab('contracts');
+          setSelectedContractForDeliverable(item);
+        } else if (type === 'client') {
+          setActiveTab('clients');
+          setSelectedClientForDetail(item);
+          setAdminNotesText(item.adminNotes || '');
+          setClientModalOpen(true);
+        }
+      }}
+      onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+    >
+      <>
 
-            <div
-              style={{
-                backgroundColor: 'var(--surface)',
-                padding: '24px 20px',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--line)',
-                borderTop: '3px solid var(--accent-gold)',
-                boxShadow: 'var(--shadow)',
-              }}
-            >
-              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                TOTAL EARNED REVENUE (USD)
-              </span>
-              <h3 className="font-display" style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
-                ${stats?.revenueUSD?.toLocaleString() || 0} USD
-              </h3>
-              <span style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '4px' }}>
-                Projects: ${stats?.projRevenueUSD?.toLocaleString() || 0} USD • Retainers: ${stats?.contractRevenueUSD?.toLocaleString() || 0} USD
-              </span>
-            </div>
+      <div style={{ padding: '24px' }}>
+        {/* OVERVIEW / ANALYTICS TAB */}
+        {activeTab === 'overview' && (
+          <AnalyticsCharts stats={stats} />
+        )}
 
-            <div
-              style={{
-                backgroundColor: 'var(--surface)',
-                padding: '24px 20px',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--line)',
-                borderTop: '3px solid #38A169',
-                boxShadow: 'var(--shadow)',
-              }}
-            >
-              <span className="font-mono" style={{ fontSize: '10px', color: '#38A169', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                RECURRING MONTHLY (ETB)
-              </span>
-              <h3 className="font-display" style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
-                {stats?.recurringRevenueETB?.toLocaleString() || 0} ETB
-              </h3>
-              <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{stats?.activeContractsCount || 0} active retainers</span>
-            </div>
+        {/* PROPOSALS & PROJECTS TAB */}
+        {activeTab === 'projects' && (
+          <div style={{ display: 'grid', gap: '24px' }}>
+            <AdminSectionHeader
+              title="Proposals & One-Off Projects"
+              subtitle="Manage client project lifecycles, revisions, deliver renders, and private notes."
+              action={
+                <>
+                  <div style={{ backgroundColor: 'var(--surface)', padding: '3px', borderRadius: '100px', border: '1px solid var(--line)', display: 'flex' }}>
+                    <button
+                      onClick={() => setProjectViewMode('table')}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: '100px',
+                        border: 'none',
+                        backgroundColor: projectViewMode === 'table' ? 'var(--accent-gold)' : 'transparent',
+                        color: projectViewMode === 'table' ? '#170B06' : 'var(--ink-soft)',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Table View
+                    </button>
+                    <button
+                      onClick={() => setProjectViewMode('kanban')}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: '100px',
+                        border: 'none',
+                        backgroundColor: projectViewMode === 'kanban' ? 'var(--accent-gold)' : 'transparent',
+                        color: projectViewMode === 'kanban' ? '#170B06' : 'var(--ink-soft)',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Kanban Board
+                    </button>
+                  </div>
 
-            <div
-              style={{
-                backgroundColor: 'var(--surface)',
-                padding: '24px 20px',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--line)',
-                borderTop: '3px solid #38A169',
-                boxShadow: 'var(--shadow)',
-              }}
-            >
-              <span className="font-mono" style={{ fontSize: '10px', color: '#38A169', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                RECURRING MONTHLY (USD)
-              </span>
-              <h3 className="font-display" style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
-                ${stats?.recurringRevenueUSD?.toLocaleString() || 0} USD
-              </h3>
-              <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{stats?.activeContractsCount || 0} active retainers</span>
-            </div>
+                  <Button
+                    variant="primary"
+                    iconRight={IconSparkles}
+                    onClick={() => {
+                      setProposalType('project');
+                      handleOpenProposalModal();
+                    }}
+                  >
+                    New Project Proposal
+                  </Button>
+                </>
+              }
+            />
+
+            {projectViewMode === 'kanban' ? (
+              <ProjectsKanbanBoard
+                projects={projects}
+                onSelectProject={(p) => {
+                  setSelectedProjectForDetail(p);
+                  setAdminNotesText(p.adminNotes || '');
+                  setDetailModalOpen(true);
+                }}
+                onMarkDelivered={handleMarkDelivered}
+              />
+            ) : (
+              <DataTable
+                columns={[
+                  {
+                    key: 'clientName',
+                    label: 'Client Name & Contact',
+                    sortable: true,
+                    render: (val, row) => (
+                      <div>
+                        <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{val}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{row.clientEmail}</div>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'editingStyle',
+                    label: 'Editing Style & Tier',
+                    sortable: true,
+                    render: (val, row) => (
+                      <div>
+                        <div style={{ fontWeight: 600 }}>{val}</div>
+                        <Badge variant="gold" size="small">
+                          {row.packageTier?.toUpperCase()} ({row.contentLength?.toUpperCase()})
+                        </Badge>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'price',
+                    label: 'Terms / Value',
+                    sortable: true,
+                    render: (val, row) => (
+                      <span style={{ fontWeight: 700, color: 'var(--accent-gold)' }}>
+                        {val} {row.currency}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'status',
+                    label: 'Status',
+                    sortable: true,
+                    render: (val) => <Badge variant={getStatusBadgeVariant(val)}>{val.replace('_', ' ').toUpperCase()}</Badge>,
+                  },
+                  {
+                    key: 'deadline',
+                    label: 'Deadline',
+                    sortable: true,
+                    render: (val) => new Date(val).toLocaleDateString(),
+                  },
+                  {
+                    key: 'createdAt',
+                    label: 'Created Date',
+                    sortable: true,
+                    render: (val) => new Date(val).toLocaleDateString(),
+                  },
+                  {
+                    key: '_id',
+                    label: 'Actions',
+                    sortable: false,
+                    render: (_, row) => (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }} onClick={(e) => e.stopPropagation()}>
+                        {!row.rated && (row.status === 'completed' || row.status === 'delivered') && (
+                          <Button
+                            variant="secondary"
+                            size="small"
+                            onClick={() => {
+                              const ratingLink = `${window.location.origin}/rate-project/${row._id}`;
+                              navigator.clipboard.writeText(ratingLink);
+                              toast({ message: 'Direct rating link copied to clipboard!', type: 'success' });
+                            }}
+                          >
+                            Copy Rating Link
+                          </Button>
+                        )}
+
+                        {(row.status === 'in_progress' || row.status === 'revision_requested') && (
+                          <Button
+                            variant="primary"
+                            size="small"
+                            onClick={() => handleMarkDelivered(row._id)}
+                          >
+                            {row.status === 'revision_requested' ? 'Deliver Revised' : 'Mark Delivered'}
+                          </Button>
+                        )}
+
+                        <Button
+                          variant="secondary"
+                          size="small"
+                          onClick={() => {
+                            setSelectedProjectForDetail(row);
+                            setAdminNotesText(row.adminNotes || '');
+                            setDetailModalOpen(true);
+                          }}
+                        >
+                          Details
+                        </Button>
+                      </div>
+                    ),
+                  },
+                ]}
+                data={projects.filter((p) => {
+                  if (projectFilterTab === 'all') return true;
+                  return p.status === projectFilterTab;
+                })}
+                searchPlaceholder="Search projects by client or style..."
+                searchKeys={['clientName', 'clientEmail', 'editingStyle', 'packageTier']}
+                filterTabs={[
+                  { label: 'All', value: 'all', count: projects.length },
+                  { label: 'Proposal Sent', value: 'proposal_sent', count: projects.filter((p) => p.status === 'proposal_sent').length },
+                  { label: 'In Progress', value: 'in_progress', count: projects.filter((p) => p.status === 'in_progress').length },
+                  { label: 'Work Delivered', value: 'delivered', count: projects.filter((p) => p.status === 'delivered').length },
+                  { label: 'Revision Requested', value: 'revision_requested', count: projects.filter((p) => p.status === 'revision_requested').length },
+                  { label: 'Completed', value: 'completed', count: projects.filter((p) => p.status === 'completed').length },
+                  { label: 'Declined', value: 'declined', count: projects.filter((p) => p.status === 'declined').length },
+                ]}
+                activeFilterTab={projectFilterTab}
+                onFilterTabChange={setProjectFilterTab}
+                onRowClick={(p) => {
+                  setSelectedProjectForDetail(p);
+                  setAdminNotesText(p.adminNotes || '');
+                  setDetailModalOpen(true);
+                }}
+              />
+            )}
           </div>
+        )}
 
-          {/* Project Lifecycle Progress Scannable Breakdown */}
-          <div style={{ backgroundColor: 'var(--surface)', padding: '32px 28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+        {/* RETAINER CONTRACTS TAB */}
+        {activeTab === 'contracts' && (
+          <div style={{ display: 'grid', gap: '24px' }}>
+            {selectedContractForDeliverable ? (
               <div>
-                <h3 className="font-display" style={{ fontSize: '20px', color: 'var(--ink)' }}>Project Lifecycle Breakdown</h3>
-                <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '2px' }}>Scannable status metrics across active and past proposals</p>
-              </div>
-              <span className="font-mono" style={{ fontSize: '12px', color: 'var(--accent-gold)' }}>Total Projects: {totalProjectCount}</span>
-            </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    onClick={() => setSelectedContractForDeliverable(null)}
+                  >
+                    ← Back to All Retainer Contracts Overview
+                  </Button>
+                  <span style={{ fontSize: '14px', color: 'var(--ink-soft)' }}>
+                    Managing deliverables for <strong>{selectedContractForDeliverable.clientName}</strong>
+                  </span>
+                </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-              {[
-                { label: 'Proposals Sent', count: stats?.statusCounts?.proposal_sent || 0, color: 'var(--accent-gold)' },
-                { label: 'In Progress', count: stats?.statusCounts?.in_progress || 0, color: '#3182CE' },
-                { label: 'Work Delivered', count: stats?.statusCounts?.delivered || 0, color: '#805AD5' },
-                { label: 'Completed', count: stats?.statusCounts?.completed || 0, color: '#38A169' },
-                { label: 'Declined', count: stats?.statusCounts?.declined || 0, color: '#E53E3E' },
-              ].map((item, idx) => {
-                const pct = totalProjectCount > 0 ? Math.round((item.count / totalProjectCount) * 100) : 0;
-                return (
-                  <div key={idx} style={{ backgroundColor: 'var(--bg)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}>
-                      <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{item.label}</span>
-                      <span className="font-mono" style={{ color: 'var(--ink-soft)' }}>{item.count} ({pct}%)</span>
+                {/* Single Contract Deliverables Management Checklist */}
+                <div style={{ backgroundColor: 'var(--surface)', padding: '32px 28px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+                    <div>
+                      <Badge variant="gold">{selectedContractForDeliverable.packageTier?.toUpperCase()} RETAINER</Badge>
+                      <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)', marginTop: '8px' }}>
+                        {selectedContractForDeliverable.clientName} Retainer Deliverables
+                      </h2>
+                      <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '2px' }}>
+                        {selectedContractForDeliverable.frequency} • {selectedContractForDeliverable.monthlyPrice} {selectedContractForDeliverable.currency} / mo
+                      </p>
                     </div>
-                    {/* Progress Bar */}
-                    <div style={{ height: '6px', backgroundColor: 'var(--line)', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', backgroundColor: item.color, transition: 'width 0.5s ease-in-out' }} />
+
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <Button
+                        variant="primary"
+                        iconRight={IconPlus}
+                        onClick={() => setDeliverableModalOpen(true)}
+                      >
+                        Add Video Deliverable
+                      </Button>
+                      {selectedContractForDeliverable.status === 'active' && (
+                        <Button
+                          variant="secondary"
+                          onClick={() => handleCompleteContract(selectedContractForDeliverable._id)}
+                        >
+                          Mark Retainer Complete
+                        </Button>
+                      )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Deliverables Checklist Grid */}
+                  <div style={{ display: 'grid', gap: '16px' }}>
+                    {selectedContractForDeliverable.deliverables?.length === 0 ? (
+                      <p style={{ color: 'var(--ink-soft)', fontSize: '14px', textAlign: 'center', padding: '24px 0' }}>
+                        No deliverable video renders added yet for this retainer contract term.
+                      </p>
+                    ) : (
+                      selectedContractForDeliverable.deliverables?.map((d) => (
+                        <div
+                          key={d._id}
+                          style={{
+                            padding: '16px 20px',
+                            borderRadius: 'var(--radius-md)',
+                            backgroundColor: 'var(--bg)',
+                            border: '1px solid var(--line)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: '12px',
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <strong style={{ fontSize: '15px', color: 'var(--ink)' }}>#{d.sequenceNumber}: {d.title}</strong>
+                              <Badge variant={d.status === 'approved' ? 'success' : 'gold'} size="small">
+                                {d.status.toUpperCase()}
+                              </Badge>
+                            </div>
+                            <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>
+                              Delivered: {new Date(d.deliveredAt).toLocaleDateString()}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <a href={d.videoUrl} target="_blank" rel="noopener noreferrer">
+                              <Button variant="secondary" size="small" iconRight={IconExternalLink}>
+                                Open Render
+                              </Button>
+                            </a>
+                            <Button
+                              variant="secondary"
+                              size="small"
+                              onClick={() => handleDeleteDeliverable(selectedContractForDeliverable._id, d._id)}
+                              style={{ color: '#E53E3E', borderColor: 'rgba(229, 62, 62, 0.3)' }}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <AdminSectionHeader
+                  title="Retainer Contracts Directory"
+                  subtitle="Overview of active, proposed, and completed monthly video editing retainers."
+                  action={
+                    <Button
+                      variant="primary"
+                      iconRight={IconPlus}
+                      onClick={() => {
+                        setProposalType('contract');
+                        handleOpenProposalModal();
+                      }}
+                    >
+                      New Retainer Contract
+                    </Button>
+                  }
+                />
+
+                <DataTable
+                  columns={[
+                    {
+                      key: 'clientName',
+                      label: 'Client Name & Contact',
+                      sortable: true,
+                      render: (val, row) => (
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{val}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{row.clientEmail}</div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'packageTier',
+                      label: 'Package Tier & Frequency',
+                      sortable: true,
+                      render: (val, row) => (
+                        <div>
+                          <Badge variant="gold" size="small">{val?.toUpperCase()}</Badge>
+                          <div style={{ fontSize: '11px', color: 'var(--ink-soft)', marginTop: '2px' }}>{row.frequency}</div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'monthlyPrice',
+                      label: 'Monthly Price',
+                      sortable: true,
+                      render: (val, row) => (
+                        <span style={{ fontWeight: 700, color: 'var(--accent-gold)' }}>
+                          {val} {row.currency} / mo
+                        </span>
+                      ),
+                    },
+                    {
+                      key: 'deliverables',
+                      label: 'Deliverables Progress',
+                      sortable: false,
+                      render: (_, row) => {
+                        const approvedCount = row.deliverables?.filter((d) => d.status === 'approved').length || 0;
+                        const totalCount = row.deliverables?.length || 0;
+                        return (
+                          <Badge variant={approvedCount === totalCount && totalCount > 0 ? 'success' : 'neutral'}>
+                            {approvedCount} / {totalCount} Approved
+                          </Badge>
+                        );
+                      },
+                    },
+                    {
+                      key: 'status',
+                      label: 'Status',
+                      sortable: true,
+                      render: (val) => <Badge variant={getStatusBadgeVariant(val)}>{val.toUpperCase()}</Badge>,
+                    },
+                    {
+                      key: '_id',
+                      label: 'Actions',
+                      sortable: false,
+                      render: (_, row) => (
+                        <div style={{ display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="primary"
+                            size="small"
+                            onClick={() => setSelectedContractForDeliverable(row)}
+                          >
+                            Manage Deliverables
+                          </Button>
+
+                          {row.status === 'active' && (
+                            <Button
+                              variant="secondary"
+                              size="small"
+                              onClick={() => handleCompleteContract(row._id)}
+                            >
+                              Complete
+                            </Button>
+                          )}
+                        </div>
+                      ),
+                    },
+                  ]}
+                  data={contracts.filter((c) => {
+                    if (contractFilterTab === 'all') return true;
+                    return c.status === contractFilterTab;
+                  })}
+                  searchPlaceholder="Search contracts by client or frequency..."
+                  searchKeys={['clientName', 'clientEmail', 'frequency', 'packageTier']}
+                  filterTabs={[
+                    { label: 'All Retainers', value: 'all', count: contracts.length },
+                    { label: 'Active', value: 'active', count: contracts.filter((c) => c.status === 'active').length },
+                    { label: 'Proposed', value: 'proposed', count: contracts.filter((c) => c.status === 'proposed').length },
+                    { label: 'Completed', value: 'completed', count: contracts.filter((c) => c.status === 'completed').length },
+                    { label: 'Cancelled', value: 'cancelled', count: contracts.filter((c) => c.status === 'cancelled').length },
+                  ]}
+                  activeFilterTab={contractFilterTab}
+                  onFilterTabChange={setContractFilterTab}
+                  onRowClick={(c) => setSelectedContractForDeliverable(c)}
+                />
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+        {/* REGISTERED CLIENTS TAB */}
+        {activeTab === 'clients' && (
+          <div style={{ display: 'grid', gap: '24px' }}>
+            <AdminSectionHeader
+              title="Registered Clients CRM Directory"
+              subtitle="Detailed profile records, engagement counts, spend stats, and private CRM notes."
+              action={
+                <Button
+                  variant="primary"
+                  iconRight={IconPlus}
+                  onClick={() => {
+                    setProposalType('project');
+                    handleOpenProposalModal();
+                  }}
+                >
+                  Issue Targeted Proposal
+                </Button>
+              }
+            />
+
+            <DataTable
+              columns={[
+                {
+                  key: 'name',
+                  label: 'Client Profile',
+                  sortable: true,
+                  render: (val, row) => (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--accent-gold)',
+                          color: '#170B06',
+                          fontWeight: 800,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '12px',
+                        }}
+                      >
+                        {val.substring(0, 1).toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{val}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{row.email}</div>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'telegramChatId',
+                  label: 'Telegram Bot Status',
+                  sortable: false,
+                  render: (val) => (
+                    <Badge variant={val ? 'success' : 'neutral'}>
+                      {val ? 'LINKED' : 'NOT LINKED'}
+                    </Badge>
+                  ),
+                },
+                {
+                  key: 'projectCount',
+                  label: 'Total Engagements',
+                  sortable: true,
+                  render: (val, row) => (
+                    <span>{val || 0} ({row.activeProjectCount || 0} active)</span>
+                  ),
+                },
+                {
+                  key: 'createdAt',
+                  label: 'Join Date',
+                  sortable: true,
+                  render: (val) => new Date(val).toLocaleDateString(),
+                },
+                {
+                  key: '_id',
+                  label: 'Actions',
+                  sortable: false,
+                  render: (_, row) => (
+                    <div style={{ display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        onClick={() => {
+                          setSelectedClientForDetail(row);
+                          setAdminNotesText(row.adminNotes || '');
+                          setClientModalOpen(true);
+                        }}
+                      >
+                        CRM Record
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="small"
+                        onClick={() => {
+                          setSelectedClient(row);
+                          setClientSearchText(row.email);
+                          handleOpenProposalModal();
+                        }}
+                      >
+                        Send Proposal
+                      </Button>
+                    </div>
+                  ),
+                },
+              ]}
+              data={clients}
+              searchPlaceholder="Search clients by name or email..."
+              searchKeys={['name', 'email']}
+              onRowClick={(c) => {
+                setSelectedClientForDetail(c);
+                setAdminNotesText(c.adminNotes || '');
+                setClientModalOpen(true);
+              }}
+            />
+          </div>
+        )}
 
       {/* RETAINER CONTRACTS MANAGEMENT CONSOLE TAB */}
       {activeTab === 'contracts' && (
@@ -931,287 +1467,296 @@ export const AdminPage = () => {
 
       {/* NOTION-STYLE CALENDAR SCHEDULE TAB */}
       {activeTab === 'calendar' && (
-        <NotionCalendar
-          projects={projects}
-          contracts={contracts}
-          onSelectProject={(proj) => {
-            setSelectedProjectForDetail(proj);
-            setDetailModalOpen(true);
-          }}
-        />
+        <div style={{ display: 'grid', gap: '24px' }}>
+          <AdminSectionHeader
+            title="Content Production & Delivery Calendar"
+            subtitle="Visual timeline and delivery schedule for all ongoing projects and retainer deliverables."
+          />
+          <NotionCalendar
+            projects={projects}
+            contracts={contracts}
+            onSelectProject={(proj) => {
+              setSelectedProjectForDetail(proj);
+              setDetailModalOpen(true);
+            }}
+          />
+        </div>
       )}
 
-      {/* CREATE PROPOSAL FORM TAB (BRANCHES TO PROJECT OR CONTRACT) */}
-      {activeTab === 'proposal' && (
-        <div style={{ maxWidth: '640px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 30px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
-          {/* Proposal Type Switcher */}
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', backgroundColor: 'var(--bg)', padding: '6px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
-            <Button
-              variant={proposalType === 'project' ? 'primary' : 'ghost'}
-              fullWidth
-              size="small"
-              onClick={() => setProposalType('project')}
-            >
-              One-Off Project Proposal
-            </Button>
-            <Button
-              variant={proposalType === 'contract' ? 'primary' : 'ghost'}
-              fullWidth
-              size="small"
-              onClick={() => setProposalType('contract')}
-            >
-              Recurring Retainer Contract
-            </Button>
-          </div>
-
-          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '20px', color: 'var(--ink)' }}>
-            {proposalType === 'project' ? 'Issue One-Off Project Proposal' : 'Issue Recurring Retainer Contract'}
-          </h2>
-
-          <form onSubmit={proposalType === 'project' ? handleCreateProposal : handleCreateContractProposal}>
-            <div style={{ position: 'relative', marginBottom: '24px' }}>
-              {!selectedClient ? (
-                <>
-                  <Input
-                    label="Registered Client Email (Required)"
-                    placeholder="Search registered client email..."
-                    value={clientSearchText}
-                    onChange={(e) => setClientSearchText(e.target.value)}
-                    icon={IconSearch}
-                    required
-                  />
-
-                  {searchResults.length > 0 && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, backgroundColor: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow)', maxHeight: '200px', overflowY: 'auto' }}>
-                      {searchResults.map((user) => (
-                        <div
-                          key={user._id}
-                          onClick={() => {
-                            setSelectedClient(user);
-                            setClientSearchText(user.email);
-                            setSearchResults([]);
-                          }}
-                          style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--line)', fontSize: '14px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '12px' }}
-                        >
-                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'rgba(201,160,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-gold)', fontWeight: 700, fontSize: '12px' }}>
-                            {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                          </div>
-                          <div>
-                            <strong>{user.name}</strong> <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>({user.email})</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div>
-                  <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
-                    Targeted Client Profile
-                  </label>
-                  <div
-                    style={{
-                      backgroundColor: 'var(--bg)',
-                      border: '1px solid var(--accent-gold)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '16px 20px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      boxShadow: 'var(--shadow-sm)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <div
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
-                          backgroundColor: 'rgba(201, 160, 107, 0.25)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'var(--accent-gold)',
-                          fontWeight: 800,
-                          fontSize: '16px',
-                          border: '1px solid var(--accent-gold)',
-                        }}
-                      >
-                        {selectedClient.avatarUrl ? (
-                          <img src={selectedClient.avatarUrl} alt={selectedClient.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                        ) : (
-                          selectedClient.name ? selectedClient.name.charAt(0).toUpperCase() : 'U'
-                        )}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {selectedClient.name}
-                          <IconCheck size={16} color="var(--accent-gold)" />
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{selectedClient.email}</div>
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="small"
-                      onClick={() => {
-                        setSelectedClient(null);
-                        setClientSearchText('');
-                      }}
-                      style={{ color: 'var(--ink-soft)', fontSize: '12px' }}
-                    >
-                      Change Client
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {proposalType === 'project' ? (
-              <>
-                <Select
-                  label="Editing Style"
-                  options={EDITING_STYLES.map((s) => ({ label: s.name, value: s.name }))}
-                  value={editingStyle}
-                  onChange={setEditingStyle}
-                />
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-                  <Select
-                    label="Content Length"
-                    options={[{ label: 'Short-Form (9:16)', value: 'short' }, { label: 'Long-Form (16:9)', value: 'long' }]}
-                    value={contentLength}
-                    onChange={setContentLength}
-                  />
-                  <Select
-                    label="Package Tier"
-                    options={[
-                      { label: 'Basic Tier', value: 'basic' },
-                      { label: 'Professional Tier (Popular)', value: 'professional' },
-                      { label: 'Premium Tier', value: 'premium' },
-                    ]}
-                    value={packageTier}
-                    onChange={setPackageTier}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-                  <Select
-                    label="Currency"
-                    options={[{ label: 'ETB', value: 'ETB' }, { label: 'USD', value: 'USD' }]}
-                    value={currency}
-                    onChange={setCurrency}
-                  />
-                  <Input
-                    label="Agreed Price"
-                    type="number"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <DatePicker
-                  label="Project Deadline"
-                  value={deadline}
-                  onChange={setDeadline}
-                  required
-                />
-              </>
-            ) : (
-              <>
-                {/* RETAINER CONTRACT FORM FIELDS */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-                  <Select
-                    label="Package Tier"
-                    options={[
-                      { label: 'Basic Tier', value: 'basic' },
-                      { label: 'Professional Tier', value: 'professional' },
-                      { label: 'Premium Tier', value: 'premium' },
-                    ]}
-                    value={packageTier}
-                    onChange={setPackageTier}
-                  />
-                  <Select
-                    label="Publishing Frequency"
-                    options={[
-                      { label: '1 Video / Week (4/mo)', value: 'weekly-1' },
-                      { label: '2 Videos / Week (8/mo)', value: 'weekly-2' },
-                      { label: '3-4 Videos / Week (14/mo)', value: 'weekly-3-4' },
-                      { label: '1 Video / Day (30/mo)', value: 'daily-1' },
-                      { label: '2 Videos / Day (60/mo)', value: 'daily-2' },
-                    ]}
-                    value={contractFrequency}
-                    onChange={setContractFrequency}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-                  <Select
-                    label="Currency"
-                    options={[{ label: 'ETB', value: 'ETB' }, { label: 'USD', value: 'USD' }]}
-                    value={currency}
-                    onChange={setCurrency}
-                  />
-                  <Input
-                    label="Monthly Agreed Price"
-                    type="number"
-                    value={contractMonthlyPrice}
-                    onChange={(e) => setContractMonthlyPrice(e.target.value)}
-                    helperText="Pre-filled from pricing engine, admin override allowed"
-                    required
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-                  <DatePicker
-                    label="Retainer Start Date"
-                    value={contractStartDate}
-                    onChange={setContractStartDate}
-                    required
-                  />
-                  <Input
-                    label="Duration (Months)"
-                    type="number"
-                    value={contractDurationMonths}
-                    onChange={(e) => setContractDurationMonths(e.target.value)}
-                    required
-                  />
-                </div>
-              </>
-            )}
-
-            <Textarea
-              label="Reference / Brief Notes (External Drive / Scope)"
-              placeholder="Enter external Google Drive or project brief notes..."
-              value={referenceBrief}
-              onChange={(e) => setReferenceBrief(e.target.value)}
-            />
-
-            <div style={{ marginTop: '24px' }}>
-              <Button type="submit" variant="primary" fullWidth isLoading={submittingProposal} iconRight={IconSparkles}>
-                {proposalType === 'project' ? 'Send Project Proposal' : 'Send Retainer Contract Proposal'}
+      {/* CREATE PROPOSAL FORM MODAL & TAB */}
+      {(proposalModalOpen || activeTab === 'proposal') && (
+        <Modal
+          isOpen={proposalModalOpen || activeTab === 'proposal'}
+          onClose={() => {
+            setProposalModalOpen(false);
+            if (activeTab === 'proposal') setActiveTab('projects');
+          }}
+          title={proposalType === 'project' ? 'Issue One-Off Project Proposal' : 'Issue Recurring Retainer Contract'}
+        >
+          <div style={{ padding: '8px 0' }}>
+            {/* Proposal Type Switcher */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', backgroundColor: 'var(--bg)', padding: '6px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+              <Button
+                variant={proposalType === 'project' ? 'primary' : 'ghost'}
+                fullWidth
+                size="small"
+                onClick={() => setProposalType('project')}
+              >
+                One-Off Project Proposal
+              </Button>
+              <Button
+                variant={proposalType === 'contract' ? 'primary' : 'ghost'}
+                fullWidth
+                size="small"
+                onClick={() => setProposalType('contract')}
+              >
+                Recurring Retainer Contract
               </Button>
             </div>
-          </form>
-        </div>
+
+            <form onSubmit={proposalType === 'project' ? handleCreateProposal : handleCreateContractProposal}>
+              <div style={{ position: 'relative', marginBottom: '24px' }}>
+                {!selectedClient ? (
+                  <>
+                    <Input
+                      label="Registered Client Email (Required)"
+                      placeholder="Search registered client email..."
+                      value={clientSearchText}
+                      onChange={(e) => setClientSearchText(e.target.value)}
+                      icon={IconSearch}
+                      required
+                    />
+
+                    {searchResults.length > 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, backgroundColor: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow)', maxHeight: '200px', overflowY: 'auto' }}>
+                        {searchResults.map((user) => (
+                          <div
+                            key={user._id}
+                            onClick={() => {
+                              setSelectedClient(user);
+                              setClientSearchText(user.email);
+                              setSearchResults([]);
+                            }}
+                            style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--line)', fontSize: '14px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '12px' }}
+                          >
+                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'rgba(201,160,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-gold)', fontWeight: 700, fontSize: '12px' }}>
+                              {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <div>
+                              <strong>{user.name}</strong> <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>({user.email})</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
+                      Targeted Client Profile
+                    </label>
+                    <div
+                      style={{
+                        backgroundColor: 'var(--bg)',
+                        border: '1px solid var(--accent-gold)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '16px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        boxShadow: 'var(--shadow-sm)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(201, 160, 107, 0.25)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--accent-gold)',
+                            fontWeight: 800,
+                            fontSize: '16px',
+                            border: '1px solid var(--accent-gold)',
+                          }}
+                        >
+                          {selectedClient.avatarUrl ? (
+                            <img src={selectedClient.avatarUrl} alt={selectedClient.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                          ) : (
+                            selectedClient.name ? selectedClient.name.charAt(0).toUpperCase() : 'U'
+                          )}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {selectedClient.name}
+                            <IconCheck size={16} color="var(--accent-gold)" />
+                          </div>
+                          <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{selectedClient.email}</div>
+                        </div>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="small"
+                        onClick={() => {
+                          setSelectedClient(null);
+                          setClientSearchText('');
+                        }}
+                        style={{ color: 'var(--ink-soft)', fontSize: '12px' }}
+                      >
+                        Change Client
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {proposalType === 'project' ? (
+                <>
+                  <Select
+                    label="Editing Style"
+                    options={EDITING_STYLES.map((s) => ({ label: s.name, value: s.name }))}
+                    value={editingStyle}
+                    onChange={setEditingStyle}
+                  />
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                    <Select
+                      label="Content Length"
+                      options={[{ label: 'Short-Form (9:16)', value: 'short' }, { label: 'Long-Form (16:9)', value: 'long' }]}
+                      value={contentLength}
+                      onChange={setContentLength}
+                    />
+                    <Select
+                      label="Package Tier"
+                      options={[
+                        { label: 'Basic Tier', value: 'basic' },
+                        { label: 'Professional Tier (Popular)', value: 'professional' },
+                        { label: 'Premium Tier', value: 'premium' },
+                      ]}
+                      value={packageTier}
+                      onChange={setPackageTier}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                    <Select
+                      label="Currency"
+                      options={[{ label: 'ETB', value: 'ETB' }, { label: 'USD', value: 'USD' }]}
+                      value={currency}
+                      onChange={setCurrency}
+                    />
+                    <Input
+                      label="Agreed Price"
+                      type="number"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <DatePicker
+                    label="Project Deadline"
+                    value={deadline}
+                    onChange={setDeadline}
+                    required
+                  />
+                </>
+              ) : (
+                <>
+                  {/* RETAINER CONTRACT FORM FIELDS */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                    <Select
+                      label="Package Tier"
+                      options={[
+                        { label: 'Basic Tier', value: 'basic' },
+                        { label: 'Professional Tier', value: 'professional' },
+                        { label: 'Premium Tier', value: 'premium' },
+                      ]}
+                      value={packageTier}
+                      onChange={setPackageTier}
+                    />
+                    <Select
+                      label="Publishing Frequency"
+                      options={[
+                        { label: '1 Video / Week (4/mo)', value: 'weekly-1' },
+                        { label: '2 Videos / Week (8/mo)', value: 'weekly-2' },
+                        { label: '3-4 Videos / Week (14/mo)', value: 'weekly-3-4' },
+                        { label: '1 Video / Day (30/mo)', value: 'daily-1' },
+                        { label: '2 Videos / Day (60/mo)', value: 'daily-2' },
+                      ]}
+                      value={contractFrequency}
+                      onChange={setContractFrequency}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                    <Select
+                      label="Currency"
+                      options={[{ label: 'ETB', value: 'ETB' }, { label: 'USD', value: 'USD' }]}
+                      value={currency}
+                      onChange={setCurrency}
+                    />
+                    <Input
+                      label="Monthly Agreed Price"
+                      type="number"
+                      value={contractMonthlyPrice}
+                      onChange={(e) => setContractMonthlyPrice(e.target.value)}
+                      helperText="Pre-filled from pricing engine, admin override allowed"
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                    <DatePicker
+                      label="Retainer Start Date"
+                      value={contractStartDate}
+                      onChange={setContractStartDate}
+                      required
+                    />
+                    <Input
+                      label="Duration (Months)"
+                      type="number"
+                      value={contractDurationMonths}
+                      onChange={(e) => setContractDurationMonths(e.target.value)}
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              <Textarea
+                label="Reference / Brief Notes (External Drive / Scope)"
+                placeholder="Enter external Google Drive or project brief notes..."
+                value={referenceBrief}
+                onChange={(e) => setReferenceBrief(e.target.value)}
+              />
+
+              <div style={{ marginTop: '24px' }}>
+                <Button type="submit" variant="primary" fullWidth isLoading={submittingProposal} iconRight={IconSparkles}>
+                  {proposalType === 'project' ? 'Send Project Proposal' : 'Send Retainer Contract Proposal'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </Modal>
       )}
 
       {/* DYNAMIC PORTFOLIO SHOWCASE MANAGEMENT CONSOLE */}
       {activeTab === 'portfolio' && (
         <div style={{ display: 'grid', gap: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-            <div>
-              <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>Portfolio Sample Videos Management</h2>
-              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '2px' }}>
-                Create, update, and manage agency sample videos displayed live on the public website.
-              </p>
-            </div>
-            <Button variant="primary" iconRight={IconPlus} onClick={() => handleOpenPortfolioModal()}>
-              Add Sample Video
-            </Button>
-          </div>
+          <AdminSectionHeader
+            title="Portfolio Sample Videos Management"
+            subtitle="Create, update, and manage agency sample videos displayed live on the public website."
+            action={
+              <Button variant="primary" iconRight={IconPlus} onClick={() => handleOpenPortfolioModal()}>
+                Add Sample Video
+              </Button>
+            }
+          />
 
           {portfolioItems.length === 0 ? (
             <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center', boxShadow: 'var(--shadow)' }}>
@@ -1253,12 +1798,6 @@ export const AdminPage = () => {
                         <img src={item.thumbnailUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
                     )}
-
-                    {item.videoUrl && (
-                      <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginBottom: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        Link: <a href={item.videoUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-gold)' }}>{item.videoUrl}</a>
-                      </div>
-                    )}
                   </div>
 
                   <div style={{ display: 'flex', gap: '12px', paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
@@ -1276,194 +1815,13 @@ export const AdminPage = () => {
         </div>
       )}
 
-      {/* PROJECT BOARD TAB WITH DETAIL VIEW MODAL */}
-      {activeTab === 'board' && (
-        <div style={{ display: 'grid', gap: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>All Client Projects & Proposals</h2>
-            <span style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>Click any card to inspect full details</span>
-          </div>
-
-          {projects.length === 0 ? (
-            <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center', boxShadow: 'var(--shadow)' }}>
-              <h3 className="font-display" style={{ fontSize: '20px', marginBottom: '8px', color: 'var(--ink)' }}>No Proposals Issued Yet</h3>
-              <p style={{ color: 'var(--ink-soft)', fontSize: '14px', marginBottom: '20px' }}>Create your first client proposal to populate the project board.</p>
-              <Button variant="primary" iconRight={IconPlus} onClick={() => setActiveTab('proposal')}>
-                Create Proposal
-              </Button>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-              {projects.map((proj) => (
-                <div
-                  key={proj._id}
-                  onClick={() => {
-                    setSelectedProjectForDetail(proj);
-                    setDetailModalOpen(true);
-                  }}
-                  style={{
-                    backgroundColor: 'var(--surface)',
-                    padding: '24px',
-                    borderRadius: 'var(--radius-lg)',
-                    border: '1px solid var(--line)',
-                    cursor: 'pointer',
-                    boxShadow: 'var(--shadow)',
-                    transition: 'transform var(--transition-fast), border-color var(--transition-fast)',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <Badge variant={getStatusBadgeVariant(proj.status)}>
-                      {proj.status.replace('_', ' ').toUpperCase()}
-                    </Badge>
-                    <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-gold)' }}>
-                      {proj.price} {proj.currency}
-                    </span>
-                  </div>
-
-                  <h3 className="font-display" style={{ fontSize: '18px', marginBottom: '4px', color: 'var(--ink)' }}>
-                    {proj.editingStyle}
-                  </h3>
-                  <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
-                    Client: {proj.clientName} ({proj.clientEmail})
-                  </p>
-
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)', borderTop: '1px solid var(--line)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Deadline: {new Date(proj.deadline).toLocaleDateString()}</span>
-                    {proj.status === 'in_progress' && (
-                      <Button
-                        variant="primary"
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMarkDelivered(proj._id);
-                        }}
-                      >
-                        Mark Delivered
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* REGISTERED CLIENTS DIRECTORY TAB */}
-      {activeTab === 'clients' && (
-        <div style={{ display: 'grid', gap: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-            <div>
-              <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>Registered Clients Directory</h2>
-              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '2px' }}>
-                Manage all registered client user profiles and issue targeted project proposals directly.
-              </p>
-            </div>
-
-            <div style={{ width: '320px' }}>
-              <Input
-                placeholder="Search clients by name or email..."
-                value={clientFilterText}
-                onChange={(e) => setClientFilterText(e.target.value)}
-                icon={IconSearch}
-              />
-            </div>
-          </div>
-
-          {filteredClients.length === 0 ? (
-            <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center', boxShadow: 'var(--shadow)' }}>
-              <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>No registered clients match your search filter.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
-              {filteredClients.map((client) => (
-                <div
-                  key={client._id}
-                  style={{
-                    backgroundColor: 'var(--surface)',
-                    borderRadius: 'var(--radius-lg)',
-                    border: '1px solid var(--line)',
-                    padding: '24px',
-                    boxShadow: 'var(--shadow-sm)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-                      {client.avatarUrl ? (
-                        <img
-                          src={client.avatarUrl}
-                          alt={client.name}
-                          style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--accent-gold)' }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '50%',
-                            backgroundColor: 'rgba(201, 160, 107, 0.2)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'var(--accent-gold)',
-                            fontWeight: 800,
-                            fontSize: '18px',
-                          }}
-                        >
-                          {client.name ? client.name.charAt(0).toUpperCase() : 'C'}
-                        </div>
-                      )}
-                      <div>
-                        <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>{client.name}</h3>
-                        <p style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>{client.email}</p>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px', backgroundColor: 'var(--bg)', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', fontSize: '12px' }}>
-                      <div>
-                        <span style={{ color: 'var(--ink-soft)', display: 'block' }}>Telegram Status</span>
-                        {client.telegramChatId ? (
-                          <Badge variant="success" size="small">CONNECTED</Badge>
-                        ) : (
-                          <Badge variant="maroon" size="small">NOT LINKED</Badge>
-                        )}
-                      </div>
-                      <div>
-                        <span style={{ color: 'var(--ink-soft)', display: 'block' }}>Proposals / Projects</span>
-                        <strong style={{ fontSize: '14px', color: 'var(--ink)' }}>{client.projectCount || 0}</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    variant="secondary"
-                    size="small"
-                    iconRight={IconPlus}
-                    onClick={() => {
-                      setSelectedClient(client);
-                      setClientSearchText(client.email);
-                      setActiveTab('proposal');
-                    }}
-                  >
-                    Issue Proposal to {client.name.split(' ')[0]}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 3-TIER PACKAGE PRICING CONSOLE WITH LIVE EXCHANGE RATE */}
-      {activeTab === 'pricing' && (
-        <div style={{ maxWidth: '760px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 32px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
-          <h2 className="font-display" style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--ink)' }}>Package Pricing Configurations (3 Tiers)</h2>
-          <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.6 }}>
-            Dynamically update base rates for Basic, Professional, and Premium tiers. Live ETB to USD conversion rates update in real-time.
-          </p>
+        {/* 3-TIER PACKAGE PRICING CONSOLE WITH LIVE EXCHANGE RATE */}
+        {activeTab === 'pricing' && (
+          <div style={{ maxWidth: '760px', margin: '0 auto', backgroundColor: 'var(--surface)', padding: '36px 32px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
+            <AdminSectionHeader
+              title="Package Pricing Configurations (3 Tiers)"
+              subtitle="Dynamically update base rates for Basic, Professional, and Premium tiers. Live ETB to USD conversion rates update in real-time."
+            />
 
           {/* Live Exchange Rate Status Banner */}
           <div
@@ -1590,7 +1948,10 @@ export const AdminPage = () => {
       {/* RATINGS & MODERATION TAB */}
       {activeTab === 'moderation' && (
         <div style={{ display: 'grid', gap: '20px' }}>
-          <h2 className="font-display" style={{ fontSize: '24px', color: 'var(--ink)' }}>Client Reviews & Moderation</h2>
+          <AdminSectionHeader
+            title="Client Reviews & Moderation"
+            subtitle="Moderate client feedback, feature reviews on homepage, or manage visibility."
+          />
           {ratings.length === 0 ? (
             <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center' }}>
               <p style={{ color: 'var(--ink-soft)', fontSize: '14px' }}>No client reviews submitted yet.</p>
@@ -1643,6 +2004,7 @@ export const AdminPage = () => {
           )}
         </div>
       )}
+      </div>
 
       {/* ADD DELIVERABLE MODAL */}
       <Modal
@@ -1739,10 +2101,21 @@ export const AdminPage = () => {
           />
 
           <Input
-            label="Video Preview URL (YouTube, Vimeo, Google Drive, MP4)"
+            label="Video Preview URL (YouTube, Vimeo, Direct MP4)"
             placeholder="https://..."
             value={portVideoUrl}
             onChange={(e) => setPortVideoUrl(e.target.value)}
+          />
+
+          <Select
+            label="Homepage Hero Placement (Featured Phone Showcase)"
+            options={[
+              { label: 'Standard Portfolio Item', value: 0 },
+              { label: 'Featured Hero Phone 1 (Left Phone Card)', value: 1 },
+              { label: 'Featured Hero Phone 2 (Right Phone Card)', value: 2 },
+            ]}
+            value={portHeroSlot}
+            onChange={setPortHeroSlot}
           />
 
           {/* Cloudinary Cover Image Uploader */}
@@ -1805,10 +2178,91 @@ export const AdminPage = () => {
         </form>
       </Modal>
 
-      {/* Project Detail Modal */}
+      {/* Client Detail CRM Modal */}
+      {selectedClientForDetail && (
+        <Modal
+          isOpen={clientModalOpen}
+          onClose={() => setClientModalOpen(false)}
+          title={`Client CRM Record: ${selectedClientForDetail.name}`}
+        >
+          <div style={{ display: 'grid', gap: '20px' }}>
+            <div style={{ backgroundColor: 'var(--bg)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>{selectedClientForDetail.name}</h3>
+                <p style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>{selectedClientForDetail.email}</p>
+              </div>
+              <Badge variant={selectedClientForDetail.telegramChatId ? 'success' : 'neutral'}>
+                {selectedClientForDetail.telegramChatId ? 'Telegram Bot Linked' : 'No Telegram'}
+              </Badge>
+            </div>
+
+            {/* Private CRM Admin Notes */}
+            <div style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent-gold)', borderRadius: 'var(--radius-md)', padding: '16px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '6px' }}>
+                Private CRM Notes (Internal Admin Only)
+              </label>
+              <Textarea
+                placeholder="Log private notes, communication history, payment preferences, custom requests..."
+                value={adminNotesText}
+                onChange={(e) => setAdminNotesText(e.target.value)}
+                rows={4}
+              />
+              <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="primary"
+                  size="small"
+                  isLoading={savingNotes}
+                  onClick={() => handleSaveClientNotes(selectedClientForDetail._id, adminNotesText)}
+                >
+                  Save Private Notes
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)', marginBottom: '8px' }}>Project Engagement History</h4>
+              <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'grid', gap: '8px' }}>
+                {projects.filter((p) => p.clientEmail === selectedClientForDetail.email || p.clientId === selectedClientForDetail._id).length === 0 ? (
+                  <p style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>No one-off projects found for this client.</p>
+                ) : (
+                  projects.filter((p) => p.clientEmail === selectedClientForDetail.email || p.clientId === selectedClientForDetail._id).map((p) => (
+                    <div key={p._id} style={{ padding: '8px 12px', borderRadius: '4px', backgroundColor: 'var(--bg)', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                      <span><strong>{p.editingStyle}</strong> ({p.price} {p.currency})</span>
+                      <Badge variant={getStatusBadgeVariant(p.status)} size="small">{p.status.toUpperCase()}</Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Upgraded Project Detail Modal */}
       {selectedProjectForDetail && (
-        <Modal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} title="Project & Proposal Specifications">
-          <div style={{ display: 'grid', gap: '16px', fontSize: '14px' }}>
+        <Modal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} title="Project Record & Timeline">
+          <div style={{ display: 'grid', gap: '20px', fontSize: '14px' }}>
+            {/* Visual Stepper Timeline */}
+            <div style={{ padding: '16px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+              <Stepper
+                currentStep={
+                  selectedProjectForDetail.status === 'completed'
+                    ? 3
+                    : selectedProjectForDetail.status === 'delivered' || selectedProjectForDetail.status === 'revision_requested'
+                    ? 2
+                    : selectedProjectForDetail.status === 'in_progress'
+                    ? 1
+                    : 0
+                }
+                steps={[
+                  { title: 'Proposal Sent', description: new Date(selectedProjectForDetail.createdAt).toLocaleDateString() },
+                  { title: 'In Progress', description: selectedProjectForDetail.acceptedAt ? new Date(selectedProjectForDetail.acceptedAt).toLocaleDateString() : 'Awaiting' },
+                  { title: 'Work Delivered', description: selectedProjectForDetail.deliveredAt ? new Date(selectedProjectForDetail.deliveredAt).toLocaleDateString() : 'Awaiting' },
+                  { title: 'Completed', description: selectedProjectForDetail.completedAt ? new Date(selectedProjectForDetail.completedAt).toLocaleDateString() : 'Awaiting' },
+                ]}
+              />
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Badge variant={getStatusBadgeVariant(selectedProjectForDetail.status)}>
                 {selectedProjectForDetail.status.replace('_', ' ').toUpperCase()}
@@ -1818,47 +2272,80 @@ export const AdminPage = () => {
               </span>
             </div>
 
-            <div>
-              <strong>Editing Style:</strong> {selectedProjectForDetail.editingStyle}
-            </div>
-            <div>
-              <strong>Client:</strong> {selectedProjectForDetail.clientName} ({selectedProjectForDetail.clientEmail})
-            </div>
-            <div>
-              <strong>Package Tier:</strong> {selectedProjectForDetail.packageTier?.toUpperCase()} ({selectedProjectForDetail.contentLength?.toUpperCase()})
-            </div>
-            <div>
-              <strong>Deadline:</strong> {new Date(selectedProjectForDetail.deadline).toLocaleDateString()}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <strong>Editing Style:</strong>
+                <div>{selectedProjectForDetail.editingStyle}</div>
+              </div>
+              <div>
+                <strong>Package Tier:</strong>
+                <div>{selectedProjectForDetail.packageTier?.toUpperCase()} ({selectedProjectForDetail.contentLength?.toUpperCase()})</div>
+              </div>
+              <div>
+                <strong>Client Name:</strong>
+                <div>{selectedProjectForDetail.clientName}</div>
+              </div>
+              <div>
+                <strong>Client Email:</strong>
+                <div>{selectedProjectForDetail.clientEmail}</div>
+              </div>
             </div>
 
             {selectedProjectForDetail.referenceBrief && (
               <div style={{ backgroundColor: 'var(--bg)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
-                <strong>Brief Notes / Reference:</strong>
+                <strong>Brief Notes / Client Reference:</strong>
                 <p style={{ marginTop: '4px', color: 'var(--ink-soft)' }}>{selectedProjectForDetail.referenceBrief}</p>
               </div>
             )}
 
-            <div style={{ paddingTop: '12px', borderTop: '1px solid var(--line)', fontSize: '12px', color: 'var(--ink-soft)' }}>
-              <div>Created: {new Date(selectedProjectForDetail.createdAt).toLocaleString()}</div>
-              {selectedProjectForDetail.acceptedAt && <div>Accepted: {new Date(selectedProjectForDetail.acceptedAt).toLocaleString()}</div>}
-              {selectedProjectForDetail.deliveredAt && <div>Delivered: {new Date(selectedProjectForDetail.deliveredAt).toLocaleString()}</div>}
-              {selectedProjectForDetail.completedAt && <div>Completed: {new Date(selectedProjectForDetail.completedAt).toLocaleString()}</div>}
+            {selectedProjectForDetail.revisionNotes && (
+              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '12px 16px', borderRadius: 'var(--radius-md)' }}>
+                <strong style={{ color: '#EF4444' }}>Client Revision Feedback Notes:</strong>
+                <p style={{ marginTop: '4px', color: 'var(--ink)' }}>"{selectedProjectForDetail.revisionNotes}"</p>
+              </div>
+            )}
+
+            {/* Private CRM Admin Notes Area */}
+            <div style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--accent-gold)', borderRadius: 'var(--radius-md)', padding: '16px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '6px' }}>
+                Private Project CRM Notes (Internal Admin Only)
+              </label>
+              <Textarea
+                placeholder="Log internal context, revision progress, editor notes..."
+                value={adminNotesText}
+                onChange={(e) => setAdminNotesText(e.target.value)}
+                rows={3}
+              />
+              <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="primary"
+                  size="small"
+                  isLoading={savingNotes}
+                  onClick={() => handleSaveProjectNotes(selectedProjectForDetail._id, adminNotesText)}
+                >
+                  Save Notes
+                </Button>
+              </div>
             </div>
 
-            {selectedProjectForDetail.status === 'in_progress' && (
-              <div style={{ marginTop: '16px' }}>
+            {(selectedProjectForDetail.status === 'in_progress' || selectedProjectForDetail.status === 'revision_requested') && (
+              <div style={{ marginTop: '8px' }}>
                 <Button
                   variant="primary"
                   fullWidth
-                  onClick={() => handleMarkDelivered(selectedProjectForDetail._id)}
+                  onClick={() => {
+                    handleMarkDelivered(selectedProjectForDetail._id);
+                    setDetailModalOpen(false);
+                  }}
                 >
-                  Mark Work Delivered
+                  {selectedProjectForDetail.status === 'revision_requested' ? 'Deliver Revised Render' : 'Mark Work Delivered'}
                 </Button>
               </div>
             )}
           </div>
         </Modal>
       )}
+      </>
     </AdminLayout>
   );
 };

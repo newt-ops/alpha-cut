@@ -108,6 +108,30 @@ export const markDelivered = async (req, res, next) => {
   }
 };
 
+export const updateProjectAdminNotes = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { adminNotes } = req.body;
+    const project = await Project.findByIdAndUpdate(id, { adminNotes }, { new: true });
+    if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
+    res.status(200).json({ success: true, project });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateClientAdminNotes = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { adminNotes } = req.body;
+    const client = await User.findByIdAndUpdate(id, { adminNotes }, { new: true }).select('name email adminNotes');
+    if (!client) return res.status(404).json({ success: false, message: 'Client not found' });
+    res.status(200).json({ success: true, client });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getStats = async (req, res, next) => {
   try {
     const clientCount = await User.countDocuments({ role: 'client' });
@@ -148,20 +172,107 @@ export const getStats = async (req, res, next) => {
       proposal_sent: allProjects.filter((p) => p.status === 'proposal_sent').length + allContracts.filter((c) => c.status === 'proposed').length,
       in_progress: allProjects.filter((p) => p.status === 'in_progress').length + allContracts.filter((c) => c.status === 'active').length,
       delivered: allProjects.filter((p) => p.status === 'delivered').length,
+      revision_requested: allProjects.filter((p) => p.status === 'revision_requested').length,
       completed: allProjects.filter((p) => p.status === 'completed').length + allContracts.filter((c) => c.status === 'completed').length,
       declined: allProjects.filter((p) => p.status === 'declined').length + allContracts.filter((c) => c.status === 'declined').length,
     };
 
-    const totalProposals = statusCounts.proposal_sent + statusCounts.in_progress + statusCounts.delivered + statusCounts.completed + statusCounts.declined;
-    const acceptedProposals = statusCounts.in_progress + statusCounts.delivered + statusCounts.completed;
+    const totalProposals = statusCounts.proposal_sent + statusCounts.in_progress + statusCounts.delivered + statusCounts.revision_requested + statusCounts.completed + statusCounts.declined;
+    const acceptedProposals = statusCounts.in_progress + statusCounts.delivered + statusCounts.revision_requested + statusCounts.completed;
     const conversionRate = totalProposals > 0 ? ((acceptedProposals / totalProposals) * 100).toFixed(1) + '%' : '0%';
 
-    const ratings = await Rating.find({ hidden: false });
+    const ratings = await Rating.find({ hidden: false }).sort({ createdAt: 1 });
     const avgRating = ratings.length > 0
       ? (ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length).toFixed(1)
       : '5.0';
 
-    const recentActivity = await Notification.find({}).sort({ createdAt: -1 }).limit(10);
+    // Revenue by Package Tier Breakdown
+    const revenueByTier = {
+      basic: { USD: 0, ETB: 0 },
+      professional: { USD: 0, ETB: 0 },
+      premium: { USD: 0, ETB: 0 },
+    };
+
+    allProjects.forEach((p) => {
+      if (p.packageTier && revenueByTier[p.packageTier]) {
+        revenueByTier[p.packageTier][p.currency || 'USD'] += p.price || 0;
+      }
+    });
+
+    allContracts.forEach((c) => {
+      if (c.packageTier && revenueByTier[c.packageTier]) {
+        revenueByTier[c.packageTier][c.currency || 'USD'] += (c.monthlyPrice * (c.durationMonths || 1)) || 0;
+      }
+    });
+
+    // Revenue by Editing Style Breakdown
+    const revenueByStyleMap = {};
+    allProjects.forEach((p) => {
+      const style = p.editingStyle || 'Custom Edit';
+      if (!revenueByStyleMap[style]) revenueByStyleMap[style] = { USD: 0, ETB: 0 };
+      revenueByStyleMap[style][p.currency || 'USD'] += p.price || 0;
+    });
+
+    const revenueByStyle = Object.keys(revenueByStyleMap).map((style) => ({
+      style,
+      USD: revenueByStyleMap[style].USD,
+      ETB: revenueByStyleMap[style].ETB,
+    }));
+
+    // Top Clients Leaderboard
+    const clientRevenueMap = {};
+    allProjects.forEach((p) => {
+      const key = p.clientEmail || p.clientName;
+      if (!clientRevenueMap[key]) clientRevenueMap[key] = { name: p.clientName, email: p.clientEmail, totalETB: 0, totalUSD: 0, count: 0 };
+      clientRevenueMap[key].count += 1;
+      if (p.currency === 'ETB') clientRevenueMap[key].totalETB += p.price;
+      else clientRevenueMap[key].totalUSD += p.price;
+    });
+
+    allContracts.forEach((c) => {
+      const key = c.clientEmail || c.clientName;
+      if (!clientRevenueMap[key]) clientRevenueMap[key] = { name: c.clientName, email: c.clientEmail, totalETB: 0, totalUSD: 0, count: 0 };
+      clientRevenueMap[key].count += 1;
+      const totalVal = c.monthlyPrice * (c.durationMonths || 1);
+      if (c.currency === 'ETB') clientRevenueMap[key].totalETB += totalVal;
+      else clientRevenueMap[key].totalUSD += totalVal;
+    });
+
+    const topClients = Object.values(clientRevenueMap)
+      .sort((a, b) => b.totalUSD + b.totalETB - (a.totalUSD + a.totalETB))
+      .slice(0, 5);
+
+    // Timeline Revenue Trend Points for Recharts (Last 6 Months / Monthly)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyTrendMap = {};
+    
+    // Seed last 6 months
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = `${months[d.getMonth()]} ${d.getFullYear().toString().substring(2)}`;
+      monthlyTrendMap[label] = { label, USD: 0, ETB: 0 };
+    }
+
+    allProjects.forEach((p) => {
+      const d = new Date(p.createdAt);
+      const label = `${months[d.getMonth()]} ${d.getFullYear().toString().substring(2)}`;
+      if (monthlyTrendMap[label]) {
+        monthlyTrendMap[label][p.currency || 'USD'] += p.price || 0;
+      }
+    });
+
+    allContracts.forEach((c) => {
+      const d = new Date(c.createdAt);
+      const label = `${months[d.getMonth()]} ${d.getFullYear().toString().substring(2)}`;
+      if (monthlyTrendMap[label]) {
+        monthlyTrendMap[label][c.currency || 'USD'] += (c.monthlyPrice * (c.durationMonths || 1)) || 0;
+      }
+    });
+
+    const revenueTrends = Object.values(monthlyTrendMap);
+
+    const recentActivity = await Notification.find({}).sort({ createdAt: -1 }).limit(20);
 
     res.status(200).json({
       success: true,
@@ -181,6 +292,10 @@ export const getStats = async (req, res, next) => {
         conversionRate,
         avgRating,
         totalReviews: ratings.length,
+        revenueByTier,
+        revenueByStyle,
+        topClients,
+        revenueTrends,
         recentActivity,
       },
     });

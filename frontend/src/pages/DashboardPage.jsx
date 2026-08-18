@@ -55,6 +55,8 @@ export const DashboardPage = () => {
   const [rateModalOpen, setRateModalOpen] = useState(false);
   const [contractRateModalOpen, setContractRateModalOpen] = useState(false);
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
+  const [revisionModalOpen, setRevisionModalOpen] = useState(false);
+  const [revisionNotes, setRevisionNotes] = useState('');
   const [ratingStars, setRatingStars] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -170,6 +172,33 @@ export const DashboardPage = () => {
       }
     } catch (err) {
       toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Request Video Revision
+  const handleRequestRevision = async (e) => {
+    e.preventDefault();
+    if (!selectedProject || !revisionNotes.trim()) {
+      toast({ message: 'Please enter revision notes.', type: 'error' });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const res = await apiFetch(`/api/projects/${selectedProject._id}/revision`, {
+        method: 'POST',
+        body: JSON.stringify({ revisionNotes: revisionNotes.trim() }),
+      });
+      if (res.success) {
+        toast({ message: 'Revision request sent to Alpha Cut team!', type: 'success' });
+        setRevisionModalOpen(false);
+        setRevisionNotes('');
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Failed to request revision', type: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -597,14 +626,42 @@ export const DashboardPage = () => {
                           )}
 
                           {proj.status === 'delivered' && (
+                            <>
+                              <Button
+                                variant="primary"
+                                size="small"
+                                iconRight={IconCheck}
+                                isLoading={submitting}
+                                onClick={() => handleApproveDelivery(proj._id)}
+                              >
+                                Approve Delivery & Complete
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="small"
+                                onClick={() => {
+                                  setSelectedProject(proj);
+                                  setRevisionNotes(proj.revisionNotes || '');
+                                  setRevisionModalOpen(true);
+                                }}
+                              >
+                                Request Revision
+                              </Button>
+                            </>
+                          )}
+
+                          {(proj.status === 'completed' || proj.status === 'delivered') && !proj.rated && (
                             <Button
-                              variant="primary"
+                              variant="secondary"
                               size="small"
-                              iconRight={IconSparkles}
-                              isLoading={submitting}
-                              onClick={() => handleApproveDelivery(proj._id)}
+                              iconRight={IconStar}
+                              onClick={() => {
+                                setSelectedProject(proj);
+                                setRateModalOpen(true);
+                              }}
+                              style={{ borderColor: 'var(--accent-gold)', color: 'var(--accent-gold)' }}
                             >
-                              Approve Delivery
+                              Rate & Review Project
                             </Button>
                           )}
 
@@ -631,6 +688,21 @@ export const DashboardPage = () => {
                               {proj.referenceBrief || 'No specific brief notes attached to this proposal.'}
                             </p>
                           </div>
+
+                          {proj.revisionNotes && (
+                            <div style={{ backgroundColor: 'rgba(201, 160, 107, 0.1)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid var(--accent-gold)', fontSize: '13px', marginBottom: '20px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <strong style={{ color: 'var(--accent-gold)' }}>Revision Request #{proj.revisionCount || 1}:</strong>
+                                <Badge variant="gold" size="small">IN REVISION</Badge>
+                              </div>
+                              <p style={{ marginTop: '6px', color: 'var(--ink)', lineHeight: 1.6 }}>
+                                "{proj.revisionNotes}"
+                              </p>
+                              <span style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '6px' }}>
+                                Alpha Cut editors are applying your requested revisions. You will receive an alert as soon as the revised render is uploaded!
+                              </span>
+                            </div>
+                          )}
 
                           {proj.status === 'proposal_sent' && (
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
@@ -949,6 +1021,27 @@ export const DashboardPage = () => {
         <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
           <Button variant="primary" fullWidth isLoading={submitting} onClick={handleSubmitContractRating}>
             Submit Retainer Review
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Revision Request Modal */}
+      <Modal isOpen={revisionModalOpen} onClose={() => setRevisionModalOpen(false)} title="Request Video Edit Revision">
+        <p style={{ fontSize: '14px', color: 'var(--ink-soft)', lineHeight: 1.6, marginBottom: '16px' }}>
+          Describe the specific changes or adjustments you would like Alpha Cut editors to make for <strong>{selectedProject?.editingStyle}</strong>.
+        </p>
+        <Textarea
+          label="Revision Notes & Timecodes"
+          placeholder="e.g., Change subtitle font style, adjust color grading at 0:24, reduce background audio volume..."
+          value={revisionNotes}
+          onChange={(e) => setRevisionNotes(e.target.value)}
+          required
+          rows={5}
+        />
+        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <Button variant="secondary" onClick={() => setRevisionModalOpen(false)}>Cancel</Button>
+          <Button variant="primary" isLoading={submitting} onClick={handleRequestRevision} iconRight={IconSparkles}>
+            Submit Revision Request
           </Button>
         </div>
       </Modal>
