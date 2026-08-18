@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TelegramAppLayout } from '@components/layout/TelegramAppLayout';
+import { TelegramAppLayout, TELEGRAM_BLUE } from '@components/layout/TelegramAppLayout';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { Modal } from '@components/ui/Modal';
@@ -9,20 +9,18 @@ import { useToast } from '@components/ui/Toast';
 import {
   triggerHaptic,
   triggerHapticNotification,
-  triggerHapticSelection,
   showTelegramConfirm,
-  showTelegramAlert,
 } from '../utils/telegramSdk';
-import { EDITING_STYLES } from '../data/editingStyles';
 import {
   IconCheck,
-  IconSparkles,
   IconExternalLink,
   IconShield,
   IconUser,
   IconFileText,
   IconZap,
   IconSliders,
+  IconClock,
+  IconFilm,
 } from '@icons/icons';
 
 export const TelegramMiniAppPage = () => {
@@ -33,7 +31,7 @@ export const TelegramMiniAppPage = () => {
   const [unlinked, setUnlinked] = useState(false);
   const [telegramUser, setTelegramUser] = useState(null);
 
-  // Active Bottom Navigation Tab: 'work' | 'packages' | 'styles' | 'account'
+  // Active Bottom Navigation Tab: 'work' | 'profile'
   const [activeNavTab, setActiveNavTab] = useState('work');
 
   // Data State
@@ -46,9 +44,6 @@ export const TelegramMiniAppPage = () => {
   const [linkCode, setLinkCode] = useState('');
   const [submittingLink, setSubmittingLink] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  // Currency State for Packages Tab
-  const [selectedCurrency, setSelectedCurrency] = useState('ETB');
 
   // Revision Modal State
   const [showRevisionModal, setShowRevisionModal] = useState(false);
@@ -78,13 +73,18 @@ export const TelegramMiniAppPage = () => {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const [projRes, contractRes] = await Promise.all([
+      const [projRes, contractRes, meRes] = await Promise.all([
         customFetch('/api/projects').catch(() => ({ success: false, projects: [] })),
         customFetch('/api/contracts').catch(() => ({ success: false, contracts: [] })),
+        customFetch('/api/auth/me').catch(() => ({ success: false })),
       ]);
 
       const fetchedProjects = projRes.success ? projRes.projects : [];
       const fetchedContracts = contractRes.success ? contractRes.contracts : [];
+
+      if (meRes.success && meRes.user) {
+        setUser(meRes.user);
+      }
 
       setProjects(fetchedProjects);
       setContracts(fetchedContracts);
@@ -151,7 +151,7 @@ export const TelegramMiniAppPage = () => {
           } else if (authRes.unlinked) {
             setTelegramUser(authRes.telegramUser);
 
-            // Auto-submit 6-digit link code if passed in start_param (e.g. startapp=code_123456 or 123456)
+            // Auto-submit 6-digit link code if passed in start_param
             if (startParam && (startParam.startsWith('code_') || /^\d{6}$/.test(startParam))) {
               const extractedCode = startParam.replace('code_', '');
               try {
@@ -378,12 +378,13 @@ export const TelegramMiniAppPage = () => {
 
   const activeProjects = projects.filter((p) => p.status === 'proposal_sent' || p.status === 'in_progress' || p.status === 'delivered' || p.status === 'revision_requested');
   const activeContracts = contracts.filter((c) => c.status === 'proposed' || c.status === 'active');
+  const completedProjects = projects.filter((p) => p.status === 'approved' || p.status === 'completed');
 
   if (loading) {
     return (
       <TelegramAppLayout activeTab={activeNavTab} onTabChange={setActiveNavTab}>
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <Badge variant="gold">Mini App Launch</Badge>
+          <Badge variant="gold">Telegram Mini App</Badge>
           <h2 className="font-display" style={{ fontSize: '22px', marginTop: '12px' }}>Loading Workspace...</h2>
         </div>
       </TelegramAppLayout>
@@ -394,13 +395,13 @@ export const TelegramMiniAppPage = () => {
     return (
       <TelegramAppLayout activeTab={activeNavTab} onTabChange={setActiveNavTab}>
         <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', boxShadow: 'var(--shadow)' }}>
-          <Badge variant="gold">Telegram Integration</Badge>
+          <Badge variant="gold">Telegram Connection</Badge>
           <h2 className="font-display" style={{ fontSize: '24px', marginTop: '12px', marginBottom: '8px' }}>
             Connect Your Account
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.6, marginBottom: '24px' }}>
             {telegramUser?.first_name ? `Welcome, ${telegramUser.first_name}. ` : ''}
-            To access your video proposals and approve deliverables inside Telegram, enter your 6-digit code from your web dashboard below.
+            To review video proposals and approve deliverables inside Telegram, enter your 6-digit code from your web dashboard below.
           </p>
 
           <form onSubmit={handleLinkAccount} style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
@@ -411,14 +412,34 @@ export const TelegramMiniAppPage = () => {
               onChange={(e) => setLinkCode(e.target.value)}
               required
             />
-            <Button type="submit" variant="primary" fullWidth isLoading={submittingLink} iconRight={IconCheck}>
-              Connect Account
-            </Button>
+            <button
+              type="submit"
+              disabled={submittingLink}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: TELEGRAM_BLUE,
+                color: '#FFFFFF',
+                border: 'none',
+                fontWeight: 600,
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'opacity 0.2s ease',
+              }}
+            >
+              <IconCheck size={18} />
+              <span>{submittingLink ? 'Connecting...' : 'Connect Account'}</span>
+            </button>
           </form>
 
           <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--line)', fontSize: '13px', color: 'var(--ink-soft)' }}>
             Need your 6-digit connection code?{' '}
-            <a href="https://alpha-cut-nine.vercel.app/dashboard" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
+            <a href="https://alpha-cut-nine.vercel.app/dashboard" target="_blank" rel="noreferrer" style={{ color: TELEGRAM_BLUE, fontWeight: 600 }}>
               Open Web Dashboard
             </a>
           </div>
@@ -429,11 +450,16 @@ export const TelegramMiniAppPage = () => {
 
   return (
     <TelegramAppLayout activeTab={activeNavTab} onTabChange={setActiveNavTab}>
-      {/* Header Banner */}
-      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <Badge variant="gold">Action Console</Badge>
-          <h2 className="font-display" style={{ fontSize: '22px', marginTop: '4px' }}>{user?.name}</h2>
+      {/* Telegram Native Header Bar */}
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface)', padding: '14px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: TELEGRAM_BLUE, color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '16px' }}>
+            {user?.name?.charAt(0) || 'U'}
+          </div>
+          <div>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)' }}>{user?.name}</div>
+            <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{user?.role?.toUpperCase()} • Synchronized</div>
+          </div>
         </div>
         <a href="https://alpha-cut-nine.vercel.app/dashboard" target="_blank" rel="noreferrer">
           <Button variant="secondary" size="small" iconRight={IconExternalLink}>
@@ -442,14 +468,17 @@ export const TelegramMiniAppPage = () => {
         </a>
       </div>
 
-      {/* TAB 1: WORK & PROPOSALS */}
+      {/* TAB 1: PROPOSALS & WORK */}
       {activeNavTab === 'work' && (
         <div style={{ display: 'grid', gap: '16px' }}>
-          {/* TARGET SPECIFIC DEEP-LINK ACTION PANEL */}
+          {/* DEEP-LINKED TASK BANNER */}
           {targetItem && (
-            <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '2px solid var(--accent-gold)', padding: '20px', marginBottom: '8px', boxShadow: 'var(--shadow)' }}>
-              <Badge variant="gold">DEEP-LINKED TASK</Badge>
-              <h3 className="font-display" style={{ fontSize: '20px', marginTop: '6px', marginBottom: '8px' }}>
+            <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: `2px solid ${TELEGRAM_BLUE}`, padding: '20px', marginBottom: '8px', boxShadow: 'var(--shadow)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: TELEGRAM_BLUE, fontWeight: 600, fontSize: '12px', marginBottom: '6px' }}>
+                <IconZap size={16} />
+                <span>DEEP-LINKED TASK</span>
+              </div>
+              <h3 className="font-display" style={{ fontSize: '20px', marginBottom: '8px' }}>
                 {targetItem.editingStyle || `${targetItem.packageTier?.toUpperCase()} Retainer`}
               </h3>
 
@@ -464,17 +493,56 @@ export const TelegramMiniAppPage = () => {
                   <Button variant="secondary" isLoading={submitting} onClick={() => handleDeclineProposal(targetItem._id)}>
                     Decline
                   </Button>
-                  <Button variant="primary" iconRight={IconCheck} isLoading={submitting} onClick={() => handleAcceptProposal(targetItem._id)}>
-                    Accept Terms
-                  </Button>
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => handleAcceptProposal(targetItem._id)}
+                    style={{
+                      padding: '12px',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: TELEGRAM_BLUE,
+                      color: '#FFF',
+                      border: 'none',
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <IconCheck size={18} />
+                    <span>Accept Terms</span>
+                  </button>
                 </div>
               )}
 
               {targetItem.status === 'delivered' && (
                 <div style={{ display: 'grid', gap: '10px' }}>
-                  <Button variant="primary" fullWidth iconRight={IconCheck} isLoading={submitting} onClick={() => handleApproveDelivery(targetItem._id)}>
-                    Confirm & Approve Delivery
-                  </Button>
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => handleApproveDelivery(targetItem._id)}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: TELEGRAM_BLUE,
+                      color: '#FFF',
+                      border: 'none',
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <IconCheck size={18} />
+                    <span>Confirm & Approve Delivery</span>
+                  </button>
                   <Button variant="secondary" fullWidth iconRight={IconSliders} onClick={() => handleOpenRevisionModal(targetItem)}>
                     Request Revisions
                   </Button>
@@ -482,14 +550,37 @@ export const TelegramMiniAppPage = () => {
               )}
 
               {targetItem.status === 'proposed' && (
-                <Button variant="primary" fullWidth iconRight={IconCheck} isLoading={submitting} onClick={() => handleAcceptContract(targetItem._id)}>
-                  Accept Retainer Terms
-                </Button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => handleAcceptContract(targetItem._id)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: TELEGRAM_BLUE,
+                    color: '#FFF',
+                    border: 'none',
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <IconCheck size={18} />
+                  <span>Accept Retainer Terms</span>
+                </button>
               )}
             </div>
           )}
 
-          <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>Active Work & Proposals</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ink)' }}>
+            <IconZap size={20} color={TELEGRAM_BLUE} />
+            <h3 className="font-display" style={{ fontSize: '18px', margin: 0 }}>Active Proposals & Projects</h3>
+          </div>
 
           {/* RETAINER CONTRACTS */}
           {activeContracts.map((c) => (
@@ -498,17 +589,34 @@ export const TelegramMiniAppPage = () => {
                 <strong style={{ fontSize: '15px' }}>{c.packageTier?.toUpperCase()} Retainer ({c.frequency})</strong>
                 <Badge variant="gold">{c.status.toUpperCase()}</Badge>
               </div>
-              <div style={{ fontSize: '13px', color: 'var(--accent-gold)', fontWeight: 600 }}>{c.monthlyPrice} {c.currency} / month</div>
+              <div style={{ fontSize: '13px', color: TELEGRAM_BLUE, fontWeight: 600 }}>{c.monthlyPrice} {c.currency} / month</div>
 
               {c.deliverables && c.deliverables.length > 0 && (
                 <div style={{ marginTop: '12px', display: 'grid', gap: '8px' }}>
                   {c.deliverables.map((d) => (
-                    <div key={d._id} style={{ backgroundColor: 'var(--bg)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
-                      <span>#{d.sequenceNumber}: {d.title || `Render #${d.sequenceNumber}`}</span>
+                    <div key={d._id} style={{ backgroundColor: 'var(--bg)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <IconFilm size={14} color="var(--ink-soft)" />
+                        <span>#{d.sequenceNumber}: {d.title || `Render #${d.sequenceNumber}`}</span>
+                      </span>
                       {d.status === 'delivered' ? (
-                        <Button variant="primary" size="small" isLoading={submitting} onClick={() => handleApproveDeliverable(c._id, d._id)}>
+                        <button
+                          type="button"
+                          disabled={submitting}
+                          onClick={() => handleApproveDeliverable(c._id, d._id)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            backgroundColor: TELEGRAM_BLUE,
+                            color: '#FFF',
+                            border: 'none',
+                            fontWeight: 600,
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                          }}
+                        >
                           Approve
-                        </Button>
+                        </button>
                       ) : (
                         <Badge variant="success" size="small">APPROVED</Badge>
                       )}
@@ -526,134 +634,136 @@ export const TelegramMiniAppPage = () => {
                 <strong style={{ fontSize: '15px' }}>{p.editingStyle}</strong>
                 <Badge variant="gold">{p.status.toUpperCase()}</Badge>
               </div>
-              <div style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
-                Terms: {p.price} {p.currency} • Deadline: {new Date(p.deadline).toLocaleDateString()}
+              <div style={{ fontSize: '13px', color: 'var(--ink-soft)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <IconClock size={14} />
+                <span>Terms: {p.price} {p.currency} • Deadline: {new Date(p.deadline).toLocaleDateString()}</span>
               </div>
 
               {p.status === 'proposal_sent' && (
                 <div style={{ marginTop: '12px', display: 'flex', gap: '10px' }}>
                   <Button variant="secondary" size="small" onClick={() => handleDeclineProposal(p._id)}>Decline</Button>
-                  <Button variant="primary" size="small" iconRight={IconCheck} onClick={() => handleAcceptProposal(p._id)}>Accept</Button>
+                  <button
+                    type="button"
+                    onClick={() => handleAcceptProposal(p._id)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: TELEGRAM_BLUE,
+                      color: '#FFF',
+                      border: 'none',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <IconCheck size={16} />
+                    <span>Accept</span>
+                  </button>
                 </div>
               )}
 
               {p.status === 'delivered' && (
                 <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <Button variant="secondary" size="small" iconRight={IconSliders} onClick={() => handleOpenRevisionModal(p)}>Revisions</Button>
-                  <Button variant="primary" size="small" iconRight={IconCheck} onClick={() => handleApproveDelivery(p._id)}>Approve</Button>
+                  <button
+                    type="button"
+                    onClick={() => handleApproveDelivery(p._id)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: TELEGRAM_BLUE,
+                      color: '#FFF',
+                      border: 'none',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <IconCheck size={16} />
+                    <span>Approve</span>
+                  </button>
                 </div>
               )}
 
               {p.status === 'revision_requested' && (
-                <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--accent-gold)', fontStyle: 'italic' }}>
-                  Revision notes submitted to editors. Updates will be sent on Telegram.
+                <div style={{ marginTop: '10px', fontSize: '12px', color: TELEGRAM_BLUE, fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IconSliders size={14} />
+                  <span>Revision notes submitted to agency editors. Updates will be sent on Telegram.</span>
                 </div>
               )}
             </div>
           ))}
 
           {activeProjects.length === 0 && activeContracts.length === 0 && (
-            <div style={{ backgroundColor: 'var(--surface)', padding: '30px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center' }}>
-              <p style={{ color: 'var(--ink-soft)', fontSize: '13px' }}>No active proposal tasks or ongoing edits.</p>
+            <div style={{ backgroundColor: 'var(--surface)', padding: '36px 20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center' }}>
+              <IconFileText size={32} color="var(--ink-soft)" style={{ marginBottom: '8px' }} />
+              <p style={{ color: 'var(--ink-soft)', fontSize: '13px', margin: 0 }}>No active proposal tasks or ongoing edits right now.</p>
             </div>
           )}
         </div>
       )}
 
-      {/* TAB 2: PACKAGES & RATES */}
-      {activeNavTab === 'packages' && (
+      {/* TAB 2: DB PROFILE & METRICS */}
+      {activeNavTab === 'profile' && (
         <div style={{ display: 'grid', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>Package Rate Cards</h3>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <Button
-                variant={selectedCurrency === 'ETB' ? 'primary' : 'secondary'}
-                size="small"
-                onClick={() => { triggerHaptic('light'); setSelectedCurrency('ETB'); }}
-              >
-                ETB (Br)
-              </Button>
-              <Button
-                variant={selectedCurrency === 'USD' ? 'primary' : 'secondary'}
-                size="small"
-                onClick={() => { triggerHaptic('light'); setSelectedCurrency('USD'); }}
-              >
-                USD ($)
-              </Button>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ink)' }}>
+            <IconUser size={20} color={TELEGRAM_BLUE} />
+            <h3 className="font-display" style={{ fontSize: '18px', margin: 0 }}>MongoDB User Profile</h3>
           </div>
 
-          <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <strong style={{ fontSize: '16px' }}>Basic Edit Tier</strong>
-              <span style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>{selectedCurrency === 'ETB' ? '500 – 800 ETB' : '$10 – $15 USD'} / video</span>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5 }}>
-              Clean subtitles, standard pacing, basic audio polish, 1 revision. Ideal for quick social clips.
-            </p>
-          </div>
-
-          <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '2px solid var(--accent-gold)', padding: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <strong style={{ fontSize: '16px' }}>Professional Tier ⭐ (Recommended)</strong>
-              <span style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>{selectedCurrency === 'ETB' ? '1,000 – 1,500 ETB' : '$20 – $30 USD'} / video</span>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5 }}>
-              Kinetic typography, dynamic b-roll overlays, custom sound effects, 2 revisions.
-            </p>
-          </div>
-
-          <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <strong style={{ fontSize: '16px' }}>Premium Edit Tier 💎</strong>
-              <span style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>{selectedCurrency === 'ETB' ? '1,600 – 2,400 ETB' : '$35 – $50 USD'} / video</span>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5 }}>
-              Custom 2D/3D motion graphics, advanced visual breakdowns, sound design mix, 3 revisions.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: SIGNATURE EDITING STYLES */}
-      {activeNavTab === 'styles' && (
-        <div style={{ display: 'grid', gap: '16px' }}>
-          <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>Signature Editing Styles</h3>
-          {EDITING_STYLES.map((style) => (
-            <div key={style.id} style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <strong style={{ fontSize: '16px' }}>{style.name}</strong>
-                <Badge variant="gold">{style.format || '9:16 Shorts'}</Badge>
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--accent-gold)', marginBottom: '8px', fontWeight: 600 }}>
-                Pacing: {style.pacing || 'Kinetic / Fast'}
-              </div>
-              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5, margin: 0 }}>
-                {style.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* TAB 4: ACCOUNT & PROFILE */}
-      {activeNavTab === 'account' && (
-        <div style={{ display: 'grid', gap: '16px' }}>
-          <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>Account Settings</h3>
-          <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '18px', color: '#000' }}>
+          <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: TELEGRAM_BLUE, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '22px', color: '#FFF' }}>
                 {user?.name?.charAt(0) || 'U'}
               </div>
               <div>
-                <strong style={{ fontSize: '16px', display: 'block' }}>{user?.name}</strong>
+                <strong style={{ fontSize: '18px', display: 'block' }}>{user?.name}</strong>
                 <span style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>{user?.email}</span>
+                <div style={{ marginTop: '4px' }}>
+                  <Badge variant="gold">{user?.role?.toUpperCase() || 'CLIENT'}</Badge>
+                </div>
               </div>
             </div>
 
-            <div style={{ backgroundColor: 'var(--bg)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--line)', fontSize: '13px', marginBottom: '20px' }}>
-              <div><strong>Role:</strong> {user?.role?.toUpperCase()}</div>
-              <div style={{ marginTop: '4px' }}><strong>Status:</strong> <span style={{ color: '#4ade80' }}>Connected to Telegram</span></div>
+            {/* LIVE DB METRICS CARDS */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
+              <div style={{ backgroundColor: 'var(--bg)', padding: '12px 8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', textAlign: 'center' }}>
+                <div style={{ fontSize: '20px', fontWeight: 700, color: TELEGRAM_BLUE }}>{activeProjects.length}</div>
+                <div style={{ fontSize: '11px', color: 'var(--ink-soft)', marginTop: '2px' }}>Active Work</div>
+              </div>
+              <div style={{ backgroundColor: 'var(--bg)', padding: '12px 8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', textAlign: 'center' }}>
+                <div style={{ fontSize: '20px', fontWeight: 700, color: '#4ade80' }}>{completedProjects.length}</div>
+                <div style={{ fontSize: '11px', color: 'var(--ink-soft)', marginTop: '2px' }}>Completed</div>
+              </div>
+              <div style={{ backgroundColor: 'var(--bg)', padding: '12px 8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', textAlign: 'center' }}>
+                <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--accent-gold)' }}>{activeContracts.length}</div>
+                <div style={{ fontSize: '11px', color: 'var(--ink-soft)', marginTop: '2px' }}>Retainers</div>
+              </div>
+            </div>
+
+            {/* MONGO DB CONNECTION DETAILS */}
+            <div style={{ backgroundColor: 'var(--bg)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', fontSize: '13px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ color: 'var(--ink-soft)' }}>Telegram Chat ID:</span>
+                <strong>{user?.telegramChatId || 'Linked'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ color: 'var(--ink-soft)' }}>Linked At:</span>
+                <strong>{user?.telegramLinkedAt ? new Date(user.telegramLinkedAt).toLocaleDateString() : 'Active'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--ink-soft)' }}>DB Synchronization:</span>
+                <span style={{ color: '#4ade80', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <IconShield size={14} /> Real-Time MongoDB
+                </span>
+              </div>
             </div>
 
             <Button variant="secondary" fullWidth onClick={handleUnlink}>
@@ -692,9 +802,27 @@ export const TelegramMiniAppPage = () => {
             <Button type="button" variant="secondary" onClick={() => setShowRevisionModal(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" isLoading={submittingRevision} iconRight={IconCheck}>
-              Send Notes
-            </Button>
+            <button
+              type="submit"
+              disabled={submittingRevision}
+              style={{
+                padding: '10px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: TELEGRAM_BLUE,
+                color: '#FFF',
+                border: 'none',
+                fontWeight: 600,
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <IconCheck size={16} />
+              <span>{submittingRevision ? 'Sending...' : 'Send Notes'}</span>
+            </button>
           </div>
         </form>
       </Modal>

@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { triggerHapticSelection } from '../../utils/telegramSdk';
-import { IconZap, IconFileText, IconSparkles, IconUser } from '@icons/icons';
+import { IconZap, IconUser } from '@icons/icons';
+
+export const TELEGRAM_BLUE = '#24A1DE';
 
 export const TelegramAppLayout = ({ children, activeTab = 'work', onTabChange }) => {
   useEffect(() => {
@@ -31,10 +33,8 @@ export const TelegramAppLayout = ({ children, activeTab = 'work', onTabChange })
   };
 
   const navItems = [
-    { id: 'work', label: 'Work', icon: IconZap },
-    { id: 'packages', label: 'Rates', icon: IconFileText },
-    { id: 'styles', label: 'Styles', icon: IconSparkles },
-    { id: 'account', label: 'Profile', icon: IconUser },
+    { id: 'work', label: 'Proposals & Work', icon: IconZap },
+    { id: 'profile', label: 'DB Profile', icon: IconUser },
   ];
 
   return (
@@ -43,31 +43,37 @@ export const TelegramAppLayout = ({ children, activeTab = 'work', onTabChange })
         minHeight: '100vh',
         backgroundColor: 'var(--bg)',
         color: 'var(--ink)',
-        paddingBottom: onTabChange ? '80px' : '24px',
+        paddingBottom: onTabChange ? '96px' : '24px',
         boxSizing: 'border-box',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
-      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '16px' }}>
+      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '16px' }}>
         {children}
       </div>
 
-      {/* Touch-Optimized 4-Tab Navigation Bar */}
+      {/* Floating Glassmorphic 2-Tab Navigation Bar */}
       {onTabChange && (
         <div
           style={{
             position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: 'var(--surface)',
-            borderTop: '1px solid var(--line)',
+            bottom: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'calc(100% - 32px)',
+            maxWidth: '480px',
+            backgroundColor: 'rgba(18, 22, 28, 0.85)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            height: '64px',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            height: '60px',
             zIndex: 100,
-            boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.25)',
-            backdropFilter: 'blur(12px)',
+            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.45)',
+            padding: '4px',
+            boxSizing: 'border-box',
           }}
         >
           {navItems.map((item) => {
@@ -80,21 +86,20 @@ export const TelegramAppLayout = ({ children, activeTab = 'work', onTabChange })
                 onClick={() => handleTabClick(item.id)}
                 style={{
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   border: 'none',
-                  background: 'none',
-                  color: isActive ? 'var(--accent-gold)' : 'var(--ink-soft)',
+                  borderRadius: '20px',
+                  backgroundColor: isActive ? 'rgba(36, 161, 222, 0.18)' : 'transparent',
+                  color: isActive ? TELEGRAM_BLUE : 'var(--ink-soft)',
                   fontWeight: isActive ? 600 : 400,
-                  fontSize: '11px',
+                  fontSize: '13px',
                   cursor: 'pointer',
-                  gap: '4px',
-                  transition: 'all 0.2s ease',
-                  padding: '6px 0',
+                  gap: '8px',
+                  transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
               >
-                <Icon size={20} color={isActive ? 'var(--accent-gold)' : 'var(--ink-soft)'} />
+                <Icon size={18} color={isActive ? TELEGRAM_BLUE : 'var(--ink-soft)'} />
                 <span>{item.label}</span>
               </button>
             );
