@@ -1113,7 +1113,7 @@ export const AdminPage = () => {
                   onChange={setEditingStyle}
                 />
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
                   <Select
                     label="Content Length"
                     options={[{ label: 'Short-Form (9:16)', value: 'short' }, { label: 'Long-Form (16:9)', value: 'long' }]}
@@ -1132,7 +1132,7 @@ export const AdminPage = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '16px' }}>
                   <Select
                     label="Currency"
                     options={[{ label: 'ETB', value: 'ETB' }, { label: 'USD', value: 'USD' }]}
@@ -1158,7 +1158,7 @@ export const AdminPage = () => {
             ) : (
               <>
                 {/* RETAINER CONTRACT FORM FIELDS */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
                   <Select
                     label="Package Tier"
                     options={[
@@ -1183,7 +1183,7 @@ export const AdminPage = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '16px' }}>
                   <Select
                     label="Currency"
                     options={[{ label: 'ETB', value: 'ETB' }, { label: 'USD', value: 'USD' }]}
@@ -1200,7 +1200,7 @@ export const AdminPage = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
                   <DatePicker
                     label="Retainer Start Date"
                     value={contractStartDate}
@@ -1579,7 +1579,7 @@ export const AdminPage = () => {
                 <Badge variant="surface">BASIC</Badge>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                 <Input
                   label="Minimum Rate (ETB / video)"
                   type="number"
@@ -1609,7 +1609,7 @@ export const AdminPage = () => {
                 <Badge variant="gold">RECOMMENDED</Badge>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                 <Input
                   label="Minimum Rate (ETB / video)"
                   type="number"
@@ -1639,7 +1639,7 @@ export const AdminPage = () => {
                 <Badge variant="gold">PREMIUM</Badge>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                 <Input
                   label="Minimum Rate (ETB / video)"
                   type="number"

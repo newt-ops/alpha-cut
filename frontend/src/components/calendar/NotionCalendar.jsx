@@ -159,29 +159,32 @@ export const NotionCalendar = ({ projects = [], contracts = [], onSelectProject 
         </div>
       </div>
 
-      {/* Weekday Column Headers */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          borderBottom: '1px solid var(--line)',
-          paddingBottom: '10px',
-          textAlign: 'center',
-        }}
-      >
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((w, idx) => (
-          <span key={idx} className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 600 }}>
-            {w}
-          </span>
-        ))}
-      </div>
+      {/* Scrollable Container for Mobile Viewports */}
+      <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ minWidth: '600px' }}>
+          {/* Weekday Column Headers */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, 1fr)',
+              borderBottom: '1px solid var(--line)',
+              paddingBottom: '10px',
+              textAlign: 'center',
+            }}
+          >
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((w, idx) => (
+              <span key={idx} className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 600 }}>
+                {w}
+              </span>
+            ))}
+          </div>
 
-      {/* Notion Grid Cells */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', backgroundColor: 'var(--line)', marginTop: '1px' }}>
-        {/* Empty leading cells */}
-        {Array.from({ length: firstDay }).map((_, i) => (
-          <div key={`empty-${i}`} style={{ backgroundColor: 'var(--bg)', minHeight: '100px', opacity: 0.3 }} />
-        ))}
+          {/* Notion Grid Cells */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', backgroundColor: 'var(--line)', marginTop: '1px' }}>
+            {/* Empty leading cells */}
+            {Array.from({ length: firstDay }).map((_, i) => (
+              <div key={`empty-${i}`} style={{ backgroundColor: 'var(--bg)', minHeight: '100px', opacity: 0.3 }} />
+            ))}
 
         {/* Month Day Cells */}
         {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -270,6 +273,8 @@ export const NotionCalendar = ({ projects = [], contracts = [], onSelectProject 
           );
         })}
       </div>
+    </div>
+  </div>
 
       {/* Notion Day Activity Inspector Modal */}
       {selectedDayEvents && (

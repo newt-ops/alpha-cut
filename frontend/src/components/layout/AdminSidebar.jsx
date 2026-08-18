@@ -17,7 +17,7 @@ import {
 
 import { Logo } from '@components/ui/Logo';
 
-export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollapse }) => {
+export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollapse, isMobileDrawer = false }) => {
   const menuItems = [
     { id: 'overview', label: 'Analytics & Revenue', icon: IconBarChart },
     { id: 'board', label: 'Proposals & Projects', icon: IconFolder },
@@ -33,19 +33,20 @@ export const AdminSidebar = ({ activeTab, onChangeTab, collapsed, onToggleCollap
   return (
     <aside
       style={{
-        width: collapsed ? '80px' : '260px',
+        width: isMobileDrawer ? '100%' : collapsed ? '80px' : '260px',
         backgroundColor: 'var(--surface)',
         color: 'var(--ink)',
-        borderRight: '1px solid var(--line)',
+        borderRight: isMobileDrawer ? 'none' : '1px solid var(--line)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         transition: 'width var(--transition-normal), background-color var(--transition-normal)',
         padding: '24px 16px',
-        position: 'sticky',
+        position: isMobileDrawer ? 'relative' : 'sticky',
         top: 0,
-        height: '100vh',
+        height: isMobileDrawer ? 'calc(100% - 60px)' : '100vh',
         zIndex: 90,
+        overflowY: 'auto',
       }}
     >
       <div>

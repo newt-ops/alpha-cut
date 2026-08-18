@@ -116,12 +116,14 @@ export const DatePicker = ({
               left: 0,
               zIndex: 100,
               width: '280px',
+              maxWidth: 'calc(100vw - 40px)',
               backgroundColor: 'var(--surface)',
               border: '1px solid var(--line)',
               borderRadius: 'var(--radius-md)',
               boxShadow: 'var(--shadow)',
               padding: '16px',
               userSelect: 'none',
+              boxSizing: 'border-box',
             }}
           >
             {/* Month Header Navigation */}
