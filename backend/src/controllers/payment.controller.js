@@ -7,6 +7,7 @@ import { Payment } from '../models/Payment.js';
 import { config } from '../config/env.js';
 import * as chapaService from '../services/chapa.service.js';
 import { sendTelegramNotification } from '../services/telegram.service.js';
+import { acceptProposal, acceptContract } from '../services/lifecycle.service.js';
 
 let isTestModeActive = config.chapaEnabled;
 
@@ -23,7 +24,7 @@ export const getChapaStatus = async (req, res) => {
   res.status(200).json({
     success: true,
     enabled: isTestModeActive,
-    hasSecretKey: !!config.chapaSecretKey && !config.chapaSecretKey.includes('alphacut1234567890'),
+    hasSecretKey: !!config.chapaSecretKey,
     mode: 'test',
   });
 };
@@ -45,12 +46,12 @@ export const toggleChapaTestMode = async (req, res) => {
     success: true,
     enabled: isTestModeActive,
     chapaEnabled: isTestModeActive,
-    hasSecretKey: !!config.chapaSecretKey && !config.chapaSecretKey.includes('alphacut1234567890'),
+    hasSecretKey: !!config.chapaSecretKey,
     message: `Chapa payment feature has been ${isTestModeActive ? 'ENABLED' : 'DISABLED'}.`,
   });
 };
 
-// Client: Initialize Chapa Payment (Ownership checked, creates Payment record)
+// Client: Initialize Chapa Payment (Server-derived amount & currency from Project/Contract document)
 export const initializeChapaPayment = async (req, res, next) => {
   try {
     if (!isTestModeActive) {
@@ -112,15 +113,14 @@ export const initializeChapaPayment = async (req, res, next) => {
       success: true,
       checkoutUrl: result.checkoutUrl,
       txRef: result.txRef,
-      isMock: !result.isLiveApi,
     });
   } catch (err) {
     next(err);
   }
 };
 
-// Helper: Process Verified Payment Success
-const processSuccessfulPayment = async (txRef, chapaPayload = {}) => {
+// Shared Idempotent Payment Confirmation Function
+export const confirmProjectPayment = async (txRef, chapaPayload = {}) => {
   let payment = await Payment.findOne({ txRef });
   let itemType = payment?.subjectType;
   let itemId = payment?.subjectId;
@@ -133,21 +133,34 @@ const processSuccessfulPayment = async (txRef, chapaPayload = {}) => {
     }
   }
 
-  // Update Payment Record
+  // Idempotency Check #1: If payment is already marked success, do nothing further!
+  if (payment && payment.status === 'success') {
+    return { itemType, itemId, alreadyConfirmed: true };
+  }
+
+  // Update Payment Record to success
   if (payment) {
     payment.status = 'success';
     payment.verifiedAt = new Date();
-    payment.chapaReference = chapaPayload.reference || chapaPayload.chapa_reference || null;
+    payment.chapaReference = chapaPayload.reference || chapaPayload.chapa_reference || chapaPayload.tx_ref || null;
     await payment.save();
   }
 
-  // Mark paid status on Project or Contract
+  // Idempotency Check #2 & Proposal/Contract Lifecycle Activation
   if (itemType === 'contract' && itemId) {
     const contract = await Contract.findById(itemId);
     if (contract) {
       contract.paymentStatus = 'paid';
       contract.paidAt = new Date();
       await contract.save();
+
+      if (contract.status === 'proposed') {
+        try {
+          await acceptContract(contract._id, contract.clientId);
+        } catch (err) {
+          console.warn('Contract already activated or transition skipped:', err.message);
+        }
+      }
     }
   } else if (itemId) {
     const project = await Project.findById(itemId);
@@ -155,36 +168,44 @@ const processSuccessfulPayment = async (txRef, chapaPayload = {}) => {
       project.paid = true;
       project.paidAt = new Date();
       await project.save();
+
+      if (project.status === 'proposal_sent') {
+        try {
+          await acceptProposal(project._id, project.clientId);
+        } catch (err) {
+          console.warn('Proposal already accepted or transition skipped:', err.message);
+        }
+      }
     }
   }
 
-  // Notify Admins
+  // Send Admin Notifications
   const admins = await User.find({ role: 'admin' });
   for (const admin of admins) {
     await Notification.create({
       userId: admin._id,
       type: 'payment_received',
-      message: `💳 Payment verified for ${itemType || 'item'} #${itemId || txRef}.`,
+      message: `💳 Payment confirmed via Chapa for ${itemType || 'item'} #${itemId || txRef}.`,
     });
 
-    const tgMessage = `💳 <b>CHAPA PAYMENT VERIFIED</b>\nRef: <code>${txRef}</code>\nItem: ${itemType || 'Project'} #${itemId || ''}`;
+    const tgMessage = `💳 <b>CHAPA PAYMENT CONFIRMED</b>\nRef: <code>${txRef}</code>\nSubject: ${itemType || 'Project'} #${itemId || ''}`;
     await sendTelegramNotification(admin.telegramChatId, tgMessage);
   }
 
-  return { itemType, itemId };
+  return { itemType, itemId, alreadyConfirmed: false };
 };
 
-// Client Server-Side Direct Verification
+// Client Server-Side Direct Verification Endpoint (Calls Chapa API & confirms payment)
 export const verifyChapaPayment = async (req, res, next) => {
   try {
     const { txRef } = req.params;
 
     const verification = await chapaService.verifyPayment(txRef);
     if (!verification.success) {
-      return res.status(400).json({ success: false, message: 'Chapa payment verification failed.' });
+      return res.status(400).json({ success: false, message: verification.message || 'Chapa payment verification failed.' });
     }
 
-    const { itemType, itemId } = await processSuccessfulPayment(txRef, verification.chapaData);
+    const { itemType, itemId, alreadyConfirmed } = await confirmProjectPayment(txRef, verification.chapaData);
 
     res.status(200).json({
       success: true,
@@ -192,6 +213,7 @@ export const verifyChapaPayment = async (req, res, next) => {
       txRef,
       itemType,
       itemId,
+      alreadyConfirmed,
       verification,
     });
   } catch (err) {
@@ -227,7 +249,7 @@ export const handleChapaWebhook = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Missing transaction reference' });
     }
 
-    await processSuccessfulPayment(txRef, req.body);
+    await confirmProjectPayment(txRef, req.body);
     res.status(200).json({ success: true, message: 'Webhook processed successfully' });
   } catch (err) {
     next(err);

@@ -90,6 +90,10 @@ export const DashboardPage = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  // Return URL Payment Verification State
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const [paymentVerificationStatus, setPaymentVerificationStatus] = useState(null); // { type: 'success' | 'error', message: string }
+
   // Handle Chapa Payment Gateway Return Redirect Verification
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -99,13 +103,32 @@ export const DashboardPage = () => {
     if (payment === 'success' && txRef) {
       const verifyReturnPayment = async () => {
         try {
+          setVerifyingPayment(true);
           const res = await apiFetch(`/api/payments/chapa/verify/${txRef}`);
           if (res.success) {
-            toast({ message: 'Payment verified successfully via Chapa!', type: 'success' });
+            setPaymentVerificationStatus({
+              type: 'success',
+              message: 'Payment confirmed via Chapa! Your project is now officially in progress.',
+            });
+            toast({ message: 'Payment confirmed! Project is officially in progress.', type: 'success' });
             fetchDashboardData();
+          } else {
+            setPaymentVerificationStatus({
+              type: 'error',
+              message: res.message || "We couldn't confirm this payment with Chapa yet. Please check back shortly.",
+            });
           }
         } catch (err) {
-          // Ignore
+          setPaymentVerificationStatus({
+            type: 'error',
+            message: err.message || "Payment verification failed. Please contact Alpha Cut support.",
+          });
+        } finally {
+          setVerifyingPayment(false);
+          // Clean URL params after 6 seconds
+          setTimeout(() => {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }, 6000);
         }
       };
       verifyReturnPayment();
@@ -121,7 +144,7 @@ export const DashboardPage = () => {
       });
 
       if (res.success && res.checkoutUrl) {
-        toast({ message: 'Redirecting to Chapa Payment Gateway (Test Mode)...', type: 'info' });
+        toast({ message: 'Redirecting to official Chapa Payment Gateway...', type: 'info' });
         window.location.href = res.checkoutUrl;
       }
     } catch (err) {
@@ -446,6 +469,52 @@ export const DashboardPage = () => {
           </div>
         </div>
 
+        {/* Chapa Return-Page Verification Alert Banner */}
+        {verifyingPayment && (
+          <div
+            style={{
+              padding: '16px 20px',
+              backgroundColor: 'rgba(201, 160, 107, 0.15)',
+              border: '1px solid var(--accent-gold)',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              color: 'var(--ink)',
+              fontSize: '14px',
+              fontWeight: 600,
+            }}
+          >
+            <div style={{ width: '20px', height: '20px', border: '3px solid var(--accent-gold)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <span>Verifying your payment with Chapa Gateway... Please hold.</span>
+          </div>
+        )}
+
+        {paymentVerificationStatus && (
+          <div
+            style={{
+              padding: '16px 20px',
+              backgroundColor: paymentVerificationStatus.type === 'success' ? 'rgba(72, 187, 120, 0.15)' : 'rgba(229, 62, 62, 0.15)',
+              border: `1px solid ${paymentVerificationStatus.type === 'success' ? '#48BB78' : '#E53E3E'}`,
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: paymentVerificationStatus.type === 'success' ? '#2F855A' : '#C53030',
+              fontSize: '14px',
+              fontWeight: 600,
+            }}
+          >
+            <span>{paymentVerificationStatus.message}</span>
+            <button
+              onClick={() => setPaymentVerificationStatus(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <Tabs tabs={dashboardTabs} activeTab={activeTab} onChange={setActiveTab} />
         </div>
@@ -635,26 +704,27 @@ export const DashboardPage = () => {
                         {/* Quick Action Controls */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-start', marginTop: '8px' }} onClick={(e) => e.stopPropagation()}>
                           {proj.status === 'proposal_sent' && (
-                            <Button
-                              variant="primary"
-                              size="small"
-                              iconRight={IconCheck}
-                              isLoading={submitting}
-                              onClick={() => handleAcceptProposal(proj._id)}
-                            >
-                              Accept Proposal
-                            </Button>
-                          )}
-
-                          {chapaEnabled && (proj.status === 'proposal_sent' || proj.status === 'in_progress' || proj.status === 'delivered') && (
-                            <Button
-                              variant="gold"
-                              size="small"
-                              isLoading={payingChapaId === proj._id}
-                              onClick={() => handlePayWithChapa('project', proj._id)}
-                            >
-                              Pay with Chapa (ETB)
-                            </Button>
+                            chapaEnabled ? (
+                              <Button
+                                variant="primary"
+                                size="small"
+                                iconRight={IconCheck}
+                                isLoading={payingChapaId === proj._id}
+                                onClick={() => handlePayWithChapa('project', proj._id)}
+                              >
+                                Accept & Pay ({proj.price} {proj.currency})
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="primary"
+                                size="small"
+                                iconRight={IconCheck}
+                                isLoading={submitting}
+                                onClick={() => handleAcceptProposal(proj._id)}
+                              >
+                                Accept Proposal
+                              </Button>
+                            )
                           )}
 
                           {proj.status === 'delivered' && (

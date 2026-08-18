@@ -28,7 +28,6 @@ const DashboardPage = lazy(() => import('@pages/DashboardPage').then((m) => ({ d
 const AdminPage = lazy(() => import('@pages/AdminPage').then((m) => ({ default: m.AdminPage })));
 const TelegramMiniAppPage = lazy(() => import('@pages/TelegramMiniAppPage').then((m) => ({ default: m.TelegramMiniAppPage })));
 const DevComponentsPage = lazy(() => import('@pages/DevComponentsPage').then((m) => ({ default: m.DevComponentsPage })));
-const ChapaTestCheckoutPage = lazy(() => import('@pages/ChapaTestCheckoutPage').then((m) => ({ default: m.ChapaTestCheckoutPage })));
 
 const RouteFallback = () => (
   <div style={{ padding: '60px 0', maxWidth: '800px', margin: '0 auto' }}>
@@ -92,7 +91,6 @@ const AppRoutes = () => {
               <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/payment/chapa-test-checkout" element={<ChapaTestCheckoutPage />} />
 
               {/* Onboarding & Client Protected Routes */}
               <Route
