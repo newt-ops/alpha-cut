@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
-import { IconFilm, IconZap, IconShield, IconExternalLink, IconSparkles } from '@icons/icons';
+import { IconFilm, IconZap, IconShield, IconExternalLink, IconSparkles, IconClose } from '@icons/icons';
 
 const FounderCard = ({ founder }) => {
   const [isRevealed, setIsRevealed] = useState(false);
