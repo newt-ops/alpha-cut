@@ -156,8 +156,27 @@ export const confirmProjectPayment = async (txRef, chapaPayload = {}) => {
     }
   }
 
-  // Idempotency Check #1: If payment is already marked success, do nothing further!
+  // Idempotency Check #1: If payment is already marked success, ensure status transition and return
   if (payment && payment.status === 'success') {
+    if (itemType === 'contract' && itemId) {
+      const contract = await Contract.findById(itemId);
+      if (contract && contract.status === 'proposed') {
+        contract.status = 'active';
+        contract.acceptedAt = new Date();
+        contract.paymentStatus = 'paid';
+        contract.paidAt = new Date();
+        await contract.save();
+      }
+    } else if (itemId) {
+      const project = await Project.findById(itemId);
+      if (project && project.status === 'proposal_sent') {
+        project.status = 'in_progress';
+        project.acceptedAt = new Date();
+        project.paid = true;
+        project.paidAt = new Date();
+        await project.save();
+      }
+    }
     return { itemType, itemId, alreadyConfirmed: true };
   }
 
@@ -169,20 +188,22 @@ export const confirmProjectPayment = async (txRef, chapaPayload = {}) => {
     await payment.save();
   }
 
-  // Idempotency Check #2 & Proposal/Contract Lifecycle Activation
+  // Process subject acceptance & status transition
   if (itemType === 'contract' && itemId) {
     const contract = await Contract.findById(itemId);
     if (contract) {
       contract.paymentStatus = 'paid';
       contract.paidAt = new Date();
+      if (contract.status === 'proposed') {
+        contract.status = 'active';
+        contract.acceptedAt = new Date();
+      }
       await contract.save();
 
-      if (contract.status === 'proposed') {
-        try {
-          await acceptContract(contract._id, contract.clientId);
-        } catch (err) {
-          console.warn('Contract already activated or transition skipped:', err.message);
-        }
+      try {
+        await acceptContract(contract._id, contract.clientId);
+      } catch (err) {
+        console.warn('Contract notification error:', err.message);
       }
     }
   } else if (itemId) {
@@ -190,14 +211,16 @@ export const confirmProjectPayment = async (txRef, chapaPayload = {}) => {
     if (project) {
       project.paid = true;
       project.paidAt = new Date();
+      if (project.status === 'proposal_sent') {
+        project.status = 'in_progress';
+        project.acceptedAt = new Date();
+      }
       await project.save();
 
-      if (project.status === 'proposal_sent') {
-        try {
-          await acceptProposal(project._id, project.clientId);
-        } catch (err) {
-          console.warn('Proposal already accepted or transition skipped:', err.message);
-        }
+      try {
+        await acceptProposal(project._id, project.clientId);
+      } catch (err) {
+        console.warn('Proposal notification error:', err.message);
       }
     }
   }

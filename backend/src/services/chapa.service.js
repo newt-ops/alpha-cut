@@ -75,19 +75,22 @@ export const verifyPayment = async (txRef) => {
     },
   });
 
-  const data = await response.json();
+  const data = await response.json().catch(() => ({ status: 'error', message: 'Failed to parse JSON response from Chapa verify API.' }));
+  console.log('[CHAPA API VERIFY RESPONSE]', { txRef, httpStatus: response.status, data });
 
-  if (data.status === 'success') {
+  const isSuccess = data.status === 'success' || data.data?.status === 'success' || data.data?.status === 'paid' || data.data?.status === 'completed';
+
+  if (isSuccess) {
     return {
       success: true,
       status: 'paid',
       txRef,
-      chapaData: data.data,
+      chapaData: data.data || data,
     };
   }
 
   return {
     success: false,
-    message: data.message || 'Payment verification failed at Chapa API.',
+    message: data.message || (typeof data.data === 'string' ? data.data : 'Payment verification failed at Chapa API.'),
   };
 };

@@ -98,20 +98,24 @@ export const DashboardPage = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const payment = urlParams.get('payment');
-    const txRef = urlParams.get('tx_ref');
+    const txRef = urlParams.get('tx_ref') || urlParams.get('trx_ref') || urlParams.get('txRef') || urlParams.get('reference');
 
-    if (payment === 'success' && txRef) {
+    // Trigger verification if txRef exists and either payment === 'success', status exists, or txRef starts with AC-PAY
+    if (txRef && (payment === 'success' || urlParams.has('status') || txRef.startsWith('AC-PAY'))) {
       const verifyReturnPayment = async () => {
         try {
           setVerifyingPayment(true);
+          console.log('[CLIENT VERIFY PAYMENT] Requesting verification for:', txRef);
           const res = await apiFetch(`/api/payments/chapa/verify/${txRef}`);
+          console.log('[CLIENT VERIFY PAYMENT] Verification result:', res);
+
           if (res.success) {
             setPaymentVerificationStatus({
               type: 'success',
               message: 'Payment confirmed via Chapa! Your project is now officially in progress.',
             });
             toast({ message: 'Payment confirmed! Project is officially in progress.', type: 'success' });
-            fetchDashboardData();
+            await fetchDashboardData();
           } else {
             setPaymentVerificationStatus({
               type: 'error',
@@ -119,16 +123,17 @@ export const DashboardPage = () => {
             });
           }
         } catch (err) {
+          console.error('[CLIENT VERIFY PAYMENT] Error:', err.message);
           setPaymentVerificationStatus({
             type: 'error',
             message: err.message || "Payment verification failed. Please contact Alpha Cut support.",
           });
         } finally {
           setVerifyingPayment(false);
-          // Clean URL params after 6 seconds
+          // Clean URL params after 8 seconds
           setTimeout(() => {
             window.history.replaceState({}, document.title, window.location.pathname);
-          }, 6000);
+          }, 8000);
         }
       };
       verifyReturnPayment();
