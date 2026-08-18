@@ -61,7 +61,6 @@ export const initializeChapaPayment = async (req, res, next) => {
     const { itemType, itemId } = req.body;
     let amount = 0;
     let currency = 'ETB';
-    let title = 'Alpha Cut Video Handoff';
 
     let project = null;
     let contract = null;
