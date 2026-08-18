@@ -108,7 +108,6 @@ export const AdminPage = () => {
   const [premiumMin, setPremiumMin] = useState('1600');
   const [premiumMax, setPremiumMax] = useState('2400');
   const [savingPackages, setSavingPackages] = useState(false);
-  const [chapaTestModeEnabled, setChapaTestModeEnabled] = useState(true);
 
   // Detail Modal State
   const [selectedProjectForDetail, setSelectedProjectForDetail] = useState(null);
@@ -117,7 +116,7 @@ export const AdminPage = () => {
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
-      const [statsRes, projRes, contractRes, ratRes, clientRes, pkgRes, portRes, rateRes, chapaRes] = await Promise.all([
+      const [statsRes, projRes, contractRes, ratRes, clientRes, pkgRes, portRes, rateRes] = await Promise.all([
         apiFetch('/api/admin/stats').catch(() => ({ success: false })),
         apiFetch('/api/admin/projects').catch(() => ({ success: false })),
         apiFetch('/api/admin/contracts').catch(() => ({ success: false, contracts: [] })),
@@ -126,7 +125,6 @@ export const AdminPage = () => {
         apiFetch('/api/admin/packages').catch(() => ({ success: false, configs: [] })),
         apiFetch('/api/portfolio').catch(() => ({ success: false, items: [] })),
         apiFetch('/api/packages/exchange-rate').catch(() => ({ success: false })),
-        apiFetch('/api/payments/chapa/status').catch(() => ({ success: false })),
       ]);
 
       if (statsRes.success) setStats(statsRes.stats);
@@ -135,7 +133,7 @@ export const AdminPage = () => {
       if (ratRes.success) setRatings(ratRes.ratings);
       if (clientRes.success) setClients(clientRes.clients);
       if (portRes.success) setPortfolioItems(portRes.items);
-      if (chapaRes.success) setChapaTestModeEnabled(chapaRes.enabled);
+
       if (rateRes.success && rateRes.usdToEtb) {
         setExchangeRate({ usdToEtb: rateRes.usdToEtb, etbToUsd: rateRes.etbToUsd });
       }
@@ -557,41 +555,7 @@ export const AdminPage = () => {
     }
   };
 
-  const [chapaSecretKeyInput, setChapaSecretKeyInput] = useState('');
 
-  const handleToggleChapaTestMode = async () => {
-    try {
-      const res = await apiFetch('/api/payments/chapa/toggle-test-mode', {
-        method: 'POST',
-        body: JSON.stringify({ enabled: !chapaTestModeEnabled }),
-      });
-      if (res.success) {
-        setChapaTestModeEnabled(res.enabled);
-        toast({ message: res.message, type: 'info' });
-      }
-    } catch (err) {
-      toast({ message: err.message || 'Failed to toggle Chapa test mode', type: 'error' });
-    }
-  };
-
-  const handleSaveChapaKey = async () => {
-    if (!chapaSecretKeyInput.trim()) {
-      return toast({ message: 'Please enter a valid Chapa Secret Key (e.g. CHASECK_TEST-...)', type: 'error' });
-    }
-
-    try {
-      const res = await apiFetch('/api/payments/chapa/toggle-test-mode', {
-        method: 'POST',
-        body: JSON.stringify({ enabled: chapaTestModeEnabled, secretKey: chapaSecretKeyInput.trim() }),
-      });
-      if (res.success) {
-        toast({ message: 'Chapa Secret Key updated successfully!', type: 'success' });
-        setChapaSecretKeyInput('');
-      }
-    } catch (err) {
-      toast({ message: err.message || 'Failed to save Chapa key', type: 'error' });
-    }
-  };
 
   // Save Package Configurations (Canonical ETB Base Rates)
   const handleSavePackageSettings = async (e) => {
@@ -1521,52 +1485,7 @@ export const AdminPage = () => {
             <Badge variant="gold" size="small">LIVE API</Badge>
           </div>
 
-          {/* CHAPA PAYMENT GATEWAY TEST MODE SETTINGS */}
-          <div
-            style={{
-              backgroundColor: 'var(--bg)',
-              border: `2px solid ${chapaTestModeEnabled ? 'var(--accent-gold)' : 'var(--line)'}`,
-              borderRadius: 'var(--radius-md)',
-              padding: '20px',
-              marginBottom: '28px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
-              <div>
-                <Badge variant={chapaTestModeEnabled ? 'gold' : 'surface'}>
-                  CHAPA.CO • {chapaTestModeEnabled ? 'TEST MODE ENABLED' : 'FEATURE DISABLED'}
-                </Badge>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', marginTop: '6px' }}>
-                  Official Chapa Hosted Payment Gateway (checkout.chapa.co)
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                  Real test mode API integration for Telebirr, CBE Birr, Awash Birr & Cards.
-                </p>
-              </div>
 
-              <Button
-                variant={chapaTestModeEnabled ? 'secondary' : 'primary'}
-                size="small"
-                onClick={handleToggleChapaTestMode}
-              >
-                {chapaTestModeEnabled ? 'Disable Chapa Feature' : 'Enable Chapa Test Mode'}
-              </Button>
-            </div>
-
-            {/* Secret Key Input Row */}
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid var(--line)' }}>
-              <div style={{ flex: 1, minWidth: '260px' }}>
-                <Input
-                  placeholder="Paste Chapa Secret Key (e.g. CHASECK_TEST-xxxx)"
-                  value={chapaSecretKeyInput}
-                  onChange={(e) => setChapaSecretKeyInput(e.target.value)}
-                />
-              </div>
-              <Button variant="primary" size="small" onClick={handleSaveChapaKey}>
-                Save Key
-              </Button>
-            </div>
-          </div>
 
           <form onSubmit={handleSavePackageSettings} style={{ display: 'grid', gap: '24px' }}>
             {/* Basic Tier Box */}

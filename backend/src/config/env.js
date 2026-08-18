@@ -21,10 +21,6 @@ export const config = {
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
-  chapaEnabled: process.env.CHAPA_ENABLED !== 'false', // Feature flag (default true in dev)
-  chapaSecretKey: process.env.CHAPA_SECRET_KEY || 'CHASECK_TEST-alphacut1234567890',
-  chapaPublicKey: process.env.CHAPA_PUBLIC_KEY || 'CHAPUBK_TEST-alphacut1234567890',
-  chapaWebhookSecret: process.env.CHAPA_WEBHOOK_SECRET || 'chapa_webhook_secret_123',
 };
 
 export const validateEnv = () => {
