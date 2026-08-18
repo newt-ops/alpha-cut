@@ -13,22 +13,28 @@ export const getChapaStatus = async (req, res) => {
   res.status(200).json({
     success: true,
     enabled: isTestModeActive,
+    hasSecretKey: !!config.chapaSecretKey && !config.chapaSecretKey.includes('alphacut1234567890'),
     mode: 'test',
   });
 };
 
-// Admin Toggle Chapa Test Mode On/Off
+// Admin Toggle Chapa Test Mode On/Off & Set Key
 export const toggleChapaTestMode = async (req, res) => {
-  const { enabled } = req.body;
+  const { enabled, secretKey } = req.body;
   if (typeof enabled === 'boolean') {
     isTestModeActive = enabled;
   } else {
     isTestModeActive = !isTestModeActive;
   }
 
+  if (secretKey && secretKey.trim().length > 0) {
+    config.chapaSecretKey = secretKey.trim();
+  }
+
   res.status(200).json({
     success: true,
     enabled: isTestModeActive,
+    hasSecretKey: !!config.chapaSecretKey && !config.chapaSecretKey.includes('alphacut1234567890'),
     message: `Chapa payment test mode has been ${isTestModeActive ? 'ENABLED' : 'DISABLED'}.`,
   });
 };

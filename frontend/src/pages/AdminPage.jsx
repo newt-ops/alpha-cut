@@ -557,6 +557,8 @@ export const AdminPage = () => {
     }
   };
 
+  const [chapaSecretKeyInput, setChapaSecretKeyInput] = useState('');
+
   const handleToggleChapaTestMode = async () => {
     try {
       const res = await apiFetch('/api/payments/chapa/toggle-test-mode', {
@@ -569,6 +571,25 @@ export const AdminPage = () => {
       }
     } catch (err) {
       toast({ message: err.message || 'Failed to toggle Chapa test mode', type: 'error' });
+    }
+  };
+
+  const handleSaveChapaKey = async () => {
+    if (!chapaSecretKeyInput.trim()) {
+      return toast({ message: 'Please enter a valid Chapa Secret Key (e.g. CHASECK_TEST-...)', type: 'error' });
+    }
+
+    try {
+      const res = await apiFetch('/api/payments/chapa/toggle-test-mode', {
+        method: 'POST',
+        body: JSON.stringify({ enabled: chapaTestModeEnabled, secretKey: chapaSecretKeyInput.trim() }),
+      });
+      if (res.success) {
+        toast({ message: 'Chapa Secret Key updated successfully!', type: 'success' });
+        setChapaSecretKeyInput('');
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Failed to save Chapa key', type: 'error' });
     }
   };
 
@@ -1508,32 +1529,43 @@ export const AdminPage = () => {
               borderRadius: 'var(--radius-md)',
               padding: '20px',
               marginBottom: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '16px',
             }}
           >
-            <div>
-              <Badge variant={chapaTestModeEnabled ? 'gold' : 'surface'}>
-                CHAPA.CO • {chapaTestModeEnabled ? 'TEST MODE ENABLED' : 'FEATURE DISABLED'}
-              </Badge>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', marginTop: '6px' }}>
-                Chapa Payment Gateway (ETB / Mobile Money / Cards)
-              </h3>
-              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                Temporary test mode integration for Telebirr, CBE Birr & Card checkout. Enable or disable anytime.
-              </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <Badge variant={chapaTestModeEnabled ? 'gold' : 'surface'}>
+                  CHAPA.CO • {chapaTestModeEnabled ? 'TEST MODE ENABLED' : 'FEATURE DISABLED'}
+                </Badge>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', marginTop: '6px' }}>
+                  Official Chapa Hosted Payment Gateway (checkout.chapa.co)
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px' }}>
+                  Real test mode API integration for Telebirr, CBE Birr, Awash Birr & Cards.
+                </p>
+              </div>
+
+              <Button
+                variant={chapaTestModeEnabled ? 'secondary' : 'primary'}
+                size="small"
+                onClick={handleToggleChapaTestMode}
+              >
+                {chapaTestModeEnabled ? 'Disable Chapa Feature' : 'Enable Chapa Test Mode'}
+              </Button>
             </div>
 
-            <Button
-              variant={chapaTestModeEnabled ? 'secondary' : 'primary'}
-              size="small"
-              onClick={handleToggleChapaTestMode}
-            >
-              {chapaTestModeEnabled ? 'Disable Chapa Feature' : 'Enable Chapa Test Mode'}
-            </Button>
+            {/* Secret Key Input Row */}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid var(--line)' }}>
+              <div style={{ flex: 1, minWidth: '260px' }}>
+                <Input
+                  placeholder="Paste Chapa Secret Key (e.g. CHASECK_TEST-xxxx)"
+                  value={chapaSecretKeyInput}
+                  onChange={(e) => setChapaSecretKeyInput(e.target.value)}
+                />
+              </div>
+              <Button variant="primary" size="small" onClick={handleSaveChapaKey}>
+                Save Key
+              </Button>
+            </div>
           </div>
 
           <form onSubmit={handleSavePackageSettings} style={{ display: 'grid', gap: '24px' }}>
