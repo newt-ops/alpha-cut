@@ -165,7 +165,9 @@ export const declineProposal = async (projectId, clientId) => {
 export const markDelivered = async (projectId, adminId) => {
   const project = await Project.findById(projectId);
   if (!project) throw new Error('Project not found.');
-  if (project.status !== 'in_progress') throw new Error(`Cannot mark delivered for project in status: ${project.status}`);
+  if (project.status !== 'in_progress' && project.status !== 'revision_requested' && project.status !== 'delivered') {
+    throw new Error(`Cannot mark delivered for project in status: ${project.status}`);
+  }
 
   project.status = 'delivered';
   project.deliveredAt = new Date();
