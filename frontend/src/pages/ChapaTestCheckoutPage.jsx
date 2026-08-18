@@ -23,7 +23,7 @@ export const ChapaTestCheckoutPage = () => {
       setLoading(true);
       const res = await customFetch(`/api/payments/chapa/verify/${txRef}`);
       if (res.success) {
-        toast({ message: '💳 Payment verified via Chapa Test Mode!', type: 'success' });
+        toast({ message: 'Payment verified via Chapa Test Mode!', type: 'success' });
         navigate('/dashboard?payment=success');
       }
     } catch (err) {
@@ -57,10 +57,10 @@ export const ChapaTestCheckoutPage = () => {
         {/* Payment Provider Selection */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px', textAlign: 'left' }}>
           {[
-            { id: 'telebirr', name: 'Telebirr (TeleCOM)', icon: '📱' },
-            { id: 'cbe', name: 'CBE Birr / Commercial', icon: '🏦' },
-            { id: 'card', name: 'Visa / Mastercard', icon: '💳' },
-            { id: 'awash', name: 'Awash Birr Mobile', icon: '⚡' },
+            { id: 'telebirr', name: 'Telebirr Mobile' },
+            { id: 'cbe', name: 'CBE Birr' },
+            { id: 'card', name: 'Visa / Mastercard' },
+            { id: 'awash', name: 'Awash Birr' },
           ].map((m) => (
             <div
               key={m.id}
@@ -68,17 +68,14 @@ export const ChapaTestCheckoutPage = () => {
               style={{
                 backgroundColor: selectedMethod === m.id ? 'rgba(201, 160, 107, 0.15)' : 'var(--bg)',
                 border: `2px solid ${selectedMethod === m.id ? 'var(--accent-gold)' : 'var(--line)'}`,
-                padding: '12px',
+                padding: '12px 14px',
                 borderRadius: 'var(--radius-md)',
                 cursor: 'pointer',
                 fontSize: '13px',
                 fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
+                color: 'var(--ink)',
               }}
             >
-              <span>{m.icon}</span>
               <span>{m.name}</span>
             </div>
           ))}

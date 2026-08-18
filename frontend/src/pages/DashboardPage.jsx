@@ -21,6 +21,7 @@ import {
   IconCalendar,
   IconChevronRight,
   IconFileText,
+  IconFilm,
 } from '@icons/icons';
 
 export const DashboardPage = () => {
@@ -100,7 +101,7 @@ export const DashboardPage = () => {
         try {
           const res = await apiFetch(`/api/payments/chapa/verify/${txRef}`);
           if (res.success) {
-            toast({ message: '💳 Payment verified successfully via Chapa!', type: 'success' });
+            toast({ message: 'Payment verified successfully via Chapa!', type: 'success' });
             fetchDashboardData();
           }
         } catch (err) {
@@ -608,10 +609,9 @@ export const DashboardPage = () => {
                               justifyContent: 'center',
                               color: 'var(--accent-gold)',
                               fontWeight: 800,
-                              fontSize: '18px',
                             }}
                           >
-                            🎬
+                            <IconFilm size={22} color="var(--accent-gold)" />
                           </div>
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
