@@ -90,6 +90,7 @@ export const AuthProvider = ({ children }) => {
 
       const data = await res.json();
       if (!res.ok) {
+        console.error(`[API ERROR] ${options.method || 'GET'} ${endpoint} [Status ${res.status}]:`, data);
         throw new Error(data.message || 'API request failed');
       }
       return data;
