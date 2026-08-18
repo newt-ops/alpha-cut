@@ -107,6 +107,7 @@ app.use('/api/ratings', ratingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+// app.use('/api/payments', paymentRoutes); // Uncomment when ready to reintegrate Chapa payments
 
 app.use('/api', contractRoutes);
 app.get('/api/packages/exchange-rate', getLiveExchangeRate);

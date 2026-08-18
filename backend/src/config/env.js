@@ -21,6 +21,11 @@ export const config = {
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
+  // Chapa Payment Gateway Config (Disabled for production; uncomment & set env vars when ready to re-enable)
+  // chapaEnabled: process.env.CHAPA_ENABLED === 'true',
+  // chapaSecretKey: process.env.CHAPA_SECRET_KEY,
+  // chapaPublicKey: process.env.CHAPA_PUBLIC_KEY,
+  // chapaWebhookSecret: process.env.CHAPA_WEBHOOK_SECRET,
 };
 
 export const validateEnv = () => {
