@@ -199,7 +199,7 @@ export const AnalyticsCharts = ({ stats }) => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#161B22', borderColor: '#30363D', color: '#F0F6FC', borderRadius: '8px' }}
                 />
-                <Area type="monotone" dataKey={currency} stroke="#C9A06B" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
+                <Area type="monotone" dataKey={currency} stroke="#C9A06B" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" isAnimationActive={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -223,7 +223,7 @@ export const AnalyticsCharts = ({ stats }) => {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={statusPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={4} dataKey="value">
+                  <Pie data={statusPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={4} dataKey="value" isAnimationActive={false}>
                     {statusPieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
@@ -251,11 +251,7 @@ export const AnalyticsCharts = ({ stats }) => {
                 <XAxis dataKey="tier" stroke="#8B949E" fontSize={12} tickLine={false} />
                 <YAxis stroke="#8B949E" fontSize={12} tickLine={false} />
                 <Tooltip contentStyle={{ backgroundColor: '#161B22', borderColor: '#30363D', borderRadius: '8px' }} />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {tierBarData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
+                <Bar dataKey="value" fill="#C9A06B" isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -278,7 +274,7 @@ export const AnalyticsCharts = ({ stats }) => {
                   <XAxis dataKey="style" stroke="#8B949E" fontSize={11} tickLine={false} />
                   <YAxis stroke="#8B949E" fontSize={12} tickLine={false} />
                   <Tooltip contentStyle={{ backgroundColor: '#161B22', borderColor: '#30363D', borderRadius: '8px' }} />
-                  <Bar dataKey="value" fill="#C9A06B" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="value" fill="#C9A06B" isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             )}
