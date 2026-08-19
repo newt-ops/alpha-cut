@@ -398,7 +398,7 @@ export const HomePage = () => {
                 <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '4px' }}>{tier.tagline}</p>
                 <div style={{ marginTop: '20px', marginBottom: '24px' }}>
                   <span className="font-display" style={{ fontSize: '36px', fontWeight: 800, color: 'var(--accent-gold)' }}>
-                    {tier.rateRangeETB} ETB
+                    {String(tier.rateRangeETB || `${tier.minRateETB} – ${tier.maxRateETB}`)} ETB
                   </span>
                   <span className="font-mono" style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block' }}>
                     per short-form video
