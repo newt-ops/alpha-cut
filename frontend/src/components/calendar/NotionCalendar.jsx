@@ -198,7 +198,9 @@ export const NotionCalendar = ({ projects = [], contracts = [], onSelectProject 
               onClick={() => handleDayClick(day, events)}
               style={{
                 backgroundColor: isToday ? 'rgba(201, 160, 107, 0.06)' : 'var(--surface)',
-                minHeight: '105px',
+                minHeight: '110px',
+                maxHeight: '110px',
+                overflow: 'hidden',
                 padding: '8px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -235,7 +237,7 @@ export const NotionCalendar = ({ projects = [], contracts = [], onSelectProject 
               </div>
 
               {/* Event Pill Badges inside Day Cell */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px', overflow: 'hidden' }}>
                 {events.slice(0, 2).map((proj) => (
                   <div
                     key={proj._id}
@@ -244,29 +246,24 @@ export const NotionCalendar = ({ projects = [], contracts = [], onSelectProject 
                       if (onSelectProject) onSelectProject(proj);
                     }}
                     style={{
-                      fontSize: '11px',
-                      padding: '3px 6px',
+                      fontSize: '10px',
+                      padding: '2px 5px',
                       borderRadius: '4px',
                       backgroundColor: 'var(--bg)',
                       borderLeft: `3px solid ${getStatusColor(proj.status)}`,
-                      borderTop: '1px solid var(--line)',
-                      borderRight: '1px solid var(--line)',
-                      borderBottom: '1px solid var(--line)',
+                      color: 'var(--ink)',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      color: 'var(--ink)',
-                      fontWeight: 600,
                     }}
                   >
-                    {proj.editingStyle}
+                    {proj.editingStyle || proj.clientName}
                   </div>
                 ))}
-
                 {events.length > 2 && (
-                  <span style={{ fontSize: '10px', color: 'var(--accent-gold)', fontWeight: 700 }}>
-                    +{events.length - 2} more...
-                  </span>
+                  <div style={{ fontSize: '10px', color: 'var(--accent-gold)', fontWeight: 700, marginTop: '1px' }}>
+                    +{events.length - 2} more
+                  </div>
                 )}
               </div>
             </div>

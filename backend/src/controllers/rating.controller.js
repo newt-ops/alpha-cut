@@ -89,3 +89,15 @@ export const toggleFeatureRating = async (req, res, next) => {
     next(err);
   }
 };
+
+export const deleteRating = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const rating = await Rating.findByIdAndDelete(id);
+    if (!rating) return res.status(404).json({ success: false, message: 'Rating not found' });
+
+    res.status(200).json({ success: true, message: 'Rating deleted permanently' });
+  } catch (err) {
+    next(err);
+  }
+};

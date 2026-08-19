@@ -41,6 +41,10 @@ const portfolioItemSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+    featuredHome: {
+      type: Boolean,
+      default: false,
+    },
     order: {
       type: Number,
       default: 0,

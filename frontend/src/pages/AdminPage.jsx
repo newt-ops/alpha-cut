@@ -723,6 +723,20 @@ export const AdminPage = () => {
     }
   };
 
+  // Permanently Delete Rating
+  const handleDeleteRating = async (ratingId) => {
+    if (!window.confirm('Are you sure you want to PERMANENTLY delete this review from the database? This action cannot be undone.')) return;
+    try {
+      const res = await apiFetch(`/api/ratings/${ratingId}`, { method: 'DELETE' });
+      if (res.success) {
+        toast({ message: 'Review permanently deleted from database.', type: 'success' });
+        fetchAdminData();
+      }
+    } catch (err) {
+      toast({ message: err.message || 'Failed to delete review', type: 'error' });
+    }
+  };
+
   const getStatusBadgeVariant = (status) => {
     switch (status) {
       case 'proposal_sent': return 'gold';
@@ -1996,6 +2010,14 @@ export const AdminPage = () => {
                     </Button>
                     <Button variant="secondary" size="small" onClick={() => handleToggleHideRating(r._id)}>
                       {r.hidden ? 'Unhide' : 'Hide Review'}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="small"
+                      style={{ color: '#E53E3E', borderColor: 'rgba(229, 62, 62, 0.4)' }}
+                      onClick={() => handleDeleteRating(r._id)}
+                    >
+                      Delete
                     </Button>
                   </div>
                 </div>

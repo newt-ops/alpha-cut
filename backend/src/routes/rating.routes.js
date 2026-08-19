@@ -1,5 +1,5 @@
 import express from 'express';
-import { getPublicRatings, submitRating, toggleHideRating, toggleFeatureRating } from '../controllers/rating.controller.js';
+import { getPublicRatings, submitRating, toggleHideRating, toggleFeatureRating, deleteRating } from '../controllers/rating.controller.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.middleware.js';
 import { validateRequest, submitRatingSchema } from '../middleware/validation.middleware.js';
 
@@ -17,5 +17,6 @@ router.get('/', getPublicRatings);
 router.post('/', optionalAuth, validateRequest(submitRatingSchema), submitRating);
 router.post('/:id/hide', requireAuth, requireAdmin, toggleHideRating);
 router.post('/:id/feature', requireAuth, requireAdmin, toggleFeatureRating);
+router.delete('/:id', requireAuth, requireAdmin, deleteRating);
 
 export default router;

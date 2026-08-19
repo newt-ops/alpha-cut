@@ -180,7 +180,7 @@ export const PackagesPage = () => {
                     {currency === 'ETB' ? (
                       <div>
                         <span className="font-display" style={{ fontSize: '38px', fontWeight: 800, color: 'var(--accent-gold)' }}>
-                          {tier.rateRangeETB} <span style={{ fontSize: '18px' }}>ETB</span>
+                          {String(tier.rateRangeETB || `${tier.minRateETB} – ${tier.maxRateETB}`)} <span style={{ fontSize: '18px' }}>ETB</span>
                         </span>
                         <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
                           PER SHORT-FORM VIDEO
@@ -189,7 +189,7 @@ export const PackagesPage = () => {
                     ) : (
                       <div>
                         <span className="font-display" style={{ fontSize: '38px', fontWeight: 800, color: 'var(--accent-gold)' }}>
-                          {tier.rateRangeUSD} <span style={{ fontSize: '18px' }}>USD</span>
+                          {String(tier.rateRangeUSD || `$${tier.minRateUSD} – $${tier.maxRateUSD}`)} <span style={{ fontSize: '18px' }}>USD</span>
                         </span>
                         <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
                           LIVE CONVERTED INTERNATIONAL RATE
@@ -220,7 +220,13 @@ export const PackagesPage = () => {
                 </div>
 
                 <div style={{ marginTop: '32px' }}>
-                  <a href="mailto:alphacutagency@gmail.com">
+                  <a
+                    href={`https://t.me/Alphacut_co?text=${encodeURIComponent(
+                      `Hi! I'm interested in the ${tier.name} package for ${formatTab === 'short' ? 'Short-form' : 'Long-form'} content. Could we discuss details?`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     <Button variant={tier.isPopular ? 'primary' : 'secondary'} fullWidth iconRight={IconArrowRight}>
                       Select {tier.name}
                     </Button>
@@ -353,7 +359,13 @@ export const PackagesPage = () => {
                 </div>
 
                 <div style={{ marginTop: '24px' }}>
-                  <a href="mailto:alphacutagency@gmail.com">
+                  <a
+                    href={`https://t.me/Alphacut_co?text=${encodeURIComponent(
+                      `Hi! I used your estimator for ${currentPreset.label} at ${selectedTier.name} tier — around ${currentPreset.videosPerMonth} videos/month, roughly ${currency === 'ETB' ? `${minMonthlyETB.toLocaleString()} – ${maxMonthlyETB.toLocaleString()} ETB` : `$${minMonthlyUSD.toLocaleString()} – $${maxMonthlyUSD.toLocaleString()} USD`}. Could we discuss setting this up?`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     <Button variant="primary" fullWidth iconRight={IconArrowRight}>
                       Start Project
                     </Button>
