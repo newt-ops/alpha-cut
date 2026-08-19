@@ -33,6 +33,7 @@ import {
   Settings,
   Volume2,
   VolumeX,
+  RefreshCw,
 } from 'lucide-react';
 
 const createIcon = (LucideIcon, defaultProps = {}) => {
@@ -80,6 +81,7 @@ export const IconUsers = createIcon(Users);
 export const IconSettings = createIcon(Settings);
 export const IconVolume = createIcon(Volume2);
 export const IconVolumeMute = createIcon(VolumeX);
+export const IconRefreshCw = createIcon(RefreshCw);
 
 export const IconStar = ({ size = 20, filled = false, color = 'var(--accent-gold)', className = '', ...props }) => (
   <LucideStar

@@ -23,11 +23,14 @@ import {
   IconClock,
   IconFilm,
   IconStar,
+  IconRefreshCw,
+  IconPlay,
 } from '@icons/icons';
 
 export const TelegramMiniAppPage = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [unlinked, setUnlinked] = useState(false);
@@ -105,6 +108,20 @@ export const TelegramMiniAppPage = () => {
       toast({ message: 'Failed to load workspace data', type: 'error' });
     }
   }, [toast]);
+
+  const handleManualRefresh = async () => {
+    try {
+      triggerHaptic('medium');
+      setRefreshing(true);
+      await fetchDashboardData();
+      triggerHapticNotification('success');
+      toast({ message: 'Workspace refreshed', type: 'success' });
+    } catch (e) {
+      toast({ message: 'Refresh failed', type: 'error' });
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     const authenticateMiniApp = async () => {
@@ -298,6 +315,42 @@ export const TelegramMiniAppPage = () => {
     }
   };
 
+  const handleOpenRevisionModal = (project) => {
+    triggerHaptic('light');
+    setRevisionProject(project);
+    setRevisionNotes('');
+    setShowRevisionModal(true);
+  };
+
+  const handleSubmitRevisionRequest = async (e) => {
+    e.preventDefault();
+    if (!revisionNotes || !revisionNotes.trim()) {
+      toast({ message: 'Please enter revision notes for the editors', type: 'error' });
+      return;
+    }
+
+    try {
+      setSubmittingRevision(true);
+      triggerHaptic('medium');
+      const res = await customFetch(`/api/projects/${revisionProject._id}/revision`, {
+        method: 'POST',
+        body: JSON.stringify({ revisionNotes }),
+      });
+
+      if (res.success) {
+        triggerHapticNotification('success');
+        toast({ message: 'Revision notes sent to editors on Telegram!', type: 'success' });
+        setShowRevisionModal(false);
+        fetchDashboardData();
+      }
+    } catch (err) {
+      triggerHapticNotification('error');
+      toast({ message: err.message, type: 'error' });
+    } finally {
+      setSubmittingRevision(false);
+    }
+  };
+
   const handleOpenRatingModal = (project) => {
     triggerHaptic('light');
     setRatingProject(project);
@@ -336,42 +389,6 @@ export const TelegramMiniAppPage = () => {
       toast({ message: err.message || 'Failed to submit rating', type: 'error' });
     } finally {
       setSubmittingRating(false);
-    }
-  };
-
-  const handleOpenRevisionModal = (project) => {
-    triggerHaptic('light');
-    setRevisionProject(project);
-    setRevisionNotes('');
-    setShowRevisionModal(true);
-  };
-
-  const handleSubmitRevisionRequest = async (e) => {
-    e.preventDefault();
-    if (!revisionNotes || !revisionNotes.trim()) {
-      toast({ message: 'Please enter revision notes for the editors', type: 'error' });
-      return;
-    }
-
-    try {
-      setSubmittingRevision(true);
-      triggerHaptic('medium');
-      const res = await customFetch(`/api/projects/${revisionProject._id}/revision`, {
-        method: 'POST',
-        body: JSON.stringify({ revisionNotes }),
-      });
-
-      if (res.success) {
-        triggerHapticNotification('success');
-        toast({ message: 'Revision notes sent to editors on Telegram!', type: 'success' });
-        setShowRevisionModal(false);
-        fetchDashboardData();
-      }
-    } catch (err) {
-      triggerHapticNotification('error');
-      toast({ message: err.message, type: 'error' });
-    } finally {
-      setSubmittingRevision(false);
     }
   };
 
@@ -429,6 +446,41 @@ export const TelegramMiniAppPage = () => {
     } catch (err) {
       toast({ message: err.message, type: 'error' });
     }
+  };
+
+  const renderProgressBar = (status) => {
+    let percent = 25;
+    let label = '25% • Proposal Sent';
+    let barColor = 'var(--accent-gold)';
+
+    if (status === 'in_progress') {
+      percent = 50;
+      label = '50% • Editing in Progress';
+      barColor = TELEGRAM_BLUE;
+    } else if (status === 'revision_requested') {
+      percent = 65;
+      label = '65% • Applying Revisions';
+      barColor = '#f59e0b';
+    } else if (status === 'delivered') {
+      percent = 85;
+      label = '85% • Delivered & Ready for Review';
+      barColor = TELEGRAM_BLUE;
+    } else if (status === 'completed' || status === 'approved') {
+      percent = 100;
+      label = '100% • Completed';
+      barColor = '#4ade80';
+    }
+
+    return (
+      <div style={{ marginTop: '12px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--ink-soft)', marginBottom: '4px', fontWeight: 600 }}>
+          <span>{label}</span>
+        </div>
+        <div style={{ height: '6px', width: '100%', backgroundColor: 'var(--bg)', borderRadius: '3px', overflow: 'hidden', border: '1px solid var(--line)' }}>
+          <div style={{ height: '100%', width: `${percent}%`, backgroundColor: barColor, borderRadius: '3px', transition: 'width 0.4s ease' }} />
+        </div>
+      </div>
+    );
   };
 
   const activeProjects = projects.filter((p) => p.status === 'proposal_sent' || p.status === 'in_progress' || p.status === 'delivered' || p.status === 'revision_requested');
@@ -524,11 +576,23 @@ export const TelegramMiniAppPage = () => {
             <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{user?.role?.toUpperCase()} • Active Workspace</div>
           </div>
         </div>
-        <a href="https://alpha-cut-nine.vercel.app/dashboard" target="_blank" rel="noreferrer">
-          <Button variant="secondary" size="small" iconRight={IconExternalLink}>
-            Web
+
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button
+            variant="secondary"
+            size="small"
+            isLoading={refreshing}
+            onClick={handleManualRefresh}
+            title="Refresh workspace data"
+          >
+            <IconRefreshCw size={14} />
           </Button>
-        </a>
+          <a href="https://alpha-cut-nine.vercel.app/dashboard" target="_blank" rel="noreferrer">
+            <Button variant="secondary" size="small" iconRight={IconExternalLink}>
+              Web
+            </Button>
+          </a>
+        </div>
       </div>
 
       {/* TAB 1: PROPOSALS & WORK */}
@@ -545,11 +609,24 @@ export const TelegramMiniAppPage = () => {
                 {targetItem.editingStyle || `${targetItem.packageTier?.toUpperCase()} Retainer`}
               </h3>
 
+              {renderProgressBar(targetItem.status)}
+
               <div style={{ backgroundColor: 'var(--bg)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', fontSize: '13px', marginBottom: '16px' }}>
                 <div><strong>Terms:</strong> {targetItem.price || targetItem.monthlyPrice} {targetItem.currency}</div>
                 {targetItem.deadline && <div style={{ marginTop: '4px', color: 'var(--ink-soft)' }}><strong>Deadline:</strong> {new Date(targetItem.deadline).toLocaleDateString()}</div>}
                 {targetItem.referenceBrief && <div style={{ marginTop: '6px', color: 'var(--ink-soft)' }}><strong>Brief:</strong> {targetItem.referenceBrief}</div>}
               </div>
+
+              {/* EMBEDDED DELIVERABLE VIDEO PLAYER PREVIEW */}
+              {targetItem.deliverableUrl && (
+                <div style={{ marginBottom: '16px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--line)', backgroundColor: '#000' }}>
+                  <video
+                    controls
+                    src={targetItem.deliverableUrl}
+                    style={{ width: '100%', maxHeight: '280px', display: 'block' }}
+                  />
+                </div>
+              )}
 
               {targetItem.status === 'proposal_sent' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -657,31 +734,54 @@ export const TelegramMiniAppPage = () => {
               {c.deliverables && c.deliverables.length > 0 && (
                 <div style={{ marginTop: '12px', display: 'grid', gap: '8px' }}>
                   {c.deliverables.map((d) => (
-                    <div key={d._id} style={{ backgroundColor: 'var(--bg)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <IconFilm size={14} color="var(--ink-soft)" />
-                        <span>#{d.sequenceNumber}: {d.title || `Render #${d.sequenceNumber}`}</span>
-                      </span>
-                      {d.status === 'delivered' ? (
-                        <button
-                          type="button"
-                          disabled={submitting}
-                          onClick={() => handleApproveDeliverable(c._id, d._id)}
+                    <div key={d._id} style={{ backgroundColor: 'var(--bg)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--line)', fontSize: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: d.deliverableUrl ? '8px' : '0' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <IconFilm size={14} color="var(--ink-soft)" />
+                          <span>#{d.sequenceNumber}: {d.title || `Render #${d.sequenceNumber}`}</span>
+                        </span>
+                        {d.status === 'delivered' ? (
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => handleApproveDeliverable(c._id, d._id)}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '4px',
+                              backgroundColor: TELEGRAM_BLUE,
+                              color: '#FFF',
+                              border: 'none',
+                              fontWeight: 600,
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Approve
+                          </button>
+                        ) : (
+                          <Badge variant="success" size="small">APPROVED</Badge>
+                        )}
+                      </div>
+
+                      {d.deliverableUrl && (
+                        <a
+                          href={d.deliverableUrl}
+                          target="_blank"
+                          rel="noreferrer"
                           style={{
-                            padding: '6px 12px',
-                            borderRadius: '4px',
-                            backgroundColor: TELEGRAM_BLUE,
-                            color: '#FFF',
-                            border: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            color: TELEGRAM_BLUE,
                             fontWeight: 600,
                             fontSize: '12px',
-                            cursor: 'pointer',
+                            textDecoration: 'none',
+                            marginTop: '4px',
                           }}
                         >
-                          Approve
-                        </button>
-                      ) : (
-                        <Badge variant="success" size="small">APPROVED</Badge>
+                          <IconPlay size={12} />
+                          <span>Preview Render Video</span>
+                        </a>
                       )}
                     </div>
                   ))}
@@ -693,14 +793,28 @@ export const TelegramMiniAppPage = () => {
           {/* ACTIVE PROJECTS */}
           {activeProjects.map((p) => (
             <div key={p._id} style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                 <strong style={{ fontSize: '15px' }}>{p.editingStyle}</strong>
                 <Badge variant="gold">{p.status.toUpperCase()}</Badge>
               </div>
+
+              {renderProgressBar(p.status)}
+
               <div style={{ fontSize: '13px', color: 'var(--ink-soft)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <IconClock size={14} />
                 <span>Terms: {p.price} {p.currency} • Deadline: {new Date(p.deadline).toLocaleDateString()}</span>
               </div>
+
+              {/* EMBEDDED DELIVERABLE VIDEO PLAYER PREVIEW */}
+              {p.deliverableUrl && (
+                <div style={{ marginTop: '12px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--line)', backgroundColor: '#000' }}>
+                  <video
+                    controls
+                    src={p.deliverableUrl}
+                    style={{ width: '100%', maxHeight: '240px', display: 'block' }}
+                  />
+                </div>
+              )}
 
               {p.status === 'proposal_sent' && (
                 <div style={{ marginTop: '12px', display: 'flex', gap: '10px' }}>
