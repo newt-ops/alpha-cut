@@ -35,7 +35,7 @@ const TIER_COLORS = {
 import { AdminSectionHeader } from './AdminSectionHeader';
 
 export const AnalyticsCharts = ({ stats }) => {
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('ETB');
   const [trendRange, setTrendRange] = useState('30d');
 
   const safeStats = stats || {};
@@ -193,13 +193,13 @@ export const AnalyticsCharts = ({ stats }) => {
                     <stop offset="95%" stopColor="#C9A06B" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" opacity={0.5} />
-                <XAxis dataKey="label" stroke="var(--ink-soft)" fontSize={12} tickLine={false} />
-                <YAxis stroke="var(--ink-soft)" fontSize={12} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#30363D" opacity={0.5} />
+                <XAxis dataKey="label" stroke="#8B949E" fontSize={12} tickLine={false} />
+                <YAxis stroke="#8B949E" fontSize={12} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--line)', color: 'var(--ink)', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: '#161B22', borderColor: '#30363D', color: '#F0F6FC', borderRadius: '8px' }}
                 />
-                <Area type="monotone" dataKey={currency} stroke="var(--accent-gold)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
+                <Area type="monotone" dataKey={currency} stroke="#C9A06B" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -228,8 +228,8 @@ export const AnalyticsCharts = ({ stats }) => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--line)', borderRadius: '8px' }} />
-                  <Legend wrapperStyle={{ fontSize: '11px', color: 'var(--ink-soft)' }} />
+                  <Tooltip contentStyle={{ backgroundColor: '#161B22', borderColor: '#30363D', borderRadius: '8px' }} />
+                  <Legend wrapperStyle={{ fontSize: '11px', color: '#8B949E' }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -247,10 +247,10 @@ export const AnalyticsCharts = ({ stats }) => {
           <div style={{ width: '100%', height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={tierBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" opacity={0.5} />
-                <XAxis dataKey="tier" stroke="var(--ink-soft)" fontSize={12} tickLine={false} />
-                <YAxis stroke="var(--ink-soft)" fontSize={12} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--line)', borderRadius: '8px' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#30363D" opacity={0.5} />
+                <XAxis dataKey="tier" stroke="#8B949E" fontSize={12} tickLine={false} />
+                <YAxis stroke="#8B949E" fontSize={12} tickLine={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#161B22', borderColor: '#30363D', borderRadius: '8px' }} />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                   {tierBarData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -274,11 +274,11 @@ export const AnalyticsCharts = ({ stats }) => {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={styleBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" opacity={0.5} />
-                  <XAxis dataKey="style" stroke="var(--ink-soft)" fontSize={11} tickLine={false} />
-                  <YAxis stroke="var(--ink-soft)" fontSize={12} tickLine={false} />
-                  <Tooltip contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--line)', borderRadius: '8px' }} />
-                  <Bar dataKey="value" fill="var(--accent-gold)" radius={[6, 6, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#30363D" opacity={0.5} />
+                  <XAxis dataKey="style" stroke="#8B949E" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#8B949E" fontSize={12} tickLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#161B22', borderColor: '#30363D', borderRadius: '8px' }} />
+                  <Bar dataKey="value" fill="#C9A06B" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
