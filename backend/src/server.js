@@ -113,6 +113,106 @@ app.use('/api', contractRoutes);
 app.get('/api/packages/exchange-rate', getLiveExchangeRate);
 app.get('/api/packages', getAllPackageConfigs);
 
+app.get('/', (req, res) => {
+  res.status(200).send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Alpha Cut — API Engine & Telegram Bot Server</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          background-color: #0d1117;
+          color: #c9d1d9;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          padding: 24px;
+        }
+        .card {
+          background-color: #161b22;
+          border: 1px solid #30363d;
+          border-radius: 16px;
+          padding: 36px;
+          max-width: 520px;
+          width: 100%;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+          text-align: center;
+        }
+        .badge {
+          display: inline-block;
+          padding: 6px 14px;
+          border-radius: 20px;
+          background-color: rgba(36, 161, 222, 0.15);
+          color: #24A1DE;
+          font-size: 13px;
+          font-weight: 600;
+          margin-bottom: 16px;
+          border: 1px solid rgba(36, 161, 222, 0.3);
+        }
+        h1 { font-size: 24px; color: #f0f6fc; margin-bottom: 8px; font-weight: 700; }
+        p { font-size: 14px; color: #8b949e; line-height: 1.6; margin-bottom: 24px; }
+        .status-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 28px;
+          text-align: left;
+        }
+        .status-item {
+          background-color: #0d1117;
+          border: 1px solid #21262d;
+          padding: 12px 14px;
+          border-radius: 8px;
+          font-size: 13px;
+        }
+        .status-label { color: #8b949e; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .status-value { color: #3fb950; font-weight: 600; display: flex; alignItems: center; gap: 6px; }
+        .btn-group { display: flex; gap: 12px; flex-direction: column; }
+        .btn {
+          display: block;
+          padding: 12px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: 600;
+          font-size: 14px;
+          transition: all 0.2s ease;
+        }
+        .btn-primary { background-color: #24A1DE; color: #ffffff; }
+        .btn-secondary { background-color: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="badge">API Engine Operational</div>
+        <h1>Alpha Cut Backend Server</h1>
+        <p>REST API Engine & Telegram Bot Microservices are running active on Render.</p>
+        
+        <div class="status-grid">
+          <div class="status-item">
+            <div class="status-label">API Health</div>
+            <div class="status-value">🟢 Online</div>
+          </div>
+          <div class="status-item">
+            <div class="status-label">MongoDB</div>
+            <div class="status-value">${mongoose.connection.readyState === 1 ? '🟢 Connected' : '🟡 Connecting'}</div>
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <a href="https://alpha-cut-nine.vercel.app" class="btn btn-primary">Open Alpha Cut Web Platform</a>
+          <a href="https://t.me/alpha_cut_bot" class="btn btn-secondary">Open Telegram Bot</a>
+        </div>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
