@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "prestart": "tsc",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit"
@@ -27,6 +28,7 @@
     "morgan": "^1.10.0",
     "resend": "^6.20.0",
     "telegraf": "^4.16.3",
+    "typescript": "^5.5.4",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -39,7 +41,6 @@
     "@types/morgan": "^1.9.10",
     "@types/node": "^26.2.0",
     "nodemon": "^3.1.4",
-    "tsx": "^4.23.12",
-    "typescript": "^7.0.2"
+    "tsx": "^4.23.12"
   }
 }
