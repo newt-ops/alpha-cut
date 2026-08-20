@@ -12,6 +12,8 @@ PROJECT_BRIEF.md
 prompt/
 client_secret_*.json
 *.json.secret
+spline.txt
+3d element.txt
 
 # Dependencies
 node_modules/
