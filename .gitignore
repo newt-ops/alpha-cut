@@ -19,7 +19,6 @@ backend/node_modules/
 frontend/node_modules/
 
 # Production build outputs
-dist/
 frontend/dist/
 build/
 
