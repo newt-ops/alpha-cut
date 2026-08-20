@@ -1,4 +1,7 @@
 @import './tokens.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -52,6 +55,11 @@ a {
   text-decoration: none;
 }
 
+:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -101,3 +109,33 @@ a {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--line);
 }
+
+/* Motion Identity Animations */
+@keyframes flipIn {
+  0% {
+    opacity: 0;
+    transform: perspective(800px) rotateX(-16deg) translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(800px) rotateX(0deg) translateY(0);
+  }
+}
+
+@keyframes gentleFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-flip-in {
+  animation: flipIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float {
+  animation: gentleFloat 4s ease-in-out infinite;
+}
+

@@ -7,12 +7,9 @@
 backend/.env
 frontend/.env
 
-# Confidential Project Brief, Prompts, Logos & OAuth Secrets
+# Confidential Project Brief, Prompts & OAuth Secrets
 PROJECT_BRIEF.md
 prompt/
-prompt
-logo/
-logo
 client_secret_*.json
 *.json.secret
 

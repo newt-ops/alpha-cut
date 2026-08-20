@@ -1,97 +1,141 @@
-# 🎬 ALPHA CUT — Creative Video Editing Agency & Client Management System
+# 🎬 ALPHA CUT — High-Impact Video Editing Agency Platform & Operating System
 
-![License: MIT](https://img.shields.io/badge/License-MIT-gold.svg)
-![Frontend: React 18 + Vite](https://img.shields.io/badge/Frontend-React_18_%2B_Vite-maroon.svg)
-![Backend: Express + MongoDB](https://img.shields.io/badge/Backend-Node.js_%2B_Express_%2B_MongoDB-170B06.svg)
-![Bot: Telegraf Telegram Bot](https://img.shields.io/badge/Bot-Telegraf_Telegram_API-0088cc.svg)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6.svg?logo=typescript)](https://www.typescriptlang.org/)
+[![React 18](https://img.shields.io/badge/React-18.3-61DAFB.svg?logo=react)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5.3-646CFF.svg?logo=vite)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4.svg?logo=tailwindcss)](https://tailwindcss.com/)
+[![TanStack Query](https://img.shields.io/badge/TanStack_Query-v5-FF4154.svg?logo=reactquery)](https://tanstack.com/query)
+[![Zustand](https://img.shields.io/badge/Zustand-v4-443E38.svg)](https://zustand-demo.pmnd.rs/)
+[![Node.js](https://img.shields.io/badge/Node.js-20.x-339933.svg?logo=node.js)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4.19-000000.svg?logo=express)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248.svg?logo=mongodb)](https://www.mongodb.com/)
+[![Telegram Bot](https://img.shields.io/badge/Telegram_Bot-Mini_App-26A5E4.svg?logo=telegram)](https://core.telegram.org/bots/webapps)
+[![License: MIT](https://img.shields.io/badge/License-MIT-gold.svg)](LICENSE)
 
 > **"Editing is the leverage point, not an afterthought."**
 
-**Alpha Cut** is a high-impact, retention-focused video editing agency platform founded by **Amir** (Video Editor) and **Aymen** (Full-Stack Developer & Video Editor). The web application combines an interactive portfolio teaching visitors the leverage of retention-driven video edits with an ERP-style client management portal, proposal builder, and Telegram bot notification service.
+**Alpha Cut** is a boutique, retention-driven video editing agency's portfolio, client-management, and operations platform founded and run by **Amir** (Video Editor) and **Aymen** (Full-Stack Developer & Video Editor). The platform pairs a high-conversion client site with an ERP-style operating system, custom Telegram Bot, and Telegram Mini App workspace.
 
 ---
 
-## 🌟 Key Features
+## 🌟 Architecture Highlights
 
-### 1. Interactive Public Platform
-- **"Why Editing Matters" Interactive Scroll Sequence**: Features a real-time **Before/After Split Comparison Slider** demonstrating raw footage vs. retention-driven kinetic edits (captions, motion graphics, sound design, color grading).
-- **Categorized Editing Styles Catalog**: Interactive showcase seeded with 5 signature styles: *Viral Animation Breakdowns*, *Cinematic Short-Film*, *SaaS Animations*, *David Jota Hook Style*, and *Ali Abdaal Storytelling Style*.
-- **Filterable Portfolio Showcase**: Custom 9:16 vertical `PhoneFrame` and 16:9 widescreen `VideoFrame` device components with subtle 3D hover perspective tilt.
-- **Packages & Monthly Frequency Calculator**: Basic vs. Premium rate comparison, USD/ETB toggle, and an interactive calculator computing monthly investment ranges (`videos/month × per-video rate range`).
-- **About Founders & Verified Reviews**: Interactive dual-profile presentation for Amir and Aymen, plus live public ratings powered by database reviews.
-
-### 2. Client Portal & Onboarding
-- **Multi-Method Auth**: Local email/password registration with 6-digit OTP verification via Resend HTML templates, plus Google OAuth integration.
-- **Telegram Account Linking**: Dual-path onboarding via manual `/link <code>` OR one-click `https://t.me/<BotUsername>?start=<token>` deep links.
-- **Client Dashboard**: Stepper timeline (`proposal_sent` → `in_progress` → `delivered` → `completed`), project detail viewer, deliverable reviewer, and 5-star review submission modal.
-
-### 3. Admin Control Panel
-- **Revenue & Analytics**: Separate USD and ETB revenue stat cards (no FX conversions), registered client count, status breakdown, average rating, and recent activity feed.
-- **Proposal Builder**: Typeahead registered client search (blocks submission for unregistered emails), style select, length & tier toggles, currency select + price input, custom popover `DatePicker` for deadline, and brief notes.
-- **Project Board & Delivery**: Status board with "Mark Delivered" action attaching external project links (Google Drive, Frame.io, Dropbox).
-- **Ratings Moderation & Pricing Config**: Moderation toggles to hide/unhide public reviews, plus a package pricing range editor.
+### ⚡ Upgraded Engineering Stack
+- **TypeScript Strict Mode**: Fully typed frontend data layer with interfaces for `User`, `Project`, `Contract`, `Deliverable`, `RatingItem`, `PortfolioItem`, and `AdminStats`.
+- **TanStack Query v5 Server State**: Replaced manual `fetch` & `useState` with Query caching, background refetching, and automatic mutation invalidation for real-time CRM updates.
+- **Zustand Client UI State**: Lightweight state stores (`useThemeStore`, `useUIStore`) managing light/dark theme attributes, active modals, and currency selection (`ETB` / `USD`).
+- **Tailwind CSS Utility Mapping**: Custom CSS custom variables (`#451D13` deep maroon, `#FBEFE1` warm cream, `#C9A06B` gold) mapped directly into Tailwind theme extensions. Zero visual style drift.
+- **Chart.js Financial Analytics**: Multi-currency revenue visualization (ETB & USD), retainer breakdown, client CRM leaderboards, and conversion analytics.
 
 ---
 
-## 🛠️ Tech Stack & Architecture
-
-| Layer | Technology |
-|---|---|
-| **Frontend** | React 18, Vite, React Router 6, Framer Motion, Lucide Icons |
-| **Styling** | Modular Vanilla CSS Design Tokens (Warm Cream `#FBEFE1`, Maroon `#451D13`, Gold `#C9A06B`), Light/Dark mode |
-| **Backend API** | Node.js, Express, Mongoose, Zod validation, Helmet CSP, CSRF protection, HPP, Cookie Parser |
-| **Database** | MongoDB Atlas |
-| **Telegram Bot** | Telegraf Webhook service running on the same Express service |
-| **Transactional Email** | Resend API |
-| **Media Storage** | Cloudinary (avatar profile photos) |
-| **Hosting** | Netlify (Frontend SPA) + Render (Backend Web Service + Telegram Bot) |
-
----
-
-## 📁 Repository Structure
+## 🏗️ System Architecture Flow Diagram
 
 ```
-alpha-cut/
-├── frontend/                  # React + Vite client application
-│   ├── public/
-│   │   └── _redirects         # Netlify SPA route fallback
+                              ┌──────────────────────────────────┐
+                              │         CLIENT VISITORS          │
+                              └────────────────┬─────────────────┘
+                                               │
+                                ┌──────────────▼──────────────┐
+                                │   React 18 + Vite Frontend  │
+                                │ (TypeScript + Tailwind CSS) │
+                                └──────────────┬──────────────┘
+                                               │
+               ┌───────────────────────────────┼───────────────────────────────┐
+               │                               │                               │
+ ┌─────────────▼─────────────┐   ┌─────────────▼─────────────┐   ┌─────────────▼─────────────┐
+ │   Public Landing & Cards  │   │     Client Dashboard      │   │     Admin Control Center  │
+ │ (Before/After, Estimator) │   │ (Proposals & Deliverables) │   │ (CRM Stats, Chart.js)     │
+ └─────────────┬─────────────┘   └─────────────┬─────────────┘   └─────────────┬─────────────┘
+               │                               │                               │
+               └───────────────────────────────┼───────────────────────────────┘
+                                               │
+                                ┌──────────────▼──────────────┐
+                                │     Node.js + Express API   │
+                                │ (JWT, Zod, Helmet Security) │
+                                └──────┬───────────────┬──────┘
+                                       │               │
+                 ┌─────────────────────┴──┐         ┌──┴─────────────────────┐
+                 │  Telegram Bot Engine   │         │    MongoDB Atlas DB    │
+                 │ (Telegraf + Mini App)  │         │ (Projects, Contracts)  │
+                 └────────────────────────┘         └────────────────────────┘
+```
+
+---
+
+## 🌟 Core Feature Suite
+
+### 1. Interactive Public Platform
+- **Before/After Split Comparison Slider**: Interactive video comparison showing raw footage vs. retention-driven kinetic edits (sound design, kinetic typography, color grading).
+- **Categorized Editing Styles**: Showcase featuring 5 signature styles: *Viral Animation Breakdowns*, *Cinematic Short-Film*, *SaaS Animations*, *David Jota Hook Style*, and *Ali Abdaal Storytelling Style*.
+- **Filterable Portfolio Showcase**: 9:16 vertical `PhoneFrame` and 16:9 widescreen video preview cards with subtle 3D hover perspective tilt.
+- **3-Tier Pricing & Calculator**: Basic, Professional, and Premium rate comparison, default ETB currency, and interactive frequency investment estimator (`videos/month × per-video rate range`).
+- **Paginated Testimonials**: Aggregate Overview Card with star distribution bars and "Load More Reviews" incremental pagination.
+
+### 2. Client Portal & Onboarding
+- **Multi-Method Auth**: Email/password registration with 6-digit OTP verification via Resend HTML templates, plus Google OAuth integration.
+- **Dual-Path Telegram Linking**: Link web account via `/link <code>` OR one-click `https://t.me/Alphacut_co_bot?start=<token>` deep links.
+- **Client Workspace**: Milestone stepper (`proposal_sent` → `in_progress` → `delivered` → `completed`), project detail viewer, deliverable reviewer, and 5-star review submission modal.
+
+### 3. Admin Control Panel
+- **Financial Analytics**: Multi-currency revenue stat cards (ETB & USD), active retainer contract metrics, status breakdown, and Chart.js trend charts.
+- **Proposal Builder**: Registered client typeahead search, style selector, length & tier toggles, currency select + price input, custom datepicker deadline, and brief notes.
+- **Retainer Contracts Directory**: Monthly retainer allocations, handed-over deliverable video manager, and deliverable approval tracking.
+- **Portfolio CMS & Moderation**: Modal thumbnail uploader with XHR progress bars, unhide/hide review moderation, and hard-delete review confirmation modal.
+
+### 4. Telegram Bot & Mini App Integration
+- **Telegraf Bot Commands**: `/start`, `/menu`, `/status`, `/projects`, `/packages`, `/styles`, `/link`, `/unlink`, `/help`.
+- **Role-Aware Keyboard Navigation**: Asymmetric menus for Admin (CRM metrics, proposal builder) vs Client (active projects, deliverable approvals).
+- **Telegram Mini App Workspace**: Native WebApp SDK integration with haptic feedback, dark theme, quick proposal acceptance, and deliverable render viewer.
+
+---
+
+## 📁 Directory Structure
+
+```
+c:/Alpha Cut/Web App/
+├── frontend/                  # React 18 + Vite + TypeScript Frontend
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── admin/         # AdminHeaderBar, AnalyticsCharts, AdminSectionHeader
 │   │   │   ├── auth/          # RequireAuth & RequireAdmin route guards
+│   │   │   ├── calendar/      # NotionCalendar component
 │   │   │   ├── home/          # BeforeAfterComparison interactive slider
 │   │   │   ├── icons/         # icons.jsx centralized SVG system (zero emojis)
-│   │   │   ├── layout/        # Navbar, Footer, PageWrapper
+│   │   │   ├── layout/        # Navbar, Footer, PageWrapper, ErrorBoundary, TelegramAppLayout
 │   │   │   ├── media/         # PhoneFrame (9:16) & VideoFrame (16:9)
-│   │   │   └── ui/            # 18 Custom UI primitives (Button, Input, DatePicker, etc.)
-│   │   ├── context/           # ThemeContext & AuthContext
+│   │   │   └── ui/            # UI primitives (Button, Input, Modal, CurrencyToggle, Dropzone, etc.)
+│   │   ├── context/           # AuthContext & ThemeContext
 │   │   ├── data/              # Canonical editing styles, portfolio & package data
-│   │   ├── pages/             # Sitemap pages (Home, Styles, Portfolio, Packages, About, Dashboard, Admin, etc.)
-│   │   ├── styles/            # tokens.css & globals.css
-│   │   ├── App.jsx            # Lazy-loaded router configuration
-│   │   └── main.jsx
-│   ├── vite.config.js         # Path aliases (@components, @pages, @icons, etc.)
+│   │   ├── hooks/             # TanStack Query hooks (useProjects, useContracts, useRatings, etc.)
+│   │   ├── pages/             # Pages (Home, Styles, Portfolio, Packages, About, Dashboard, Admin, MiniApp)
+│   │   ├── stores/            # Zustand stores (useThemeStore, useUIStore)
+│   │   ├── styles/            # tokens.css & globals.css (Tailwind directives & custom tokens)
+│   │   ├── types/             # Strict TypeScript interface declarations (index.ts)
+│   │   ├── App.tsx            # Lazy-loaded QueryClient router configuration
+│   │   └── main.tsx           # Application entry point
+│   ├── tailwind.config.js     # Tailwind CSS theme configuration
+│   ├── vite.config.ts         # Vite TypeScript configuration
+│   ├── tsconfig.json          # TypeScript compiler options & path aliases
 │   └── package.json
-├── backend/                   # Express API & Telegram Bot
+├── backend/                   # Express API & Telegram Bot Engine (TypeScript)
 │   ├── src/
-│   │   ├── config/            # Environment loader & validation
-│   │   ├── controllers/       # Auth, Admin, Project, Rating, Notification controllers
-│   │   ├── middleware/        # Auth, Admin, CSRF, Helmet CSP, Zod validation, Error Handler
-│   │   ├── models/            # User, Project, Rating, PackageConfig, PendingLink, Notification
-│   │   ├── routes/            # API routes (/api/auth, /api/admin, /api/projects, /api/telegram, etc.)
-│   │   ├── services/          # Lifecycle Engine, Email Service, Telegram Bot Service, Cloudinary Service
-│   │   ├── utils/             # seedAdmin.js & setTelegramWebhook.js CLI tools
-│   │   └── server.js          # Express app entry point
+│   │   ├── bot/               # Telegraf Telegram bot commands, keyboards, handlers & notifications (.ts)
+│   │   ├── config/            # Environment loader & validation (.ts)
+│   │   ├── controllers/       # Auth, Admin, Project, Contract, Rating, Notification controllers (.ts)
+│   │   ├── middleware/        # Auth, Admin, CSRF, Helmet CSP, Zod validation, Error Handler (.ts)
+│   │   ├── models/            # User, Project, Contract, Rating, PackageConfig, PendingLink, Notification (.ts)
+│   │   ├── routes/            # API routes (/api/auth, /api/admin, /api/projects, /api/contracts, etc.) (.ts)
+│   │   ├── services/          # Lifecycle Engine, Email Service, Telegram Bot Service, Cloudinary Service (.ts)
+│   │   └── server.ts          # Express app entry point (TypeScript)
+│   ├── tsconfig.json          # NodeNext TypeScript compiler configuration
 │   └── package.json
-├── PROJECT_BRIEF.md           # Canonical master project brief
-├── README.md                  # System documentation
-└── LICENSE                    # MIT License
+└── README.md                  # Master repository documentation
 ```
 
 ---
 
 ## 🔑 Environment Variables Reference
-
-Create `.env` in `backend/` and `frontend/` matching the required variables:
 
 ### Backend (`backend/.env`)
 ```env
@@ -107,7 +151,7 @@ CLOUDINARY_API_KEY=your_cloudinary_api_key_here
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret_here
 RESEND_API_KEY=your_resend_api_key_here
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-TELEGRAM_BOT_USERNAME=@alpha_cut_bot
+TELEGRAM_BOT_USERNAME=@alphacut_co_bot
 TELEGRAM_WEBHOOK_SECRET=your_telegram_webhook_secret_here
 CLIENT_URL=http://localhost:5173
 SERVER_URL=http://localhost:5000
@@ -123,61 +167,33 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
 
 ## ⚡ Quick Start (Local Development)
 
-### 1. Clone & Install Dependencies
+### 1. Install Dependencies
 ```bash
-# Install backend packages
+# Install backend dependencies
 cd backend
 npm install
 
-# Install frontend packages
+# Install frontend dependencies
 cd ../frontend
 npm install
 ```
 
-### 2. Seed Initial Admin Account
-Run the CLI seed script to generate your admin credentials in MongoDB Atlas:
+### 2. Run Type Checks & Local Servers
 ```bash
-cd backend
-node src/utils/seedAdmin.js alphacutagency@gmail.com YourStrongPassword! "Aymen Admin"
-```
+# Type-check frontend
+cd frontend
+npx tsc --noEmit
 
-### 3. Start Local Servers
-```bash
-# Terminal 1: Backend API (Port 5000)
-cd backend
+# Start Backend API (Port 5000)
+cd ../backend
 npm run dev
 
-# Terminal 2: Frontend Client (Port 5173)
-cd frontend
+# Start Frontend Vite Dev Server (Port 5173)
+cd ../frontend
 npm run dev
 ```
 
 Visit `http://localhost:5173` in your browser.
-
----
-
-## 🚀 Deployment Instructions
-
-### 1. Backend Service (Render)
-- Deploy `backend/` as a single Render **Web Service**.
-- Build Command: `npm install`
-- Start Command: `node src/server.js`
-- Set all backend environment variables in Render's environment dashboard.
-- Set `CLIENT_URL` to your production Netlify URL.
-
-### 2. Telegram Bot Webhook Registration
-After your Render Web Service is live, register the Telegram Webhook:
-```bash
-cd backend
-node src/utils/setTelegramWebhook.js https://your-service.onrender.com
-```
-
-### 3. Frontend Client (Netlify)
-- Deploy `frontend/` to Netlify.
-- Build Command: `npm run build`
-- Publish Directory: `frontend/dist`
-- Set `VITE_API_URL` to your live Render backend URL.
-- The included `public/_redirects` file ensures single-page client routing (`/* /index.html 200`).
 
 ---
 

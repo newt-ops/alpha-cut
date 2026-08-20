@@ -1,0 +1,57 @@
+export interface EditingStyleItem {
+  id: string;
+  name: string;
+  category: string;
+  format: string;
+  description: string;
+  pacing: string;
+  bestFor?: string;
+}
+
+export const EDITING_STYLES: EditingStyleItem[] = [
+  {
+    id: 'viral-animation',
+    name: 'Viral Animation Breakdowns',
+    category: 'Educational',
+    format: '9:16 Short-Form',
+    description: 'High-energy kinetic typography, custom motion graphics overlays, rhythmic sound design on visual beats.',
+    pacing: 'High Pacing (0.8s cuts)',
+    bestFor: 'Viral shorts, educational breakdowns',
+  },
+  {
+    id: 'cinematic-storytelling',
+    name: 'Cinematic Short-Film',
+    category: 'Personal Brand',
+    format: '9:16 & 16:9',
+    description: 'Editorial grade color grading, atmospheric soundscapes, film grain, seamless match-cuts.',
+    pacing: 'Dynamic Film Pacing',
+    bestFor: 'Founder brand stories, documentary shorts',
+  },
+  {
+    id: 'saas-animation',
+    name: 'SaaS & App Animations',
+    category: 'Product / SaaS',
+    format: '9:16 & 16:9',
+    description: 'Vector UI recreations, simulated cursor movements, smooth camera zooms on dashboard features.',
+    pacing: 'Clean Product Flow',
+    bestFor: 'Software demos, product feature launches',
+  },
+  {
+    id: 'jota-hook',
+    name: 'David Jota Hook Style',
+    category: 'Viral Hook Driven',
+    format: '9:16 Short-Form',
+    description: 'Aggressive 3-second hook framing, dynamic zooms, pop-up icon graphics, screen shakes.',
+    pacing: 'Explosive 3s Retention Hook',
+    bestFor: 'High-conversion ad hooks, TikTok trends',
+  },
+  {
+    id: 'abdaal-style',
+    name: 'Ali Abdaal Storytelling Style',
+    category: 'Knowledge',
+    format: '9:16 & 16:9',
+    description: 'Clean, elegant typography, warm paper textures, smooth B-roll overlays.',
+    pacing: 'Educational Typography',
+    bestFor: 'Long-form essays, newsletter videos',
+  },
+];
