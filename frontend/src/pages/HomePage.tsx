@@ -6,7 +6,6 @@ import { Button } from '@components/ui/Button';
 import { StarRating } from '@components/ui/StarRating';
 import { PhoneFrame } from '@components/media/PhoneFrame';
 import { BeforeAfterComparison } from '@components/home/BeforeAfterComparison';
-import { SplineViewer } from '@components/home/SplineViewer';
 import { EDITING_STYLES } from '../data/editingStyles';
 import { PORTFOLIO_ITEMS } from '../data/portfolioItems';
 import { PACKAGES_DATA } from '../data/packagesData';
@@ -19,7 +18,6 @@ export const HomePage: React.FC = () => {
   const [totalReviews, setTotalReviews] = useState(12);
   const [packageTiers, setPackageTiers] = useState<any[]>(PACKAGES_DATA.shortForm.tiers);
   const [portfolioList, setPortfolioList] = useState<any[]>(PORTFOLIO_ITEMS);
-  const [activeSplineUrl, setActiveSplineUrl] = useState('https://prod.spline.design/PBQQBw8bfXDhBo7w/scene.splinecode');
 
   useEffect(() => {
     const fetchLiveData = async () => {
@@ -177,56 +175,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. INTERACTIVE 3D VISUAL SHOWCASE */}
-      <section style={{ textAlign: 'center' }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto 28px auto' }}>
-          <Badge variant="gold">3D Creative Dimension</Badge>
-          <h2 className="font-display" style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, marginTop: '8px' }}>
-            Interactive 3D Motion Canvas
-          </h2>
-          <p style={{ color: 'var(--ink-soft)', marginTop: '6px', fontSize: '15px' }}>
-            Drag, rotate, and interact with live 3D assets rendered directly in real-time.
-          </p>
-
-          {/* Interactive Scene Presets */}
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '20px' }}>
-            {[
-              { label: 'Follow Cursor', url: 'https://prod.spline.design/PBQQBw8bfXDhBo7w/scene.splinecode' },
-              { label: 'Look At Camera', url: 'https://prod.spline.design/FVZWbQH2B6ndj9UU/scene.splinecode' },
-              { label: 'Orbit & Zoom', url: 'https://prod.spline.design/U9O6K7fXziMEU7Wu/scene.splinecode' },
-              { label: 'Scroll Camera', url: 'https://prod.spline.design/LEvjG3OETYd2GsRw/scene.splinecode' },
-              { label: '3D Hero Scene', url: 'https://prod.spline.design/UWoeqiir20o49Dah/scene.splinecode' },
-            ].map((preset) => (
-              <button
-                key={preset.url}
-                type="button"
-                onClick={() => setActiveSplineUrl(preset.url)}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '100px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  backgroundColor: activeSplineUrl === preset.url ? 'var(--accent-gold)' : 'var(--surface)',
-                  color: activeSplineUrl === preset.url ? '#170B06' : 'var(--ink)',
-                  border: `1px solid ${activeSplineUrl === preset.url ? 'var(--accent-gold)' : 'var(--line)'}`,
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)',
-                }}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <SplineViewer
-          key={activeSplineUrl}
-          sceneUrl={activeSplineUrl}
-          height="540px"
-        />
-      </section>
-
-      {/* 3. VISUAL PROOF COMPARISON SLIDER SECTION */}
+      {/* 2. VISUAL PROOF COMPARISON SLIDER SECTION */}
       <section>
         <BeforeAfterComparison />
       </section>
