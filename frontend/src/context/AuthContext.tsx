@@ -126,7 +126,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const data = await apiFetch('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password, turnstileToken }),
+        body: JSON.stringify({
+          email,
+          password,
+          turnstileToken,
+          'cf-turnstile-response': turnstileToken,
+        }),
       });
       setAccessToken(data.accessToken);
       setUser(data.user);
@@ -143,7 +148,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signup = async (name: string, email: string, password: string, turnstileToken?: string) => {
     const data = await apiFetch('/api/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, turnstileToken }),
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+        turnstileToken,
+        'cf-turnstile-response': turnstileToken,
+      }),
     });
     setUnverifiedEmail(email);
     return data;

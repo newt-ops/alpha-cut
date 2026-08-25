@@ -25,7 +25,11 @@ export const ForgotPasswordPage: React.FC = () => {
       setIsLoading(true);
       const res = await customFetch('/api/auth/forgot-password', {
         method: 'POST',
-        body: JSON.stringify({ email, turnstileToken }),
+        body: JSON.stringify({
+          email,
+          turnstileToken,
+          'cf-turnstile-response': turnstileToken,
+        }),
       });
 
       setMessage(res.message);

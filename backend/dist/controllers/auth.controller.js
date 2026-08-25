@@ -31,21 +31,19 @@ const generateOtpCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 const verifyTurnstileToken = async (req) => {
-    const token = req.body?.turnstileToken || req.body?.['cf-turnstile-response'];
+    const token = req.body?.['cf-turnstile-response'] || req.body?.turnstileToken;
     const secretKey = process.env.TURNSTILE_SECRET || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '0x4AAAAAAEcK-mP0HILAUZFBV_a-iy28gIw';
-    if (typeof token !== 'string' || !token.trim() || token.length > 2048) {
-        console.warn('[TURNSTILE VERIFY WARN]: Missing or invalid token format in request body');
+    if (typeof token !== 'string' || !token.trim()) {
+        console.warn('[TURNSTILE VERIFY WARN]: Missing token in request body');
         if (process.env.NODE_ENV !== 'production' && secretKey.startsWith('1x000000')) {
             return true;
         }
         return false;
     }
     try {
-        const remoteIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '';
         const formData = new URLSearchParams({
             secret: secretKey,
             response: token,
-            ...(remoteIp ? { remoteip: remoteIp.split(',')[0].trim() } : {}),
         });
         const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
             method: 'POST',
@@ -53,18 +51,14 @@ const verifyTurnstileToken = async (req) => {
             signal: AbortSignal.timeout(10000),
             body: formData,
         });
-        if (!response.ok) {
-            console.error(`[TURNSTILE HTTP ERROR]: siteverify responded status ${response.status}`);
-            return false;
-        }
         const data = await response.json();
         if (!data.success) {
-            console.error('[TURNSTILE CLOUDFLARE REJECTION]:', JSON.stringify(data));
+            console.error('[TURNSTILE SITEVERIFY REJECTED]:', JSON.stringify(data));
         }
         return data.success === true;
     }
     catch (err) {
-        console.error('[TURNSTILE VERIFY EXCEPTION]:', err);
+        console.error('[TURNSTILE SITEVERIFY EXCEPTION]:', err);
         return process.env.NODE_ENV !== 'production';
     }
 };
