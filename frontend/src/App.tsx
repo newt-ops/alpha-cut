@@ -74,10 +74,9 @@ const AppRoutes: React.FC = () => {
     }
   }, [hostType]);
 
-  // Production Legacy Path Redirects to Subdomains (Opt-in via VITE_ENABLE_SUBDOMAIN_REDIRECTS)
-  const enableSubdomainRedirects = import.meta.env.VITE_ENABLE_SUBDOMAIN_REDIRECTS === 'true';
+  // Production Legacy Path Redirects to Subdomains
   React.useEffect(() => {
-    if (enableSubdomainRedirects && isProductionCustomDomain) {
+    if (isProductionCustomDomain) {
       if (location.pathname.startsWith('/admin')) {
         window.location.href = `https://admin.alpha-cut.com${location.search}`;
       } else if (location.pathname.startsWith('/dashboard')) {
@@ -86,7 +85,7 @@ const AppRoutes: React.FC = () => {
         window.location.href = `https://app.alpha-cut.com${location.search}`;
       }
     }
-  }, [location, isProductionCustomDomain, enableSubdomainRedirects]);
+  }, [location, isProductionCustomDomain]);
 
   // 1. ADMIN SUBDOMAIN (admin.alpha-cut.com) or Local /admin Fallback
   if (hostType === 'admin' || location.pathname.startsWith('/admin')) {

@@ -22,6 +22,15 @@ export const Navbar: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
+  const getSubdomainHref = (subdomain: 'admin' | 'dashboard' | 'app') => {
+    if (typeof window === 'undefined') return `/${subdomain}`;
+    const host = window.location.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return `/${subdomain}`;
+    }
+    return `https://${subdomain}.alpha-cut.com`;
+  };
+
   const navLinks = [
     { label: 'Home', path: '/' },
     { label: 'Editing Styles', path: '/editing-styles' },
@@ -331,8 +340,8 @@ export const Navbar: React.FC = () => {
                         zIndex: 1000,
                       }}
                     >
-                      <Link
-                        to="/dashboard"
+                      <a
+                        href={getSubdomainHref('dashboard')}
                         onClick={() => setProfileDropdownOpen(false)}
                         style={{
                           display: 'flex',
@@ -342,15 +351,16 @@ export const Navbar: React.FC = () => {
                           borderRadius: '8px',
                           fontSize: '14px',
                           color: 'var(--ink)',
+                          textDecoration: 'none',
                         }}
                       >
                         <IconUser size={16} color="var(--accent-gold)" />
                         Client Dashboard
-                      </Link>
+                      </a>
 
                       {user?.role === 'admin' && (
-                        <Link
-                          to="/admin"
+                        <a
+                          href={getSubdomainHref('admin')}
                           onClick={() => setProfileDropdownOpen(false)}
                           style={{
                             display: 'flex',
@@ -360,11 +370,12 @@ export const Navbar: React.FC = () => {
                             borderRadius: '8px',
                             fontSize: '14px',
                             color: 'var(--ink)',
+                            textDecoration: 'none',
                           }}
                         >
                           <IconShield size={16} color="var(--accent-gold)" />
                           Admin Panel
-                        </Link>
+                        </a>
                       )}
 
                       <div style={{ height: '1px', backgroundColor: 'var(--line)', margin: '6px 0' }} />
@@ -473,21 +484,21 @@ export const Navbar: React.FC = () => {
 
               {isAuthenticated ? (
                 <>
-                  <Link
-                    to="/dashboard"
+                  <a
+                    href={getSubdomainHref('dashboard')}
                     onClick={() => setMobileMenuOpen(false)}
-                    style={{ fontSize: '16px', fontWeight: 600, color: 'var(--ink)' }}
+                    style={{ fontSize: '16px', fontWeight: 600, color: 'var(--ink)', textDecoration: 'none' }}
                   >
                     Client Dashboard
-                  </Link>
+                  </a>
                   {user?.role === 'admin' && (
-                    <Link
-                      to="/admin"
+                    <a
+                      href={getSubdomainHref('admin')}
                       onClick={() => setMobileMenuOpen(false)}
-                      style={{ fontSize: '16px', fontWeight: 600, color: 'var(--accent-gold)' }}
+                      style={{ fontSize: '16px', fontWeight: 600, color: 'var(--accent-gold)', textDecoration: 'none' }}
                     >
                       Admin Panel
-                    </Link>
+                    </a>
                   )}
                   <button
                     onClick={() => {
