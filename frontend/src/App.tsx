@@ -24,6 +24,7 @@ const SignupPage = lazy(() => import('@pages/SignupPage').then((m) => ({ default
 const VerifyEmailPage = lazy(() => import('@pages/VerifyEmailPage').then((m) => ({ default: m.VerifyEmailPage })));
 const ForgotPasswordPage = lazy(() => import('@pages/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage = lazy(() => import('@pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
+const GoogleCallbackPage = lazy(() => import('@pages/GoogleCallbackPage').then((m) => ({ default: m.GoogleCallbackPage })));
 const TelegramLinkPage = lazy(() => import('@pages/TelegramLinkPage').then((m) => ({ default: m.TelegramLinkPage })));
 const DashboardPage = lazy(() => import('@pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const AdminPage = lazy(() => import('@pages/AdminPage').then((m) => ({ default: m.AdminPage })));
@@ -159,6 +160,7 @@ const AppRoutes: React.FC = () => {
               <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
 
               {/* Onboarding Protected Route */}
               <Route

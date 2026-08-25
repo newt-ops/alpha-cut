@@ -12,6 +12,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<any>;
   signup: (name: string, email: string, password: string) => Promise<any>;
   loginWithGoogle: (credential: string) => Promise<any>;
+  loginWithGoogleCode: (code: string, redirectUri: string) => Promise<any>;
+  initiateGoogleRedirect: () => void;
   verifyEmail: (email: string, code: string) => Promise<any>;
   resendVerification: (email: string) => Promise<any>;
   updateProfile: (profileData: Partial<User>) => Promise<any>;
@@ -158,6 +160,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return data;
   };
 
+  const initiateGoogleRedirect = () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '592216295265-6n5uqjepnlvn45nbto2o4chvf3q1cen9.apps.googleusercontent.com';
+    const stateToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('oauth_state', stateToken);
+      const redirectUri = `${window.location.origin}/auth/google/callback`;
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent('openid email profile')}&state=${encodeURIComponent(stateToken)}&prompt=select_account`;
+      window.location.href = googleAuthUrl;
+    }
+  };
+
+  const loginWithGoogleCode = async (code: string, redirectUri: string) => {
+    const data = await apiFetch('/api/auth/google/callback', {
+      method: 'POST',
+      body: JSON.stringify({ code, redirectUri }),
+    });
+    setAccessToken(data.accessToken);
+    setUser(data.user);
+    setUnverifiedEmail(null);
+    return data;
+  };
+
   const verifyEmail = async (email: string, code: string) => {
     const data = await apiFetch('/api/auth/verify-email', {
       method: 'POST',
@@ -239,6 +263,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         login,
         signup,
         loginWithGoogle,
+        loginWithGoogleCode,
+        initiateGoogleRedirect,
         verifyEmail,
         resendVerification,
         updateProfile,

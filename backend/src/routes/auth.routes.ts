@@ -3,6 +3,7 @@ import {
   signup,
   login,
   googleAuth,
+  googleCallback,
   verifyEmail,
   resendVerification,
   forgotPassword,
@@ -29,6 +30,7 @@ router.use(authRateLimiter);
 router.post('/signup', validateRequest(signupSchema), signup);
 router.post('/login', validateRequest(loginSchema), login);
 router.post('/google', googleAuth);
+router.post('/google/callback', googleCallback);
 router.post('/verify-email', validateRequest(verifyEmailSchema), verifyEmail);
 router.post('/resend-verification', resendVerification);
 router.post('/forgot-password', validateRequest(forgotPasswordSchema), forgotPassword);

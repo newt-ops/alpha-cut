@@ -8,7 +8,7 @@ import { useToast } from '@components/ui/Toast';
 import { IconGoogle, IconUser, IconCheck } from '@icons/icons';
 
 export const SignupPage: React.FC = () => {
-  const { signup, loginWithGoogle } = useAuth();
+  const { signup, initiateGoogleRedirect } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -44,25 +44,12 @@ export const SignupPage: React.FC = () => {
   };
 
   const handleGoogleClick = () => {
-    if (typeof window !== 'undefined' && (window as any).google && (window as any).google.accounts) {
-      (window as any).google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '592216295265-6n5uqjepnlvn45nbto2o4chvf3q1cen9.apps.googleusercontent.com',
-        callback: async (response: any) => {
-          try {
-            setIsGoogleLoading(true);
-            await loginWithGoogle(response.credential);
-            toast({ message: 'Welcome to Alpha Cut!', type: 'success' });
-            navigate('/dashboard');
-          } catch (err: any) {
-            toast({ message: err.message || 'Google sign-in failed', type: 'error' });
-          } finally {
-            setIsGoogleLoading(false);
-          }
-        },
-      });
-      (window as any).google.accounts.id.prompt();
-    } else {
-      toast({ message: 'Google Sign-In is initializing, please wait a moment...', type: 'info' });
+    try {
+      setIsGoogleLoading(true);
+      initiateGoogleRedirect();
+    } catch (err: any) {
+      toast({ message: 'Failed to initiate Google sign-in redirect.', type: 'error' });
+      setIsGoogleLoading(false);
     }
   };
 

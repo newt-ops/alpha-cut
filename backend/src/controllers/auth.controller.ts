@@ -6,7 +6,7 @@ import { User, IUser } from '../models/User.js';
 import { config } from '../config/env.js';
 import { sendVerificationEmail } from '../services/email.service.js';
 
-const googleClient = new OAuth2Client(config.googleClientId);
+const googleClient = new OAuth2Client(config.googleClientId, config.googleClientSecret);
 
 export interface TokenPair {
   accessToken: string;
@@ -169,6 +169,64 @@ export const googleAuth = async (req: Request, res: Response, next: NextFunction
     });
   } catch (err) {
     next(err);
+  }
+};
+
+export const googleCallback = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
+    const { code, redirectUri } = req.body;
+    if (!code) {
+      return res.status(400).json({ success: false, message: 'Authorization code is required' });
+    }
+
+    const targetRedirectUri = redirectUri || `${config.clientUrl}/auth/google/callback`;
+    const { tokens } = await googleClient.getToken({
+      code,
+      redirect_uri: targetRedirectUri,
+    });
+
+    if (!tokens.id_token) {
+      return res.status(400).json({ success: false, message: 'Failed to obtain ID token from Google' });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: config.googleClientId,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ success: false, message: 'Invalid Google user profile payload' });
+    }
+
+    const { email, name, picture } = payload;
+    let user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      user = await User.create({
+        name: name || 'Google User',
+        email: email.toLowerCase(),
+        authProvider: 'google',
+        role: 'client',
+        emailVerified: true,
+        avatarUrl: picture || null,
+      });
+    } else if (!user.emailVerified) {
+      user.emailVerified = true;
+      await user.save();
+    }
+
+    const { accessToken, refreshToken } = generateTokens(user);
+    setRefreshCookie(res, refreshToken);
+
+    res.status(200).json({
+      success: true,
+      accessToken,
+      user,
+    });
+  } catch (err: any) {
+    console.error('[GOOGLE OAUTH CALLBACK ERROR]:', err.message);
+    return res.status(401).json({ success: false, message: err.message || 'Google OAuth code exchange failed' });
   }
 };
 

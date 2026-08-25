@@ -9,7 +9,7 @@ import { IconGoogle, IconUser, IconCheck } from '@icons/icons';
 import { Logo } from '@components/ui/Logo';
 
 export const LoginPage: React.FC = () => {
-  const { login, loginWithGoogle, isAuthenticated, user } = useAuth();
+  const { login, initiateGoogleRedirect, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,24 +53,12 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleGoogleClick = () => {
-    if (typeof window !== 'undefined' && (window as any).google && (window as any).google.accounts) {
-      (window as any).google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '592216295265-6n5uqjepnlvn45nbto2o4chvf3q1cen9.apps.googleusercontent.com',
-        callback: async (response: any) => {
-          try {
-            setIsGoogleLoading(true);
-            await loginWithGoogle(response.credential);
-            toast({ message: 'Welcome back!', type: 'success' });
-          } catch (err: any) {
-            toast({ message: err.message || 'Google sign-in failed', type: 'error' });
-          } finally {
-            setIsGoogleLoading(false);
-          }
-        },
-      });
-      (window as any).google.accounts.id.prompt();
-    } else {
-      toast({ message: 'Google Sign-In is initializing, please wait a moment...', type: 'info' });
+    try {
+      setIsGoogleLoading(true);
+      initiateGoogleRedirect();
+    } catch (err: any) {
+      toast({ message: 'Failed to initiate Google sign-in redirect.', type: 'error' });
+      setIsGoogleLoading(false);
     }
   };
 
