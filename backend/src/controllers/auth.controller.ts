@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import { User, IUser } from '../models/User.js';
 import { config } from '../config/env.js';
-import { sendVerificationEmail } from '../services/email.service.js';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email.service.js';
 
 const googleClient = new OAuth2Client(config.googleClientId, config.googleClientSecret);
 
@@ -322,7 +322,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     user.verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    await sendVerificationEmail({ toEmail: user.email, name: user.name, code: rawOtp });
+    await sendPasswordResetEmail({ toEmail: user.email, name: user.name, code: rawOtp });
 
     res.status(200).json({
       success: true,

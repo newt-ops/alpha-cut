@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { config } from '../config/env.js';
 const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
 const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || 'Alpha Cut <verification@alpha-cut.com>';
-export const createEmailTemplateHtml = ({ name, code, title = 'Verify Your Email', badge = 'ALPHA CUT AGENCY' }) => `
+export const createEmailTemplateHtml = ({ name, code, title, badge, messageText, resetUrl, }) => `
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -112,6 +112,21 @@ export const createEmailTemplateHtml = ({ name, code, title = 'Verify Your Email
         text-align: center;
         margin-top: 12px;
       }
+      .btn-container {
+        text-align: center;
+        margin-top: 24px;
+      }
+      .btn {
+        display: inline-block;
+        background: #D9B27C;
+        color: #170B06;
+        font-weight: 700;
+        font-size: 14px;
+        text-decoration: none;
+        padding: 14px 28px;
+        border-radius: 12px;
+        text-align: center;
+      }
       .divider {
         height: 1px;
         background: rgba(251, 239, 225, 0.12);
@@ -139,18 +154,22 @@ export const createEmailTemplateHtml = ({ name, code, title = 'Verify Your Email
         </div>
         <div class="body-content">
           <p class="greeting">Hello ${name},</p>
-          <p class="text">
-            Welcome to <strong>Alpha Cut Agency</strong>. Enter the 6-digit verification code below to confirm your account and access your client dashboard.
-          </p>
+          <p class="text">${messageText}</p>
 
           <div class="otp-card">
-            <span class="otp-label">VERIFICATION CODE</span>
+            <span class="otp-label">SECURITY CODE</span>
             <div class="otp-code">${code}</div>
-            <p class="timer-note">Valid for 15 minutes &bull; Single-use security code</p>
+            <p class="timer-note">Valid for 15 minutes &bull; Single-use security token</p>
           </div>
 
-          <p class="text" style="font-size: 13px; color: #8B776A; margin-bottom: 0;">
-            If you did not request this verification code, you can safely ignore this email.
+          ${resetUrl
+    ? `<div class="btn-container">
+                   <a href="${resetUrl}" class="btn">Reset Your Password</a>
+                 </div>`
+    : ''}
+
+          <p class="text" style="font-size: 13px; color: #8B776A; margin-top: 24px; margin-bottom: 0;">
+            If you did not request this, your account remains secure and no further action is required.
           </p>
         </div>
 
@@ -170,7 +189,13 @@ export const createEmailTemplateHtml = ({ name, code, title = 'Verify Your Email
 `;
 export const sendVerificationEmail = async ({ toEmail, name, code }) => {
     const subject = 'Alpha Cut — Verify Your Email Address';
-    const htmlContent = createEmailTemplateHtml({ name, code });
+    const htmlContent = createEmailTemplateHtml({
+        name,
+        code,
+        title: 'Verify Your Email',
+        badge: 'ALPHA CUT AGENCY',
+        messageText: 'Welcome to <strong>Alpha Cut Agency</strong>. Enter the 6-digit verification code below to confirm your account and access your client dashboard.',
+    });
     if (!resend) {
         console.log(`[DEV MODE EMAIL RESEND] Verification code for ${toEmail}: ${code}`);
         return { success: true, devMode: true };
@@ -188,6 +213,42 @@ export const sendVerificationEmail = async ({ toEmail, name, code }) => {
             return { success: false, error: result.error.message, fallbackCode: code };
         }
         console.log(`[RESEND SUCCESS] Sent verification email to ${toEmail}`);
+        return { success: true, data: result.data };
+    }
+    catch (err) {
+        console.error('Resend email exception:', err.message);
+        console.log(`[RESEND FALLBACK OTP CODE] for ${toEmail}: ${code}`);
+        return { success: false, error: err.message, fallbackCode: code };
+    }
+};
+export const sendPasswordResetEmail = async ({ toEmail, name, code }) => {
+    const subject = 'Alpha Cut — Reset Your Password';
+    const resetUrl = `${config.clientUrl}/reset-password?email=${encodeURIComponent(toEmail)}`;
+    const htmlContent = createEmailTemplateHtml({
+        name,
+        code,
+        title: 'Reset Your Password',
+        badge: 'ACCOUNT RECOVERY SECURITY',
+        messageText: 'We received a request to reset your password for your <strong>Alpha Cut Agency</strong> account. Enter the 6-digit security code below or click the button to proceed.',
+        resetUrl,
+    });
+    if (!resend) {
+        console.log(`[DEV MODE EMAIL RESEND] Password reset code for ${toEmail}: ${code}`);
+        return { success: true, devMode: true };
+    }
+    try {
+        const result = await resend.emails.send({
+            from: SENDER_EMAIL,
+            to: [toEmail],
+            subject,
+            html: htmlContent,
+        });
+        if (result.error) {
+            console.error('[RESEND API ERROR]:', result.error.message);
+            console.log(`[RESEND FALLBACK OTP CODE] for ${toEmail}: ${code}`);
+            return { success: false, error: result.error.message, fallbackCode: code };
+        }
+        console.log(`[RESEND SUCCESS] Sent password reset email to ${toEmail}`);
         return { success: true, data: result.data };
     }
     catch (err) {
