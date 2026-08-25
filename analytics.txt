@@ -1,0 +1,420 @@
+Yep bro 🔥. Since you're preparing Alpha Cut for production, **Google Analytics 4 (GA4)** is worth setting up now, but let's keep it clean. We don't need complicated tracking yet.
+
+## 1. Create the GA4 property
+
+Go to [Google Analytics](https://analytics.google.com/?utm_source=chatgpt.com) and sign in with the Google account you use for Alpha Cut.
+
+Create:
+
+**Account**
+
+```text
+Alpha Cut
+```
+
+Then create a **GA4 property**:
+
+```text
+Property name: Alpha Cut
+Reporting time zone: Ethiopia / your actual operating timezone
+Currency: ETB
+```
+
+Don't create multiple properties for `alpha-cut.com`, `dashboard.alpha-cut.com`, etc.
+
+For now, **one GA4 property can cover the Alpha Cut ecosystem**.
+
+---
+
+## 2. Create the Web data stream
+
+Inside the Alpha Cut GA4 property:
+
+**Admin → Data collection and modification → Data streams → Web**
+
+Enter:
+
+```text
+Website URL:
+https://alpha-cut.com
+```
+
+Stream name:
+
+```text
+Alpha Cut Website
+```
+
+You'll receive a **Measurement ID** that looks like:
+
+```text
+G-XXXXXXXXXX
+```
+
+That's the important value.
+
+**Don't send me the Measurement ID if you don't want to.** It's not a secret, but we can work with it locally in your project.
+
+---
+
+# 3. Add GA4 to the website
+
+Since your website is React + Vite, I recommend using Google's official Google tag rather than adding a random analytics package just for basic tracking.
+
+You can place the Google tag in your main HTML document, typically:
+
+```text
+index.html
+```
+
+You'll get code from Google that looks roughly like:
+
+```html
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+
+<script>
+  window.dataLayer = window.dataLayer || [];
+
+  function gtag() {
+    dataLayer.push(arguments);
+  }
+
+  gtag('js', new Date());
+
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+```
+
+Replace:
+
+```text
+G-XXXXXXXXXX
+```
+
+with your actual Measurement ID.
+
+**Use the exact Google-generated snippet rather than copying one from somewhere else.**
+
+---
+
+# 4. Important for React
+
+Because Alpha Cut is a React SPA, there's one extra thing to consider.
+
+If someone navigates:
+
+```text
+/
+↓
+/services
+↓
+/portfolio
+↓
+/contact
+```
+
+without the browser doing a full page reload, GA4 still needs to understand that those are page views.
+
+So we should make sure **SPA page navigation is tracked correctly**.
+
+Don't blindly add `gtag('config', ...)` every time React renders.
+
+We'll set this up properly once I see your routing structure.
+
+---
+
+# 5. Don't track everything yet
+
+For Alpha Cut v1, I'd track only useful things.
+
+### Automatically
+
+GA4 can collect things such as:
+
+```text
+Page views
+Sessions
+Users
+Traffic sources
+Device type
+Country
+Browser
+Engagement
+```
+
+That's already enough to learn how people are using the site.
+
+---
+
+# 6. Add useful Alpha Cut events
+
+Later, I'd add custom events such as:
+
+```text
+contact_form_submit
+portfolio_view
+service_view
+cta_click
+quote_request
+```
+
+For example:
+
+```text
+CTA clicked
+```
+
+could tell us:
+
+> How many visitors actually clicked "Get Started"?
+
+And:
+
+```text
+contact_form_submit
+```
+
+tells us:
+
+> How many visitors actually tried to contact Alpha Cut?
+
+That's much more useful than tracking 50 random interactions.
+
+---
+
+# 7. Don't track sensitive information
+
+This is **very important**.
+
+Never send personally identifiable information to Google Analytics.
+
+For example, don't send:
+
+```text
+email
+phone number
+client name
+message content
+password
+verification code
+```
+
+as Analytics event parameters.
+
+Bad:
+
+```js
+gtag('event', 'contact_form_submit', {
+  email: user.email
+});
+```
+
+Don't do that.
+
+Instead:
+
+```js
+gtag('event', 'contact_form_submit');
+```
+
+or use non-identifying metadata such as:
+
+```js
+gtag('event', 'contact_form_submit', {
+  service: 'short_form_video'
+});
+```
+
+provided that value itself isn't sensitive.
+
+---
+
+# 8. What about the dashboards?
+
+Here's where our architecture matters.
+
+We have:
+
+```text
+alpha-cut.com
+app.alpha-cut.com
+dashboard.alpha-cut.com
+admin.alpha-cut.com
+api.alpha-cut.com
+```
+
+I would **not automatically send all of them into the public website analytics setup**.
+
+### Public website
+
+```text
+alpha-cut.com
+```
+
+✅ Definitely track.
+
+### App
+
+```text
+app.alpha-cut.com
+```
+
+Potentially track separately depending on what we're trying to understand.
+
+### Client dashboard
+
+```text
+dashboard.alpha-cut.com
+```
+
+I'd be much more careful.
+
+That's authenticated/private user activity.
+
+### Admin
+
+```text
+admin.alpha-cut.com
+```
+
+I wouldn't put normal marketing analytics there.
+
+### API
+
+```text
+api.alpha-cut.com
+```
+
+❌ Don't install GA4 on the API.
+
+---
+
+# 9. Recommended v1 architecture
+
+Keep the first version simple:
+
+```text
+                     GA4
+                      ↑
+                      |
+              alpha-cut.com
+                      |
+          +-----------+-----------+
+          |                       |
+      Page views              CTA events
+          |                       |
+          +-----------+-----------+
+                      |
+                 Alpha Cut
+```
+
+Then later:
+
+```text
+app.alpha-cut.com
+```
+
+can have its own analytics strategy if we actually need it.
+
+---
+
+# 10. Connect Google Search Console
+
+This is the next thing I'd do after GA4.
+
+GA4 tells us:
+
+> **What visitors do on the website.**
+
+Search Console tells us:
+
+> **How Google Search finds and indexes the website.**
+
+So together:
+
+```text
+Google Search Console
+        +
+Google Analytics
+        ↓
+Alpha Cut website insights
+```
+
+In Search Console, add:
+
+```text
+alpha-cut.com
+```
+
+I'd recommend using a **Domain property**, not just:
+
+```text
+https://alpha-cut.com/
+```
+
+because Domain property can cover the domain's subdomains and protocols.
+
+---
+
+# 11. Submit the sitemap
+
+Once your sitemap is live:
+
+```text
+https://alpha-cut.com/sitemap.xml
+```
+
+submit it in Search Console.
+
+You'll then have:
+
+```text
+Google
+  ↓
+Search Console
+  ↓
+sitemap.xml
+  ↓
+Alpha Cut pages
+```
+
+---
+
+# 12. GA4 production checklist
+
+Before launch:
+
+```text
+[ ] GA4 property created
+[ ] Web data stream created
+[ ] Measurement ID obtained
+[ ] Google tag installed
+[ ] SPA page views verified
+[ ] Realtime traffic verified
+[ ] No PII sent to GA4
+[ ] Contact conversion event planned
+[ ] CTA event planned
+[ ] Search Console connected
+[ ] Sitemap submitted
+```
+
+### One thing I'd do before you touch the code
+
+**Create the GA4 property + Web data stream first.**
+
+Once you have the `G-XXXXXXXXXX` Measurement ID, tell me **what your current React/Vite routing setup looks like** (or send me your `index.html` and `App.tsx` / router file), and I'll tell you exactly where to put GA4 so we don't accidentally double-count page views.
+
+Choose how to set up a Google tag
+Install manually Recommended
+Below is the Google tag for this account. Copy and paste it in the code of every page of your website, immediately after the <head> element. Don’t add more than one Google tag to each page.
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3NHS5VZHML"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-3NHS5VZHML');
+</script>
+Use Google Tag Manager?
+For additional features including multiple tag management and enterprise workflows, install and manage with Google Tag Manager. Learn more about Google Tag Manager

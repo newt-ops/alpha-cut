@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { trackPageView } from './utils/analytics';
 import { ThemeProvider } from '@context/ThemeContext';
 import { ToastProvider } from '@components/ui/Toast';
 import { AuthProvider } from '@context/AuthContext';
@@ -89,6 +90,11 @@ const AppRoutes: React.FC = () => {
       }
     }
   }, [location, isProductionCustomDomain]);
+
+  // Google Analytics 4 SPA Route Tracking
+  React.useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
 
   // 1. ADMIN SUBDOMAIN (admin.alpha-cut.com) or Local /admin Fallback
   if (hostType === 'admin' || location.pathname.startsWith('/admin')) {
