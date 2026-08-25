@@ -50,9 +50,44 @@ const generateOtpCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+const verifyTurnstileToken = async (token: string | undefined, req: Request): Promise<boolean> => {
+  const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+  
+  if (!token) {
+    if (process.env.NODE_ENV !== 'production' && secretKey.startsWith('1x000000')) {
+      return true;
+    }
+    return false;
+  }
+
+  try {
+    const remoteIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
+    const formData = new URLSearchParams();
+    formData.append('secret', secretKey);
+    formData.append('response', token);
+    if (remoteIp) formData.append('remoteip', remoteIp.split(',')[0].trim());
+
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    return data.success === true;
+  } catch (err) {
+    console.error('[TURNSTILE VERIFY EXCEPTION]:', err);
+    return process.env.NODE_ENV !== 'production';
+  }
+};
+
 export const signup = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, turnstileToken } = req.body;
+
+    const isHuman = await verifyTurnstileToken(turnstileToken, req);
+    if (!isHuman) {
+      return res.status(400).json({ success: false, message: 'Security check failed. Please complete the "I am not a robot" verification.' });
+    }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
@@ -90,7 +125,12 @@ export const signup = async (req: Request, res: Response, next: NextFunction): P
 
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-    const { email, password } = req.body;
+    const { email, password, turnstileToken } = req.body;
+
+    const isHuman = await verifyTurnstileToken(turnstileToken, req);
+    if (!isHuman) {
+      return res.status(400).json({ success: false, message: 'Security check failed. Please complete the "I am not a robot" verification.' });
+    }
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user || !user.passwordHash) {
@@ -307,7 +347,13 @@ export const resendVerification = async (req: Request, res: Response, next: Next
 
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-    const { email } = req.body;
+    const { email, turnstileToken } = req.body;
+
+    const isHuman = await verifyTurnstileToken(turnstileToken, req);
+    if (!isHuman) {
+      return res.status(400).json({ success: false, message: 'Security check failed. Please complete the "I am not a robot" verification.' });
+    }
+
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user || user.authProvider === 'google') {

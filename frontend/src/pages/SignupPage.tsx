@@ -6,6 +6,7 @@ import { Input } from '@components/ui/Input';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
 import { IconGoogle, IconUser, IconCheck } from '@icons/icons';
+import { TurnstileWidget } from '@components/ui/TurnstileWidget';
 
 export const SignupPage: React.FC = () => {
   const { signup, initiateGoogleRedirect } = useAuth();
@@ -15,6 +16,7 @@ export const SignupPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,7 +35,7 @@ export const SignupPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
-      await signup(name, email, password);
+      await signup(name, email, password, turnstileToken);
       toast({ message: 'Account created! Verification code sent to your email.', type: 'success' });
       navigate('/verify-email');
     } catch (err: any) {
@@ -117,6 +119,8 @@ export const SignupPage: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+
+          <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
 
           <Button type="submit" variant="primary" fullWidth size="large" isLoading={isLoading} iconRight={IconCheck}>
             Create Account

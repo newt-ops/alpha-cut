@@ -6,12 +6,14 @@ import { Input } from '@components/ui/Input';
 import { useToast } from '@components/ui/Toast';
 import { customFetch } from '../utils/api';
 import { IconArrowRight, IconUser } from '@icons/icons';
+import { TurnstileWidget } from '@components/ui/TurnstileWidget';
 
 export const ForgotPasswordPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -23,7 +25,7 @@ export const ForgotPasswordPage: React.FC = () => {
       setIsLoading(true);
       const res = await customFetch('/api/auth/forgot-password', {
         method: 'POST',
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, turnstileToken }),
       });
 
       setMessage(res.message);
@@ -83,6 +85,8 @@ export const ForgotPasswordPage: React.FC = () => {
             icon={IconUser}
             required
           />
+
+          <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
 
           <Button type="submit" variant="primary" fullWidth isLoading={isLoading} iconRight={IconArrowRight}>
             Send Reset Code

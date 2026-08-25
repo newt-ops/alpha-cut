@@ -9,8 +9,8 @@ interface AuthContextType {
   unverifiedEmail: string | null;
   setUnverifiedEmail: (email: string | null) => void;
   apiFetch: (endpoint: string, options?: RequestInit) => Promise<any>;
-  login: (email: string, password: string) => Promise<any>;
-  signup: (name: string, email: string, password: string) => Promise<any>;
+  login: (email: string, password: string, turnstileToken?: string) => Promise<any>;
+  signup: (name: string, email: string, password: string, turnstileToken?: string) => Promise<any>;
   loginWithGoogle: (credential: string) => Promise<any>;
   loginWithGoogleCode: (code: string, redirectUri: string) => Promise<any>;
   initiateGoogleRedirect: () => void;
@@ -122,11 +122,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     [accessToken, refreshSession]
   );
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, turnstileToken?: string) => {
     try {
       const data = await apiFetch('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, turnstileToken }),
       });
       setAccessToken(data.accessToken);
       setUser(data.user);
@@ -140,10 +140,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const signup = async (name: string, email: string, password: string) => {
+  const signup = async (name: string, email: string, password: string, turnstileToken?: string) => {
     const data = await apiFetch('/api/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, turnstileToken }),
     });
     setUnverifiedEmail(email);
     return data;

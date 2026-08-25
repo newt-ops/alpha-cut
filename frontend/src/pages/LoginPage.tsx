@@ -7,6 +7,7 @@ import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
 import { IconGoogle, IconUser, IconCheck } from '@icons/icons';
 import { Logo } from '@components/ui/Logo';
+import { TurnstileWidget } from '@components/ui/TurnstileWidget';
 
 export const LoginPage: React.FC = () => {
   const { login, initiateGoogleRedirect, isAuthenticated, user } = useAuth();
@@ -16,6 +17,7 @@ export const LoginPage: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,7 +40,7 @@ export const LoginPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
-      await login(email, password);
+      await login(email, password, turnstileToken);
       toast({ message: 'Welcome back!', type: 'success' });
     } catch (err: any) {
       if (err.message && err.message.includes('verify your email')) {
@@ -127,6 +129,8 @@ export const LoginPage: React.FC = () => {
               required
             />
           </div>
+
+          <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
 
           <Button type="submit" variant="primary" fullWidth size="large" isLoading={isLoading} iconRight={IconCheck}>
             Log In
