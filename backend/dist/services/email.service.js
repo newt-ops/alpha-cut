@@ -55,17 +55,6 @@ export const createEmailTemplateHtml = ({ name, code, title, badge, messageText,
         text-align: center;
         border-bottom: 1px solid rgba(217, 178, 124, 0.15);
       }
-      .brand-logo-emblem {
-        width: 48px;
-        height: 48px;
-        margin: 0 auto 16px auto;
-        background: rgba(217, 178, 124, 0.1);
-        border: 1px solid rgba(217, 178, 124, 0.35);
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
       .brand-badge {
         display: inline-block;
         font-family: 'IBM Plex Mono', monospace;
@@ -175,19 +164,26 @@ export const createEmailTemplateHtml = ({ name, code, title, badge, messageText,
       .divider {
         height: 1px;
         background: linear-gradient(90deg, transparent 0%, rgba(217, 178, 124, 0.2) 50%, transparent 100%);
-        margin: 36px 0 24px 0;
+        margin: 36px 0 28px 0;
       }
       .footer {
-        padding: 0 36px 36px 36px;
+        padding: 0 36px 40px 36px;
         text-align: center;
-        font-size: 12.5px;
+        font-size: 13px;
         color: #8B776A;
         line-height: 1.6;
       }
-      .footer a {
-        color: #D9B27C;
-        text-decoration: none;
-        font-weight: 600;
+      .tagline-text {
+        font-size: 13px;
+        color: #A89588;
+        margin: 0 0 20px 0;
+        line-height: 1.5;
+      }
+      .copyright-text {
+        font-size: 12px;
+        color: #7A665A;
+        margin-top: 18px;
+        margin-bottom: 0;
       }
     </style>
   </head>
@@ -229,11 +225,42 @@ export const createEmailTemplateHtml = ({ name, code, title, badge, messageText,
 
         <div class="footer">
           <div class="divider"></div>
-          <p style="margin: 0 0 8px 0;">
-            <strong style="color: #FBEFE1;">Alpha Cut Agency</strong> &bull; Executive Video Editing & Retainer OS
+
+          <p class="tagline-text">
+            Alpha Cut, an executive video editing & retainer OS with all the leverage you need.
           </p>
-          <p style="margin: 0;">
-            <a href="https://alpha-cut.com">alpha-cut.com</a> &bull; Developed by <a href="https://aymen10.netlify.app">aymen10.netlify.app</a>
+
+          <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 20px auto 16px auto;">
+            <tr>
+              <!-- Telegram Bot -->
+              <td style="padding: 0 8px;">
+                <a href="https://t.me/alpha_cut_bot" target="_blank" title="Telegram Bot" style="display: inline-block; width: 38px; height: 38px; background: rgba(217, 178, 124, 0.08); border: 1px solid rgba(217, 178, 124, 0.25); border-radius: 50%; text-align: center; vertical-align: middle; text-decoration: none;">
+                  <img src="https://api.iconify.design/lucide:send.svg?color=%23D9B27C" width="16" height="16" alt="Telegram" style="vertical-align: middle; margin-top: 10px;" />
+                </a>
+              </td>
+              <!-- Website -->
+              <td style="padding: 0 8px;">
+                <a href="https://alpha-cut.com" target="_blank" title="Alpha Cut Website" style="display: inline-block; width: 38px; height: 38px; background: rgba(217, 178, 124, 0.08); border: 1px solid rgba(217, 178, 124, 0.25); border-radius: 50%; text-align: center; vertical-align: middle; text-decoration: none;">
+                  <img src="https://api.iconify.design/lucide:globe.svg?color=%23D9B27C" width="16" height="16" alt="Website" style="vertical-align: middle; margin-top: 10px;" />
+                </a>
+              </td>
+              <!-- Email Contact -->
+              <td style="padding: 0 8px;">
+                <a href="mailto:alphacutagency@gmail.com" title="Email Contact" style="display: inline-block; width: 38px; height: 38px; background: rgba(217, 178, 124, 0.08); border: 1px solid rgba(217, 178, 124, 0.25); border-radius: 50%; text-align: center; vertical-align: middle; text-decoration: none;">
+                  <img src="https://api.iconify.design/lucide:mail.svg?color=%23D9B27C" width="16" height="16" alt="Email" style="vertical-align: middle; margin-top: 10px;" />
+                </a>
+              </td>
+              <!-- Developer Portfolio -->
+              <td style="padding: 0 8px;">
+                <a href="https://aymen10.netlify.app" target="_blank" title="Developer Credit" style="display: inline-block; width: 38px; height: 38px; background: rgba(217, 178, 124, 0.08); border: 1px solid rgba(217, 178, 124, 0.25); border-radius: 50%; text-align: center; vertical-align: middle; text-decoration: none;">
+                  <img src="https://api.iconify.design/lucide:code.svg?color=%23D9B27C" width="16" height="16" alt="Developer" style="vertical-align: middle; margin-top: 10px;" />
+                </a>
+              </td>
+            </tr>
+          </table>
+
+          <p class="copyright-text">
+            &copy; 2026 Alpha Cut Agency. All rights reserved.
           </p>
         </div>
       </div>
