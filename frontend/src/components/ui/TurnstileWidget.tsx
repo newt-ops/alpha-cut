@@ -26,8 +26,8 @@ declare global {
   }
 }
 
-// Sitekey from env or Cloudflare Turnstile Always-Pass Testing Key
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+// Official Cloudflare Turnstile Site Key for Alpha Cut
+const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAEcK-kOquvtclSfB';
 
 export const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({
   onVerify,

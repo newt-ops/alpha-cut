@@ -31,7 +31,7 @@ const generateOtpCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 const verifyTurnstileToken = async (token, req) => {
-    const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+    const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '0x4AAAAAAEcK-mP0HILAUZFBV_a-iy28gIw';
     if (!token) {
         if (process.env.NODE_ENV !== 'production' && secretKey.startsWith('1x000000')) {
             return true;

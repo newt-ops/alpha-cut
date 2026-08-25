@@ -51,7 +51,7 @@ const generateOtpCode = (): string => {
 };
 
 const verifyTurnstileToken = async (token: string | undefined, req: Request): Promise<boolean> => {
-  const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA';
+  const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '0x4AAAAAAEcK-mP0HILAUZFBV_a-iy28gIw';
   
   if (!token) {
     if (process.env.NODE_ENV !== 'production' && secretKey.startsWith('1x000000')) {
