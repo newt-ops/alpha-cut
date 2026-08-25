@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from './Badge';
-import { Button } from './Button';
-import { IconCheck, IconZap } from '@icons/icons';
+import { IconCheck, IconZap, IconInfo, IconFileText, IconDollar, IconStar, IconFilm } from '@icons/icons';
 
 export interface NotificationItem {
   _id: string;
   userId: string;
-  type: string;
+  type?: string;
   message: string;
   read: boolean;
   createdAt: string;
@@ -27,9 +27,16 @@ export const NotificationList: React.FC<NotificationListProps> = ({
   onClose,
   loading = false,
 }) => {
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  const filteredNotifications = notifications.filter((n) => {
+    if (filter === 'unread') return !n.read;
+    return true;
+  });
+
   const formatTimeAgo = (dateStr: string) => {
+    if (!dateStr) return 'Just now';
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -43,15 +50,24 @@ export const NotificationList: React.FC<NotificationListProps> = ({
     return date.toLocaleDateString();
   };
 
+  const getCategoryIcon = (type?: string, msg: string = '') => {
+    const text = (type || msg).toLowerCase();
+    if (text.includes('proposal') || text.includes('contract')) return <IconFileText size={16} color="var(--accent-gold)" />;
+    if (text.includes('payment') || text.includes('invoice') || text.includes('$')) return <IconDollar size={16} color="var(--accent-gold)" />;
+    if (text.includes('review') || text.includes('rating') || text.includes('star')) return <IconStar size={16} color="var(--accent-gold)" filled />;
+    if (text.includes('video') || text.includes('render') || text.includes('deliverable')) return <IconFilm size={16} color="var(--accent-gold)" />;
+    return <IconZap size={16} color="var(--accent-gold)" />;
+  };
+
   return (
     <div
       style={{
-        width: '340px',
-        maxWidth: '90vw',
+        width: '360px',
+        maxWidth: '92vw',
         backgroundColor: 'var(--surface)',
-        border: '1px solid var(--line)',
+        border: '1.5px solid var(--line)',
         borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow)',
+        boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.4)',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -61,84 +77,156 @@ export const NotificationList: React.FC<NotificationListProps> = ({
       {/* Header */}
       <div
         style={{
-          padding: '14px 16px',
+          padding: '16px 18px',
           borderBottom: '1px solid var(--line)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
           backgroundColor: 'var(--bg)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <h4 className="font-display" style={{ fontSize: '15px', color: 'var(--ink)', margin: 0 }}>
-            Notifications
-          </h4>
-          {unreadCount > 0 && <Badge variant="gold" size="small">{unreadCount} New</Badge>}
-        </div>
-
-        {unreadCount > 0 && (
-          <button
-            onClick={onMarkAllRead}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent-gold)',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Mark all read
-          </button>
-        )}
-      </div>
-
-      {/* Body List */}
-      <div style={{ maxHeight: '320px', overflowY: 'auto', padding: '8px' }}>
-        {loading ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--ink-soft)', fontSize: '13px' }}>
-            Loading updates...
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h4 className="font-display" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
+              Activity Notifications
+            </h4>
+            {unreadCount > 0 && <Badge variant="gold" size="small">{unreadCount} Unread</Badge>}
           </div>
-        ) : notifications.length === 0 ? (
-          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-soft)' }}>
-            <IconZap size={24} color="var(--accent-gold)" style={{ opacity: 0.6, marginBottom: '8px' }} />
-            <p style={{ fontSize: '13px', margin: 0 }}>You are all caught up! No notifications.</p>
-          </div>
-        ) : (
-          notifications.map((item) => (
-            <div
-              key={item._id}
-              onClick={() => !item.read && onMarkRead(item._id)}
+
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={onMarkAllRead}
               style={{
-                padding: '12px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: item.read ? 'transparent' : 'rgba(201, 160, 107, 0.08)',
-                border: `1px solid ${item.read ? 'transparent' : 'rgba(201, 160, 107, 0.2)'}`,
-                marginBottom: '4px',
-                cursor: item.read ? 'default' : 'pointer',
-                transition: 'background-color var(--transition-fast)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-gold)',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: '4px 8px',
+                borderRadius: '6px',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>
-                  {formatTimeAgo(item.createdAt)}
-                </span>
-                {!item.read && (
-                  <span
+              Mark all read
+            </button>
+          )}
+        </div>
+
+        {/* Filter Switcher */}
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button
+            type="button"
+            onClick={() => setFilter('all')}
+            style={{
+              flex: 1,
+              padding: '6px',
+              borderRadius: '6px',
+              border: 'none',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              backgroundColor: filter === 'all' ? 'rgba(201, 160, 107, 0.15)' : 'transparent',
+              color: filter === 'all' ? 'var(--accent-gold)' : 'var(--ink-soft)',
+            }}
+          >
+            All ({notifications.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter('unread')}
+            style={{
+              flex: 1,
+              padding: '6px',
+              borderRadius: '6px',
+              border: 'none',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              backgroundColor: filter === 'unread' ? 'rgba(201, 160, 107, 0.15)' : 'transparent',
+              color: filter === 'unread' ? 'var(--accent-gold)' : 'var(--ink-soft)',
+            }}
+          >
+            Unread ({unreadCount})
+          </button>
+        </div>
+      </div>
+
+      {/* Notifications List */}
+      <div style={{ maxHeight: '340px', overflowY: 'auto', padding: '10px' }}>
+        {loading ? (
+          <div style={{ padding: '28px', textAlign: 'center', color: 'var(--ink-soft)', fontSize: '13px' }}>
+            Updating system activity...
+          </div>
+        ) : filteredNotifications.length === 0 ? (
+          <div style={{ padding: '36px 20px', textAlign: 'center', color: 'var(--ink-soft)' }}>
+            <IconZap size={28} color="var(--accent-gold)" style={{ opacity: 0.7, marginBottom: '10px' }} />
+            <p style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)', margin: '0 0 4px 0' }}>
+              All Caught Up!
+            </p>
+            <p style={{ fontSize: '12px', margin: 0 }}>No new notifications at this time.</p>
+          </div>
+        ) : (
+          <AnimatePresence>
+            {filteredNotifications.map((item) => (
+              <motion.div
+                key={item._id}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0 }}
+                onClick={() => !item.read && onMarkRead(item._id)}
+                style={{
+                  padding: '14px',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: item.read ? 'transparent' : 'rgba(201, 160, 107, 0.1)',
+                  border: `1px solid ${item.read ? 'var(--line)' : 'rgba(201, 160, 107, 0.3)'}`,
+                  marginBottom: '8px',
+                  cursor: item.read ? 'default' : 'pointer',
+                  transition: 'all var(--transition-fast)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <div
                     style={{
-                      width: '6px',
-                      height: '6px',
+                      width: '32px',
+                      height: '32px',
                       borderRadius: '50%',
-                      backgroundColor: 'var(--accent-gold)',
+                      backgroundColor: 'var(--bg)',
+                      border: '1px solid var(--line)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
                     }}
-                  />
-                )}
-              </div>
-              <p style={{ fontSize: '13px', color: 'var(--ink)', margin: 0, lineHeight: 1.4, fontWeight: item.read ? 400 : 600 }}>
-                {item.message}
-              </p>
-            </div>
-          ))
+                  >
+                    {getCategoryIcon(item.type, item.message)}
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 700 }}>
+                        {formatTimeAgo(item.createdAt)}
+                      </span>
+                      {!item.read && (
+                        <span
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--accent-gold)',
+                            boxShadow: '0 0 8px var(--accent-gold)',
+                          }}
+                        />
+                      )}
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--ink)', margin: 0, lineHeight: 1.45, fontWeight: item.read ? 400 : 600 }}>
+                      {item.message}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         )}
       </div>
     </div>

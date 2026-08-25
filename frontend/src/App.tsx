@@ -30,6 +30,7 @@ const AdminPage = lazy(() => import('@pages/AdminPage').then((m) => ({ default: 
 const RateProjectPage = lazy(() => import('@pages/RateProjectPage').then((m) => ({ default: m.RateProjectPage })));
 const TelegramMiniAppPage = lazy(() => import('@pages/TelegramMiniAppPage').then((m) => ({ default: m.TelegramMiniAppPage })));
 const DevComponentsPage = lazy(() => import('@pages/DevComponentsPage').then((m) => ({ default: m.DevComponentsPage })));
+const NotFoundPage = lazy(() => import('@pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 const RouteFallback: React.FC = () => (
   <div style={{ padding: '60px 0', maxWidth: '800px', margin: '0 auto' }}>
@@ -43,6 +44,7 @@ const AppRoutes: React.FC = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isMiniAppRoute = location.pathname.startsWith('/app');
+  const isDashboardRoute = location.pathname.startsWith('/dashboard');
 
   if (isAdminRoute) {
     return (
@@ -55,6 +57,25 @@ const AppRoutes: React.FC = () => {
                 <RequireAdmin>
                   <AdminPage />
                 </RequireAdmin>
+              }
+            />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
+  if (isDashboardRoute) {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route
+              path="/dashboard"
+              element={
+                <RequireAuth>
+                  <DashboardPage />
+                </RequireAuth>
               }
             />
           </Routes>
@@ -95,7 +116,7 @@ const AppRoutes: React.FC = () => {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-              {/* Onboarding & Client Protected Routes */}
+              {/* Onboarding Protected Route */}
               <Route
                 path="/telegram-link"
                 element={
@@ -104,19 +125,14 @@ const AppRoutes: React.FC = () => {
                   </RequireAuth>
                 }
               />
-              <Route
-                path="/dashboard"
-                element={
-                  <RequireAuth>
-                    <DashboardPage />
-                  </RequireAuth>
-                }
-              />
 
               {/* QA Sandbox (Dev Mode Only) */}
               {import.meta.env.DEV && (
                 <Route path="/dev/components" element={<DevComponentsPage />} />
               )}
+
+              {/* Custom 404 Catch-All Route */}
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>

@@ -4,8 +4,11 @@ import * as lifecycleService from '../services/lifecycle.service.js';
 
 export const getPublicRatings = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-    const { featured, page, limit } = req.query;
-    const filter: any = { hidden: false };
+    const { featured, page, limit, admin } = req.query;
+    const filter: any = {};
+    if (admin !== 'true') {
+      filter.hidden = false;
+    }
     if (featured === 'true') {
       filter.featured = true;
     }

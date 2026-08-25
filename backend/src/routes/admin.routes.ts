@@ -3,6 +3,7 @@ import { requireAuth, requireAdmin } from '../middleware/auth.middleware.js';
 import {
   searchUsers,
   getAllClients,
+  createClient,
   createProposal,
   getAllProjects,
   markDelivered,
@@ -20,6 +21,7 @@ router.use(requireAdmin);
 
 router.get('/users/search', searchUsers);
 router.get('/clients', getAllClients);
+router.post('/clients', createClient);
 router.put('/clients/:id/notes', updateClientAdminNotes);
 router.post('/projects', createProposal);
 router.get('/projects', getAllProjects);

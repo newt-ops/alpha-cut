@@ -4,17 +4,13 @@ import * as lifecycleService from '../services/lifecycle.service.js';
 
 export const getClientProjects = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-    let query: any = {};
-    if (req.user!.role === 'admin') {
-      query = {};
-    } else {
-      query = {
-        $or: [
-          { clientId: req.user!._id },
-          { clientEmail: req.user!.email ? req.user!.email.toLowerCase() : '' },
-        ],
-      };
-    }
+    const userEmail = req.user!.email ? req.user!.email.toLowerCase() : '';
+    const query = {
+      $or: [
+        { clientId: req.user!._id },
+        ...(userEmail ? [{ clientEmail: userEmail }] : []),
+      ],
+    };
     const projects = await Project.find(query).sort({ createdAt: -1 });
     res.status(200).json({ success: true, projects });
   } catch (err) {

@@ -1,96 +1,150 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, ChangeEvent, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from '@components/ui/Badge';
 import { IconSparkles, IconSliders } from '@icons/icons';
 
-export const BeforeAfterComparison: React.FC = () => {
+export interface BeforeAfterComparisonProps {
+  rawVideoUrl?: string;
+  editedVideoUrl?: string;
+  rawThumbnailUrl?: string;
+  editedThumbnailUrl?: string;
+  title?: string;
+}
+
+export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
+  rawVideoUrl = '',
+  editedVideoUrl = '',
+  rawThumbnailUrl = '',
+  editedThumbnailUrl = '',
+  title = 'Raw Footage vs. Alpha Cut Retention Edit',
+}) => {
   const [sliderPos, setSliderPos] = useState(50);
+  const rawVideoRef = useRef<HTMLVideoElement>(null);
+  const editedVideoRef = useRef<HTMLVideoElement>(null);
 
   const handleSliderChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSliderPos(Number(e.target.value));
   };
 
+  useEffect(() => {
+    // Keep both video streams synchronized
+    if (rawVideoRef.current && editedVideoRef.current) {
+      rawVideoRef.current.play().catch(() => {});
+      editedVideoRef.current.play().catch(() => {});
+    }
+  }, [rawVideoUrl, editedVideoUrl]);
+
   return (
     <div
       style={{
+        position: 'relative',
         width: '100%',
-        maxWidth: '720px',
+        maxWidth: '780px',
         margin: '0 auto',
-        backgroundColor: 'var(--surface)',
+        padding: '40px 32px',
         borderRadius: 'var(--radius-lg)',
+        backgroundColor: 'var(--surface)',
         border: '1px solid var(--line)',
-        padding: '32px 24px',
         boxShadow: 'var(--shadow)',
+        overflow: 'hidden',
+        transition: 'background-color var(--transition-smooth), border-color var(--transition-smooth)',
       }}
       className="before-after-wrapper"
     >
-      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <Badge variant="gold" size="small">Visual Proof</Badge>
-        <h3 className="font-display" style={{ fontSize: '24px', marginTop: '8px' }}>
-          Raw Footage vs. Alpha Cut Edit
-        </h3>
-        <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-          Drag the slider to reveal how retention-driven editing transforms unedited video.
-        </p>
-      </div>
-
-      {/* Mode Controls */}
+      {/* Background Radial Ambient Glow */}
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '12px',
-          marginBottom: '24px',
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '100%',
+          height: '100%',
+          background: 'radial-gradient(circle at 50% 50%, rgba(201, 160, 107, 0.1), transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: 0,
         }}
-      >
-        <button
-          type="button"
-          onClick={() => setSliderPos(0)}
+      />
+
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+        <div style={{ marginBottom: '28px' }}>
+          <Badge variant="gold" size="small">VISUAL PROOF</Badge>
+          <h3 className="font-display" style={{ fontSize: 'clamp(22px, 3.5vw, 30px)', fontWeight: 800, marginTop: '8px', color: 'var(--ink)' }}>
+            {title}
+          </h3>
+          <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginTop: '6px', maxWidth: '560px', margin: '6px auto 0 auto' }}>
+            Drag the interactive slider to reveal how kinetic captions, color grading, and SFX transform raw unedited video.
+          </p>
+        </div>
+
+        {/* Modern Segmented Pill Controls */}
+        <div
           style={{
-            padding: '8px 16px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '13px',
-            fontWeight: 600,
-            backgroundColor: sliderPos === 0 ? 'var(--line)' : 'transparent',
-            color: 'var(--ink)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '4px',
+            backgroundColor: 'var(--bg)',
+            padding: '5px',
+            borderRadius: '100px',
             border: '1px solid var(--line)',
-            cursor: 'pointer',
+            marginBottom: '32px',
+            boxShadow: 'var(--shadow-sm)',
+            transition: 'background-color var(--transition-smooth)',
           }}
         >
-          View Raw Only
-        </button>
-        <button
-          type="button"
-          onClick={() => setSliderPos(50)}
-          style={{
-            padding: '8px 16px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '13px',
-            fontWeight: 600,
-            backgroundColor: sliderPos === 50 ? 'var(--accent-gold)' : 'transparent',
-            color: sliderPos === 50 ? '#170B06' : 'var(--ink)',
-            border: '1px solid var(--accent-gold)',
-            cursor: 'pointer',
-          }}
-        >
-          Split Comparison (50/50)
-        </button>
-        <button
-          type="button"
-          onClick={() => setSliderPos(100)}
-          style={{
-            padding: '8px 16px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '13px',
-            fontWeight: 600,
-            backgroundColor: sliderPos === 100 ? 'var(--accent-gold)' : 'transparent',
-            color: sliderPos === 100 ? '#170B06' : 'var(--ink)',
-            border: '1px solid var(--accent-gold)',
-            cursor: 'pointer',
-          }}
-        >
-          View Alpha Cut Edit
-        </button>
+          <button
+            type="button"
+            onClick={() => setSliderPos(0)}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '100px',
+              fontSize: '12px',
+              fontWeight: 700,
+              backgroundColor: sliderPos === 0 ? 'var(--accent-gold)' : 'transparent',
+              color: sliderPos === 0 ? '#170B06' : 'var(--ink-soft)',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            Raw Only (0%)
+          </button>
+          <button
+            type="button"
+            onClick={() => setSliderPos(50)}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '100px',
+              fontSize: '12px',
+              fontWeight: 700,
+              backgroundColor: sliderPos === 50 ? 'var(--accent-gold)' : 'transparent',
+              color: sliderPos === 50 ? '#170B06' : 'var(--ink-soft)',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            Split View (50/50)
+          </button>
+          <button
+            type="button"
+            onClick={() => setSliderPos(100)}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '100px',
+              fontSize: '12px',
+              fontWeight: 700,
+              backgroundColor: sliderPos === 100 ? 'var(--accent-gold)' : 'transparent',
+              color: sliderPos === 100 ? '#170B06' : 'var(--ink-soft)',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            Alpha Cut Edit (100%)
+          </button>
+        </div>
       </div>
 
       {/* Main Interactive Comparison Display */}
@@ -101,15 +155,15 @@ export const BeforeAfterComparison: React.FC = () => {
           maxWidth: '340px',
           aspectRatio: '9 / 16',
           margin: '0 auto',
-          borderRadius: '32px',
-          border: '4px solid #170B06',
+          borderRadius: '38px',
+          border: '2px solid rgba(201, 160, 107, 0.35)',
           overflow: 'hidden',
           backgroundColor: '#0F0704',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+          boxShadow: '0 30px 70px -10px rgba(201, 160, 107, 0.4), 0 25px 45px -15px rgba(0, 0, 0, 0.95)',
           userSelect: 'none',
         }}
       >
-        {/* Layer 1: RAW FOOTAGE (Left Side) */}
+        {/* Layer 1: RAW FOOTAGE (Base Layer) */}
         <div
           style={{
             position: 'absolute',
@@ -120,36 +174,70 @@ export const BeforeAfterComparison: React.FC = () => {
             justifyContent: 'space-between',
             padding: '24px 20px',
             color: '#8C827A',
-            filter: 'grayscale(40%) contrast(85%)',
+            filter: 'grayscale(35%) contrast(85%)',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="font-mono" style={{ fontSize: '10px', color: '#8C827A', background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px' }}>
+          {rawVideoUrl ? (
+            <video
+              ref={rawVideoRef}
+              src={rawVideoUrl}
+              autoPlay
+              loop
+              muted
+              playsInline
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: 0.8,
+              }}
+            />
+          ) : rawThumbnailUrl ? (
+            <img
+              src={rawThumbnailUrl}
+              alt="Raw Footage"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: 0.75,
+              }}
+            />
+          ) : null}
+
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="font-mono" style={{ fontSize: '10px', color: '#FBEFE1', background: 'rgba(0,0,0,0.65)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.15)' }}>
               RAW CAMERA FEED
             </span>
-            <span style={{ fontSize: '11px' }}>Un-edited</span>
+            <span className="font-mono" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>Un-edited</span>
           </div>
 
-          <div style={{ textAlign: 'center', margin: 'auto 0' }}>
-            <p style={{ fontSize: '14px', fontFamily: 'serif', color: '#B3AAA2' }}>
-              "Here is how I built my startup business..."
-            </p>
-            <span style={{ fontSize: '11px', display: 'block', marginTop: '12px', opacity: 0.6 }}>
-              (No kinetic captions, flat audio, no B-roll)
-            </span>
-          </div>
+          {!rawVideoUrl && !rawThumbnailUrl && (
+            <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', margin: 'auto 0' }}>
+              <p style={{ fontSize: '14px', fontFamily: 'serif', color: '#B3AAA2' }}>
+                "Here is how I built my startup business..."
+              </p>
+              <span style={{ fontSize: '11px', display: 'block', marginTop: '12px', opacity: 0.6 }}>
+                (No kinetic captions, flat audio, no B-roll)
+              </span>
+            </div>
+          )}
 
-          <div style={{ fontSize: '11px', color: '#8C827A', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
+          <div style={{ position: 'relative', zIndex: 2, fontSize: '11px', color: 'rgba(255,255,255,0.8)', borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: '10px', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
             Retention dropoff rate: ~45% at 3s
           </div>
         </div>
 
-        {/* Layer 2: ALPHA CUT EDIT (Right Side, clipped by sliderPos) */}
+        {/* Layer 2: ALPHA CUT EDIT (Top Layer, clipped from Left to Right by sliderPos) */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            clipPath: `polygon(${sliderPos}% 0, 100% 0, 100% 100%, ${sliderPos}% 100%)`,
+            clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`,
             backgroundColor: '#170B06',
             backgroundImage: 'radial-gradient(circle at center, #2E180C 0%, #170B06 100%)',
             display: 'flex',
@@ -157,39 +245,73 @@ export const BeforeAfterComparison: React.FC = () => {
             justifyContent: 'space-between',
             padding: '24px 20px',
             color: '#FBEFE1',
+            boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {editedVideoUrl ? (
+            <video
+              ref={editedVideoRef}
+              src={editedVideoUrl}
+              autoPlay
+              loop
+              muted
+              playsInline
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          ) : editedThumbnailUrl ? (
+            <img
+              src={editedThumbnailUrl}
+              alt="Alpha Cut Edit"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          ) : null}
+
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Badge variant="gold" size="small">ALPHA CUT EDIT</Badge>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'rgba(15,7,4,0.65)', padding: '3px 8px', borderRadius: '4px' }}>
               <IconSparkles size={14} color="var(--accent-gold)" />
-              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)' }}>SFX & COLOR GRADED</span>
+              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)' }}>SFX & GRADED</span>
             </div>
           </div>
 
-          <div style={{ textAlign: 'center', margin: 'auto 0' }}>
-            {/* Animated Kinetic Typography */}
-            <motion.div
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              style={{
-                backgroundColor: 'rgba(201, 160, 107, 0.2)',
-                border: '2px solid var(--accent-gold)',
-                padding: '12px 16px',
-                borderRadius: '16px',
-                backdropFilter: 'blur(10px)',
-              }}
-            >
-              <span className="font-display" style={{ fontSize: '18px', fontWeight: 800, color: '#FFFDF8', display: 'block' }}>
-                HOW I BUILT A <span style={{ color: 'var(--accent-gold)' }}>$1M AGENCY</span>
-              </span>
-              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', marginTop: '4px', display: 'block' }}>
-                [ANIMATED MOTION GRAPHIC + SFX]
-              </span>
-            </motion.div>
-          </div>
+          {!editedVideoUrl && !editedThumbnailUrl && (
+            <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', margin: 'auto 0' }}>
+              {/* Animated Kinetic Typography */}
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                style={{
+                  backgroundColor: 'rgba(23, 11, 6, 0.85)',
+                  border: '2px solid var(--accent-gold)',
+                  padding: '12px 16px',
+                  borderRadius: '16px',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                }}
+              >
+                <span className="font-display" style={{ fontSize: '18px', fontWeight: 800, color: '#FFFDF8', display: 'block' }}>
+                  HOW I BUILT A <span style={{ color: 'var(--accent-gold)' }}>$1M AGENCY</span>
+                </span>
+                <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', marginTop: '4px', display: 'block' }}>
+                  [ANIMATED MOTION GRAPHIC + SFX]
+                </span>
+              </motion.div>
+            </div>
+          )}
 
-          <div style={{ backgroundColor: 'rgba(36,18,9,0.9)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--accent-gold)' }}>
+          <div style={{ position: 'relative', zIndex: 2, backgroundColor: 'rgba(23, 11, 6, 0.9)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--accent-gold)' }}>
             <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 600 }}>
               Retention boost: +84% Watch Time
             </span>
@@ -207,7 +329,8 @@ export const BeforeAfterComparison: React.FC = () => {
             backgroundColor: 'var(--accent-gold)',
             transform: 'translateX(-50%)',
             pointerEvents: 'none',
-            boxShadow: '0 0 10px rgba(201, 160, 107, 0.8)',
+            boxShadow: '0 0 12px rgba(201, 160, 107, 0.9)',
+            zIndex: 10,
           }}
         >
           <div
@@ -224,7 +347,7 @@ export const BeforeAfterComparison: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
             }}
           >
             <IconSliders size={18} />

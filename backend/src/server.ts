@@ -21,6 +21,7 @@ import uploadRoutes from './routes/upload.routes.js';
 import portfolioRoutes from './routes/portfolio.routes.js';
 import contractRoutes from './routes/contract.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+import invoiceRoutes from './routes/invoice.routes.js';
 import { getAllPackageConfigs, getLiveExchangeRate } from './controllers/admin.controller.js';
 
 validateEnv();
@@ -105,6 +106,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/admin/invoices', invoiceRoutes);
 
 app.use('/api', contractRoutes);
 app.get('/api/packages/exchange-rate', getLiveExchangeRate);

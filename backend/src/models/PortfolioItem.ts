@@ -8,8 +8,11 @@ export interface IPortfolioItem extends Document {
   clientType: string;
   videoUrl: string;
   thumbnailUrl: string;
+  rawVideoUrl?: string;
+  rawThumbnailUrl?: string;
   isHeroFeatured: boolean;
   heroSlot?: number | null;
+  isBeforeAfterFeatured?: boolean;
   featuredHome: boolean;
   order: number;
   createdAt: Date;
@@ -49,6 +52,14 @@ const portfolioItemSchema = new Schema<IPortfolioItem>(
       type: String,
       default: '',
     },
+    rawVideoUrl: {
+      type: String,
+      default: '',
+    },
+    rawThumbnailUrl: {
+      type: String,
+      default: '',
+    },
     isHeroFeatured: {
       type: Boolean,
       default: false,
@@ -56,6 +67,10 @@ const portfolioItemSchema = new Schema<IPortfolioItem>(
     heroSlot: {
       type: Number,
       default: null,
+    },
+    isBeforeAfterFeatured: {
+      type: Boolean,
+      default: false,
     },
     featuredHome: {
       type: Boolean,

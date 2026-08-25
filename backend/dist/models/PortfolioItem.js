@@ -31,6 +31,14 @@ const portfolioItemSchema = new Schema({
         type: String,
         default: '',
     },
+    rawVideoUrl: {
+        type: String,
+        default: '',
+    },
+    rawThumbnailUrl: {
+        type: String,
+        default: '',
+    },
     isHeroFeatured: {
         type: Boolean,
         default: false,
@@ -38,6 +46,10 @@ const portfolioItemSchema = new Schema({
     heroSlot: {
         type: Number,
         default: null,
+    },
+    isBeforeAfterFeatured: {
+        type: Boolean,
+        default: false,
     },
     featuredHome: {
         type: Boolean,

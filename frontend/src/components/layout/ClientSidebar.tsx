@@ -4,20 +4,16 @@ import { Badge } from '@components/ui/Badge';
 import {
   IconBarChart,
   IconFolder,
-  IconPlus,
-  IconUsers,
-  IconFilm,
+  IconFileText,
+  IconCalendar,
   IconStar,
-  IconSettings,
+  IconUser,
   IconExternalLink,
   IconMenu,
-  IconCalendar,
-  IconFileText,
 } from '@icons/icons';
-
 import { Logo } from '@components/ui/Logo';
 
-export interface AdminSidebarProps {
+export interface ClientSidebarProps {
   activeTab: string;
   onChangeTab: (tabId: string) => void;
   collapsed: boolean;
@@ -25,7 +21,7 @@ export interface AdminSidebarProps {
   isMobileDrawer?: boolean;
 }
 
-export const AdminSidebar: React.FC<AdminSidebarProps> = ({
+export const ClientSidebar: React.FC<ClientSidebarProps> = ({
   activeTab,
   onChangeTab,
   collapsed,
@@ -33,14 +29,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   isMobileDrawer = false,
 }) => {
   const menuItems = [
-    { id: 'overview', label: 'Analytics & Revenue', icon: IconBarChart },
-    { id: 'projects', label: 'Proposals & Projects', icon: IconFolder },
+    { id: 'overview', label: 'Studio Overview', icon: IconBarChart },
+    { id: 'projects', label: 'Projects & Proposals', icon: IconFolder },
     { id: 'contracts', label: 'Retainer Contracts', icon: IconFileText },
-    { id: 'calendar', label: 'Calendar Schedule', icon: IconCalendar },
-    { id: 'clients', label: 'Registered Clients', icon: IconUsers },
-    { id: 'portfolio', label: 'Portfolio Showcase', icon: IconFilm },
-    { id: 'moderation', label: 'Reviews & Moderation', icon: IconStar },
-    { id: 'pricing', label: 'Package Settings', icon: IconSettings },
+    { id: 'calendar', label: 'Delivery Schedule', icon: IconCalendar },
+    { id: 'ratings', label: 'My Reviews', icon: IconStar },
+    { id: 'profile', label: 'Account & Telegram', icon: IconUser },
   ];
 
   return (
@@ -63,50 +57,62 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       }}
     >
       <div>
-        {/* Brand Header & Collapse Toggle */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'space-between',
-            marginBottom: '32px',
-            paddingBottom: '16px',
-            borderBottom: '1px solid var(--line)',
-          }}
-        >
-          {!collapsed && (
-            <div>
-              <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', letterSpacing: '1.5px', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                ALPHA CUT STUDIO
-              </span>
-              <Logo size="small" />
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={onToggleCollapse}
+        {/* Brand Header & Collapse Toggle (Hidden in mobile drawer) */}
+        {!isMobileDrawer && (
+          <div
             style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent-gold)',
-              cursor: 'pointer',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: collapsed ? 'center' : 'space-between',
+              marginBottom: '32px',
+              paddingBottom: '16px',
+              borderBottom: '1px solid var(--line)',
             }}
-            title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
-            <IconMenu size={20} />
-          </button>
-        </div>
+            {!collapsed && (
+              <div>
+                <span
+                  className="font-mono"
+                  style={{
+                    fontSize: '10px',
+                    color: 'var(--accent-gold)',
+                    letterSpacing: '1.5px',
+                    textTransform: 'uppercase',
+                    display: 'block',
+                    marginBottom: '4px',
+                  }}
+                >
+                  CLIENT PORTAL
+                </span>
+                <Logo size="small" />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-gold)',
+                cursor: 'pointer',
+                padding: '6px',
+                borderRadius: 'var(--radius-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            >
+              <IconMenu size={20} />
+            </button>
+          </div>
+        )}
 
         {/* Sidebar Nav Items */}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id || (item.id === 'projects' && activeTab === 'board');
+            const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
@@ -137,7 +143,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </nav>
       </div>
 
-      {/* Exit to Public Site Footer */}
+      {/* Footer link to public site */}
       <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
         <Link
           to="/"
@@ -155,7 +161,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           }}
         >
           <IconExternalLink size={16} />
-          {!collapsed && <span>Exit to Public Site</span>}
+          {!collapsed && <span>Exit to Studio Site</span>}
         </Link>
       </div>
     </aside>

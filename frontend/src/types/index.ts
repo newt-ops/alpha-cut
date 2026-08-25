@@ -101,7 +101,10 @@ export interface PortfolioItem {
   clientType: string;
   videoUrl: string;
   thumbnailUrl: string;
+  rawVideoUrl?: string;
+  rawThumbnailUrl?: string;
   heroFeatured?: boolean;
+  isBeforeAfterFeatured?: boolean;
   featuredHome?: boolean;
   heroSlot?: number;
   order?: number;

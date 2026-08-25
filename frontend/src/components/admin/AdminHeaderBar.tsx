@@ -23,6 +23,7 @@ interface AdminHeaderBarProps {
   onSelectRecord?: (record: { type: string; item: any }) => void;
   onMarkAllNotificationsRead?: () => void;
   onOpenProposalModal?: () => void;
+  onOpenInvoiceModal?: () => void;
 }
 
 export const AdminHeaderBar: React.FC<AdminHeaderBarProps> = ({
@@ -35,6 +36,7 @@ export const AdminHeaderBar: React.FC<AdminHeaderBarProps> = ({
   onSelectRecord = () => {},
   onMarkAllNotificationsRead = () => {},
   onOpenProposalModal,
+  onOpenInvoiceModal,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);

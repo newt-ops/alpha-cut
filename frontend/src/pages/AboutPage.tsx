@@ -12,6 +12,7 @@ interface Founder {
   skills: string[];
   portfolioHighlight: string;
   socialLink: string;
+  socialHandle: string;
 }
 
 const FounderCard: React.FC<{ founder: Founder }> = ({ founder }) => {
@@ -211,7 +212,7 @@ const FounderCard: React.FC<{ founder: Founder }> = ({ founder }) => {
               textDecoration: 'none',
             }}
           >
-            <span>Connect on Telegram (@{founder.name.toLowerCase()})</span>
+            <span>Connect on Telegram (@{founder.socialHandle})</span>
             <IconExternalLink size={14} />
           </a>
         </div>
@@ -226,40 +227,94 @@ export const AboutPage: React.FC = () => {
       name: 'Amir',
       role: 'Co-Founder & Lead Editor',
       specialty: 'Kinetic Motion Graphics & Sound Design Architecture',
-      image: '/founders/amir.jpg',
+      image: '/amir-portrait.jpg',
       bio: 'Amir leads the visual storytelling engine at Alpha Cut. Specializing in high-retention short-form edits, kinetic typography callouts, and multi-layered sound design, he transforms standard video footage into viral content.',
       skills: ['Adobe Premiere Pro', 'After Effects', 'Kinetic Typography', 'Sound Design SFX', 'Color Grading'],
       portfolioHighlight: 'Engineered 90%+ retention short-form edits for top tech & productivity creators.',
-      socialLink: 'https://t.me/Alphacut_co',
+      socialLink: 'https://t.me/amirae62',
+      socialHandle: 'amirae62',
     },
     {
       name: 'Aymen',
       role: 'Co-Founder & Executive Director',
       specialty: 'Client Strategy & Cinematic Editorial Direction',
-      image: '/founders/aymen.jpg',
+      image: '/aymen-portrait.jpg',
       bio: 'Aymen manages agency strategy, long-form documentary workflows, and client success. Overseeing both technical editing pipelines and custom proposals, he ensures every project meets international broadcast standards.',
-      skills: ['Documentary Pacing', 'Client Workflow ERP', 'Color Correction', 'Long-Form Editing', 'SaaS Demos'],
-      portfolioHighlight: 'Directed full post-production pipelines for founder personal brands and SaaS walk-throughs.',
-      socialLink: 'https://t.me/Alphacut_co',
+      skills: ['Documentary Pacing', 'Client Workflow Systems', 'Color Correction', 'Long-Form Editing', 'SaaS Demos'],
+      portfolioHighlight: 'Directed full post-production pipelines for founder personal brands and SaaS walkthroughs.',
+      socialLink: 'https://t.me/Leo_rnn',
+      socialHandle: 'Leo_rnn',
     },
   ];
 
   return (
-    <div style={{ padding: '60px 0', maxWidth: '1100px', margin: '0 auto' }}>
+    <div style={{ padding: '40px 0 80px 0', maxWidth: '1100px', margin: '0 auto' }}>
+      {/* Page Header */}
       <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-        <Badge variant="gold" size="medium">MEET THE FOUNDERS</Badge>
-        <h1 className="font-display" style={{ fontSize: '42px', fontWeight: 800, marginTop: '16px', color: 'var(--ink)' }}>
+        <Badge variant="gold" size="medium">MEET THE FOUNDERS & STUDIO</Badge>
+        <h1 className="font-display" style={{ fontSize: 'clamp(34px, 5.5vw, 56px)', fontWeight: 800, marginTop: '16px', color: 'var(--ink)' }}>
           The Editors Behind Alpha Cut
         </h1>
-        <p style={{ fontSize: '16px', color: 'var(--ink-soft)', maxWidth: '640px', margin: '16px auto 0 auto', lineHeight: 1.6 }}>
-          Founded by Amir & Aymen, Alpha Cut is an elite video editing studio dedicated to helping creators, personal brands, and software companies win audience attention.
+        <p style={{ fontSize: '16px', color: 'var(--ink-soft)', maxWidth: '680px', margin: '16px auto 0 auto', lineHeight: 1.6 }}>
+          Founded by Amir & Aymen, Alpha Cut is an elite video editing studio dedicated to helping creators, personal brands, and software companies dominate viewer retention.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '32px', marginBottom: '80px' }}>
+      {/* Founder Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '36px', marginBottom: '80px' }}>
         {founders.map((f, i) => (
           <FounderCard key={i} founder={f} />
         ))}
+      </div>
+
+      {/* Agency Editorial Workflow Section */}
+      <div
+        style={{
+          backgroundColor: 'var(--surface)',
+          padding: '60px 40px',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--line)',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <Badge variant="gold">PRODUCTION PIPELINE</Badge>
+          <h2 className="font-display" style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, marginTop: '12px' }}>
+            Our 4-Step Editing Workflow
+          </h2>
+          <p style={{ color: 'var(--ink-soft)', fontSize: '15px', maxWidth: '560px', margin: '8px auto 0 auto', lineHeight: 1.5 }}>
+            From raw camera files to studio-rendered MP4 deliverables in 48 hours.
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '24px' }}>
+          {[
+            { step: '01', title: 'Upload & Briefing', desc: 'Drop raw footage and reference links directly into your private client portal.' },
+            { step: '02', title: 'Hook & Retention Edit', desc: 'We structure the 3-second hook, trim filler words, and apply kinetic cuts.' },
+            { step: '03', title: 'SFX & Color Master', desc: 'Audio levelling, whooshes/risers SFX, and custom LUT color grading applied.' },
+            { step: '04', title: 'Render & Revisions', desc: 'Download high-bitrate MP4 renders with up to 3 included revision cycles.' },
+          ].map((item, index) => (
+            <div
+              key={index}
+              style={{
+                backgroundColor: 'var(--bg)',
+                padding: '24px',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--line)',
+              }}
+            >
+              <span className="font-mono" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-gold)', display: 'block', marginBottom: '8px' }}>
+                {item.step}
+              </span>
+              <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', marginBottom: '8px' }}>
+                {item.title}
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+                {item.desc}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

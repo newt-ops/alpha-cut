@@ -8,7 +8,7 @@ import {
   IconMenu,
   IconClose,
   IconSearch,
-  IconSparkles,
+  IconBell,
   IconUser,
   IconFileText,
   IconClock,
@@ -152,18 +152,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           style={{
             height: '64px',
             backgroundColor: 'var(--surface)',
-            borderBottom: '1px solid var(--line)',
+            borderBottom: '1px solid rgba(201, 160, 107, 0.25)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '0 24px',
+            padding: isMobile ? '0 16px' : '0 28px',
             position: 'sticky',
             top: 0,
             zIndex: 80,
-            backdropFilter: 'blur(12px)',
+            backdropFilter: 'blur(16px)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Left Brand & Menu Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {isMobile && (
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
@@ -173,142 +175,364 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   color: 'var(--ink)',
                   cursor: 'pointer',
                   display: 'flex',
+                  padding: '4px',
                 }}
               >
-                {mobileOpen ? <IconClose size={24} /> : <IconMenu size={24} />}
+                {mobileOpen ? <IconClose size={22} /> : <IconMenu size={22} />}
               </button>
             )}
 
             {/* Breadcrumb Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--ink-soft)' }}>
-              <span style={{ fontWeight: 600, color: 'var(--ink)' }}>Admin</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+              <span className="font-mono" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', letterSpacing: '0.08em' }}>
+                ALPHA CUT
+              </span>
+              {!isMobile && <IconChevronRight size={14} color="var(--ink-soft)" />}
+              {!isMobile && <span style={{ fontWeight: 700, color: 'var(--ink)' }}>Admin Console</span>}
               <IconChevronRight size={14} color="var(--ink-soft)" />
-              <span style={{ textTransform: 'capitalize', color: 'var(--accent-gold)', fontWeight: 600 }}>
+              <span
+                className="font-mono"
+                style={{
+                  textTransform: 'uppercase',
+                  color: 'var(--accent-gold)',
+                  fontWeight: 800,
+                  fontSize: '10px',
+                  backgroundColor: 'rgba(201, 160, 107, 0.15)',
+                  padding: '3px 8px',
+                  borderRadius: '100px',
+                  border: '1px solid var(--accent-gold)',
+                  letterSpacing: '0.06em',
+                }}
+              >
                 {activeTab.replace('_', ' ')}
               </span>
             </div>
           </div>
 
           {/* Right Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {/* Global Command Search Box */}
-            <div ref={searchContainerRef} style={{ position: 'relative', width: isMobile ? '160px' : '260px' }}>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <div style={{ position: 'absolute', left: '12px', pointerEvents: 'none', display: 'flex' }}>
-                  <IconSearch size={16} color="var(--ink-soft)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px' }}>
+            {/* Desktop Command Search Input or Mobile Search Button */}
+            {!isMobile ? (
+              <div ref={searchContainerRef} style={{ position: 'relative', width: '280px' }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <div style={{ position: 'absolute', left: '14px', pointerEvents: 'none', display: 'flex' }}>
+                    <IconSearch size={15} color="var(--accent-gold)" />
+                  </div>
+                  <input
+                    id="global-admin-search-input"
+                    type="text"
+                    placeholder="Global Command Search..."
+                    value={searchQuery}
+                    onFocus={() => setSearchOpen(true)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setSearchOpen(true);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '9px 65px 9px 38px',
+                      borderRadius: '100px',
+                      border: '1px solid var(--line)',
+                      backgroundColor: 'var(--bg)',
+                      color: 'var(--ink)',
+                      fontSize: '12.5px',
+                      outline: 'none',
+                      transition: 'all var(--transition-fast)',
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      pointerEvents: 'none',
+                      backgroundColor: 'var(--surface)',
+                      border: '1px solid var(--line)',
+                      borderRadius: '6px',
+                      padding: '2px 6px',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      color: 'var(--accent-gold)',
+                      fontFamily: 'var(--font-mono)',
+                    }}
+                  >
+                    Ctrl+K
+                  </div>
                 </div>
-                <input
-                  id="global-admin-search-input"
-                  type="text"
-                  placeholder={isMobile ? 'Search...' : 'Search (Ctrl+K)...'}
-                  value={searchQuery}
-                  onFocus={() => setSearchOpen(true)}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setSearchOpen(true);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px 8px 36px',
-                    borderRadius: '100px',
-                    border: '1px solid var(--line)',
-                    backgroundColor: 'var(--bg)',
-                    color: 'var(--ink)',
-                    fontSize: '13px',
-                    outline: 'none',
-                  }}
-                />
-              </div>
 
-              {/* Global Search Results Dropdown */}
-              {searchOpen && searchQuery.trim() && (
-                <div
+                {/* Desktop Search Results Dropdown */}
+                {searchOpen && searchQuery.trim() && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 10px)',
+                      right: 0,
+                      width: '360px',
+                      maxHeight: '420px',
+                      overflowY: 'auto',
+                      backgroundColor: 'var(--surface)',
+                      border: '1.5px solid var(--accent-gold)',
+                      borderRadius: 'var(--radius-lg)',
+                      boxShadow: '0 16px 40px -10px rgba(0,0,0,0.6)',
+                      padding: '16px',
+                      zIndex: 100,
+                    }}
+                  >
+                    {totalResultsCount === 0 ? (
+                      <div style={{ padding: '16px', textAlign: 'center', color: 'var(--ink-soft)', fontSize: '13px' }}>
+                        No matching records found.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gap: '14px' }}>
+                        {filteredResults.clients.length > 0 && (
+                          <div>
+                            <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', fontWeight: 800, textTransform: 'uppercase', display: 'block', marginBottom: '8px', letterSpacing: '0.06em' }}>
+                              Clients ({filteredResults.clients.length})
+                            </span>
+                            {filteredResults.clients.map((c) => (
+                              <div
+                                key={c._id}
+                                onClick={() => {
+                                  onSelectRecord({ type: 'client', item: c });
+                                  setSearchOpen(false);
+                                }}
+                                style={{ padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'var(--bg)', marginBottom: '6px', border: '1px solid var(--line)' }}
+                              >
+                                <IconUser size={15} color="var(--accent-gold)" />
+                                <div>
+                                  <span style={{ fontSize: '13px', color: 'var(--ink)', fontWeight: 700, display: 'block' }}>{c.name}</span>
+                                  <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{c.email}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {filteredResults.projects.length > 0 && (
+                          <div>
+                            <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', fontWeight: 800, textTransform: 'uppercase', display: 'block', marginBottom: '8px', letterSpacing: '0.06em' }}>
+                              Projects ({filteredResults.projects.length})
+                            </span>
+                            {filteredResults.projects.map((p) => (
+                              <div
+                                key={p._id}
+                                onClick={() => {
+                                  onSelectRecord({ type: 'project', item: p });
+                                  setSearchOpen(false);
+                                }}
+                                style={{ padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'var(--bg)', marginBottom: '6px', border: '1px solid var(--line)' }}
+                              >
+                                <IconFileText size={15} color="var(--accent-gold)" />
+                                <div>
+                                  <span style={{ fontSize: '13px', color: 'var(--ink)', fontWeight: 700, display: 'block' }}>{p.editingStyle}</span>
+                                  <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{p.clientName} • {p.price} {p.currency}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Mobile Search Lens Button */
+              <div ref={searchContainerRef} style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setSearchOpen(!searchOpen)}
+                  title="Global Search"
                   style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 8px)',
-                    right: 0,
-                    width: '320px',
-                    maxHeight: '400px',
-                    overflowY: 'auto',
-                    backgroundColor: 'var(--surface)',
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--bg)',
                     border: '1px solid var(--line)',
-                    borderRadius: 'var(--radius-md)',
-                    boxShadow: 'var(--shadow)',
-                    padding: '12px',
-                    zIndex: 100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--accent-gold)',
+                    cursor: 'pointer',
                   }}
                 >
-                  {totalResultsCount === 0 ? (
-                    <div style={{ padding: '16px', textAlign: 'center', color: 'var(--ink-soft)', fontSize: '13px' }}>
-                      No matching records found.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'grid', gap: '12px' }}>
-                      {filteredResults.clients.length > 0 && (
-                        <div>
-                          <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-                            Clients ({filteredResults.clients.length})
-                          </span>
-                          {filteredResults.clients.map((c) => (
-                            <div
-                              key={c._id}
-                              onClick={() => {
-                                onSelectRecord({ type: 'client', item: c });
-                                setSearchOpen(false);
-                              }}
-                              style={{ padding: '6px 8px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                            >
-                              <IconUser size={14} color="var(--accent-gold)" />
-                              <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{c.name}</span>
-                            </div>
-                          ))}
+                  <IconSearch size={15} />
+                </button>
+
+                {/* Mobile Search Popdown Modal (Positioned Under Sticky Header) */}
+                {searchOpen && (
+                  <div
+                    style={{
+                      position: 'fixed',
+                      top: '64px',
+                      left: '8px',
+                      right: '8px',
+                      backgroundColor: 'var(--surface)',
+                      backdropFilter: 'blur(20px)',
+                      WebkitBackdropFilter: 'blur(20px)',
+                      borderRadius: '0 0 20px 20px',
+                      border: '1px solid rgba(201, 160, 107, 0.35)',
+                      borderTop: 'none',
+                      padding: '14px 16px',
+                      boxShadow: '0 16px 40px -10px rgba(0, 0, 0, 0.35)',
+                      zIndex: 100,
+                      display: 'grid',
+                      gap: '12px',
+                      transition: 'all var(--transition-normal)',
+                    }}
+                  >
+                    {/* Header bar with Input + Close Button */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                        <div style={{ position: 'absolute', left: '12px', pointerEvents: 'none', display: 'flex' }}>
+                          <IconSearch size={15} color="var(--accent-gold)" />
                         </div>
-                      )}
-                      {filteredResults.projects.length > 0 && (
-                        <div>
-                          <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-                            Projects ({filteredResults.projects.length})
-                          </span>
-                          {filteredResults.projects.map((p) => (
-                            <div
-                              key={p._id}
-                              onClick={() => {
-                                onSelectRecord({ type: 'project', item: p });
-                                setSearchOpen(false);
-                              }}
-                              style={{ padding: '6px 8px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                            >
-                              <IconFileText size={14} color="var(--accent-gold)" />
-                              <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{p.editingStyle}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                        <input
+                          id="global-admin-search-input-mobile"
+                          type="text"
+                          placeholder="Search clients, projects, contracts..."
+                          value={searchQuery}
+                          autoFocus
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '9px 12px 9px 36px',
+                            borderRadius: '100px',
+                            border: '1px solid var(--accent-gold)',
+                            backgroundColor: 'var(--bg)',
+                            color: 'var(--ink)',
+                            fontSize: '13px',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => setSearchOpen(false)}
+                        style={{
+                          width: '34px',
+                          height: '34px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--bg)',
+                          border: '1px solid var(--line)',
+                          color: 'var(--ink)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <IconClose size={16} />
+                      </button>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
+
+                    {/* Search Results in Mobile Overlay */}
+                    {searchQuery.trim() && (
+                      <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'grid', gap: '12px', paddingBottom: '4px' }}>
+                        {totalResultsCount === 0 ? (
+                          <p style={{ fontSize: '13px', color: 'var(--ink-soft)', textAlign: 'center', margin: '12px 0' }}>
+                            No matching records found.
+                          </p>
+                        ) : (
+                          <>
+                            {filteredResults.clients.length > 0 && (
+                              <div>
+                                <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', fontWeight: 800, textTransform: 'uppercase', display: 'block', marginBottom: '6px', letterSpacing: '0.06em' }}>
+                                  CLIENTS ({filteredResults.clients.length})
+                                </span>
+                                <div style={{ display: 'grid', gap: '6px' }}>
+                                  {filteredResults.clients.map((c) => (
+                                    <div
+                                      key={c._id}
+                                      onClick={() => {
+                                        onSelectRecord({ type: 'client', item: c });
+                                        setSearchOpen(false);
+                                      }}
+                                      style={{
+                                        padding: '8px 12px',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        backgroundColor: 'var(--bg)',
+                                        border: '1px solid var(--line)',
+                                      }}
+                                    >
+                                      <IconUser size={15} color="var(--accent-gold)" />
+                                      <div>
+                                        <span style={{ fontSize: '13px', color: 'var(--ink)', fontWeight: 700, display: 'block' }}>{c.name}</span>
+                                        <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{c.email}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {filteredResults.projects.length > 0 && (
+                              <div>
+                                <span className="font-mono" style={{ fontSize: '10px', color: 'var(--accent-gold)', fontWeight: 800, textTransform: 'uppercase', display: 'block', marginBottom: '6px', letterSpacing: '0.06em' }}>
+                                  PROJECTS ({filteredResults.projects.length})
+                                </span>
+                                <div style={{ display: 'grid', gap: '6px' }}>
+                                  {filteredResults.projects.map((p) => (
+                                    <div
+                                      key={p._id}
+                                      onClick={() => {
+                                        onSelectRecord({ type: 'project', item: p });
+                                        setSearchOpen(false);
+                                      }}
+                                      style={{
+                                        padding: '8px 12px',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        backgroundColor: 'var(--bg)',
+                                        border: '1px solid var(--line)',
+                                      }}
+                                    >
+                                      <IconFileText size={15} color="var(--accent-gold)" />
+                                      <div>
+                                        <span style={{ fontSize: '13px', color: 'var(--ink)', fontWeight: 700, display: 'block' }}>{p.editingStyle}</span>
+                                        <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{p.clientName} • {p.price} {p.currency}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Notification Bell Dropdown */}
             <div ref={notifContainerRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+                title="System Notifications Log"
                 style={{
                   position: 'relative',
                   background: 'var(--bg)',
                   border: '1px solid var(--line)',
                   borderRadius: '50%',
-                  width: '36px',
-                  height: '36px',
+                  width: isMobile ? '34px' : '38px',
+                  height: isMobile ? '34px' : '38px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                   color: 'var(--ink)',
+                  boxShadow: unreadNotifCount > 0 ? '0 0 14px rgba(201, 160, 107, 0.45)' : 'none',
+                  transition: 'all var(--transition-fast)',
                 }}
               >
-                <IconSparkles size={16} color="var(--accent-gold)" />
+                <IconBell size={isMobile ? 15 : 18} color="var(--accent-gold)" />
                 {unreadNotifCount > 0 && (
                   <span
                     style={{
@@ -322,6 +546,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                       fontWeight: 800,
                       padding: '2px 6px',
                       lineHeight: 1,
+                      border: '2px solid var(--surface)',
                     }}
                   >
                     {unreadNotifCount}
@@ -333,37 +558,40 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <div
                   style={{
                     position: 'absolute',
-                    top: 'calc(100% + 8px)',
+                    top: 'calc(100% + 10px)',
                     right: 0,
-                    width: '320px',
-                    maxHeight: '360px',
+                    width: isMobile ? '290px' : '340px',
+                    maxHeight: '380px',
                     overflowY: 'auto',
                     backgroundColor: 'var(--surface)',
                     border: '1px solid var(--line)',
-                    borderRadius: 'var(--radius-md)',
-                    boxShadow: 'var(--shadow)',
-                    padding: '16px',
+                    borderRadius: 'var(--radius-lg)',
+                    boxShadow: '0 12px 35px -10px rgba(0,0,0,0.5)',
+                    padding: '18px',
                     zIndex: 100,
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)' }}>Activity Log</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ink)' }}>Live Activity Log</span>
                     {unreadNotifCount > 0 && (
                       <button
                         onClick={onMarkAllNotificationsRead}
-                        style={{ background: 'none', border: 'none', color: 'var(--accent-gold)', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent-gold)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
                       >
-                        Mark Read
+                        Mark All Read ✓
                       </button>
                     )}
                   </div>
                   {notifications.length === 0 ? (
-                    <p style={{ fontSize: '12px', color: 'var(--ink-soft)', textAlign: 'center' }}>No recent notifications.</p>
+                    <p style={{ fontSize: '13px', color: 'var(--ink-soft)', textAlign: 'center', margin: '16px 0' }}>No recent notifications.</p>
                   ) : (
                     <div style={{ display: 'grid', gap: '8px' }}>
                       {notifications.slice(0, 8).map((n) => (
-                        <div key={n._id} style={{ padding: '8px', borderRadius: '6px', backgroundColor: n.read ? 'var(--bg)' : 'rgba(201,160,107,0.08)', fontSize: '12px' }}>
-                          <p style={{ color: 'var(--ink)', margin: 0 }}>{n.message}</p>
+                        <div key={n._id} style={{ padding: '10px 12px', borderRadius: '8px', backgroundColor: n.read ? 'var(--bg)' : 'rgba(201,160,107,0.12)', fontSize: '12.5px', border: '1px solid var(--line)' }}>
+                          <p style={{ color: 'var(--ink)', margin: 0, lineHeight: 1.45 }}>{n.message}</p>
+                          <span style={{ fontSize: '10px', color: 'var(--ink-soft)', marginTop: '4px', display: 'block' }}>
+                            {new Date(n.createdAt || Date.now()).toLocaleTimeString()}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -375,9 +603,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
+              title="Toggle Theme"
               style={{
-                width: '36px',
-                height: '36px',
+                width: isMobile ? '34px' : '38px',
+                height: isMobile ? '34px' : '38px',
                 borderRadius: '50%',
                 backgroundColor: 'var(--bg)',
                 border: '1px solid var(--line)',
@@ -386,10 +615,49 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 justifyContent: 'center',
                 color: 'var(--accent-gold)',
                 cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
               }}
             >
-              {theme === 'light' ? <IconMoon size={16} /> : <IconSun size={16} />}
+              {theme === 'light' ? <IconMoon size={isMobile ? 15 : 17} /> : <IconSun size={isMobile ? 15 : 17} />}
             </button>
+
+            {/* Minimal Admin Profile Avatar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user?.name || 'Admin'}
+                  style={{
+                    width: isMobile ? '32px' : '36px',
+                    height: isMobile ? '32px' : '36px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '1.5px solid var(--accent-gold)',
+                    boxShadow: '0 2px 8px rgba(201, 160, 107, 0.3)',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: isMobile ? '32px' : '36px',
+                    height: isMobile ? '32px' : '36px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--accent-gold)',
+                    color: '#170B06',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 800,
+                    fontSize: isMobile ? '13px' : '14px',
+                    fontFamily: 'var(--font-mono)',
+                    border: '1.5px solid var(--accent-gold)',
+                    boxShadow: '0 2px 8px rgba(201, 160, 107, 0.3)',
+                  }}
+                >
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

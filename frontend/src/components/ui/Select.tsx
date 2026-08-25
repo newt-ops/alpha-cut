@@ -44,7 +44,11 @@ export const Select: React.FC<SelectProps> = ({
   }, []);
 
   const handleSelect = (optionValue: string | number) => {
-    onChange(optionValue);
+    const eventLike = {
+      target: { value: optionValue },
+      value: optionValue,
+    };
+    onChange(eventLike as any);
     setIsOpen(false);
   };
 

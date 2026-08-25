@@ -52,6 +52,15 @@ export const DataTable: React.FC<DataTableProps> = ({
   const filteredData = useMemo(() => {
     let result = [...data];
 
+    // Filter tab matching
+    if (activeFilterTab && activeFilterTab !== 'all') {
+      result = result.filter((item) => {
+        const tabDef = filterTabs.find((t) => t.value === activeFilterTab);
+        const filterKey = tabDef?.key || 'status';
+        return item[filterKey] === activeFilterTab;
+      });
+    }
+
     // Search query matching
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -79,7 +88,7 @@ export const DataTable: React.FC<DataTableProps> = ({
     }
 
     return result;
-  }, [data, searchQuery, searchKeys, sortKey, sortOrder]);
+  }, [data, activeFilterTab, filterTabs, searchQuery, searchKeys, sortKey, sortOrder]);
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize) || 1;

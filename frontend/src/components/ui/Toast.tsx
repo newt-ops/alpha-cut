@@ -70,7 +70,10 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 backgroundColor: 'var(--surface)',
                 color: 'var(--ink)',
                 border: '1px solid var(--line)',
-                boxShadow: 'var(--shadow)',
+                borderLeft: `4px solid ${t.type === 'success' ? 'var(--accent-gold)' : t.type === 'error' ? '#E53E3E' : 'var(--accent-gold)'}`,
+                boxShadow: '0 12px 30px -10px rgba(0,0,0,0.5)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
                 fontSize: '14px',
               }}
             >

@@ -10,8 +10,11 @@ const INITIAL_SEED_ITEMS = [
     clientType: 'Tech Creator',
     videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80',
+    rawVideoUrl: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4',
+    rawThumbnailUrl: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=600&q=80',
     isHeroFeatured: true,
     heroSlot: 1,
+    isBeforeAfterFeatured: true,
     order: 1,
   },
   {
@@ -84,6 +87,9 @@ export const getPortfolioItems = async (req: Request, res: Response, next: NextF
 
 export const createPortfolioItem = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
+    if (req.body.isBeforeAfterFeatured) {
+      await PortfolioItem.updateMany({}, { isBeforeAfterFeatured: false });
+    }
     const item = await PortfolioItem.create(req.body);
     res.status(201).json({ success: true, item });
   } catch (err) {
@@ -94,6 +100,9 @@ export const createPortfolioItem = async (req: Request, res: Response, next: Nex
 export const updatePortfolioItem = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
     const { id } = req.params;
+    if (req.body.isBeforeAfterFeatured) {
+      await PortfolioItem.updateMany({ _id: { $ne: id } }, { isBeforeAfterFeatured: false });
+    }
     const item = await PortfolioItem.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
     if (!item) {
       return res.status(404).json({ success: false, message: 'Portfolio sample item not found' });

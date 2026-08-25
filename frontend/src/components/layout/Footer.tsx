@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '@components/ui/Logo';
-import { IconTiktok, IconInstagram, IconTelegram } from '@icons/icons';
+import { IconTiktok, IconInstagram, IconTelegram, IconYoutube } from '@icons/icons';
 
 export const Footer: React.FC = () => {
   return (
@@ -125,6 +125,24 @@ export const Footer: React.FC = () => {
             Follow & Connect
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <a
+              href="https://www.youtube.com/@alpha-cut-co"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                fontSize: '14px',
+                color: 'var(--ink-soft)',
+                textDecoration: 'none',
+                transition: 'color var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
+            >
+              <IconYoutube size={18} /> @alpha-cut-co
+            </a>
             <a
               href="https://www.tiktok.com/@alphacut.ae"
               target="_blank"
