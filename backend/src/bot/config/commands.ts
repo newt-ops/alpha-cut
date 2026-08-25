@@ -11,7 +11,7 @@ const sanitizeUrl = (rawUrl?: string): string => {
 };
 
 export const CLIENT_URL = sanitizeUrl(config.clientUrl);
-export const MINI_APP_URL = `${CLIENT_URL}/app`;
+export const MINI_APP_URL = process.env.MINI_APP_URL || (CLIENT_URL.includes('alpha-cut.com') ? 'https://app.alpha-cut.com' : `${CLIENT_URL}/app`);
 
 export const botCommands = [
   { command: 'start', description: 'Launch bot & main menu' },

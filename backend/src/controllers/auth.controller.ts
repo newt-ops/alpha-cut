@@ -29,11 +29,19 @@ export const generateTokens = (user: IUser): TokenPair => {
   return { accessToken, refreshToken };
 };
 
+const getCookieDomain = (): string | undefined => {
+  if (process.env.COOKIE_DOMAIN) return process.env.COOKIE_DOMAIN;
+  if (process.env.NODE_ENV === 'production') return '.alpha-cut.com';
+  return undefined;
+};
+
 export const setRefreshCookie = (res: Response, refreshToken: string): void => {
+  const domain = getCookieDomain();
   res.cookie('alpha_cut_refresh', refreshToken, {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
+    ...(domain ? { domain } : {}),
     maxAge: 14 * 24 * 60 * 60 * 1000,
   });
 };
@@ -363,10 +371,12 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
 };
 
 export const logout = (req: Request, res: Response): void => {
+  const domain = getCookieDomain();
   res.clearCookie('alpha_cut_refresh', {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
+    ...(domain ? { domain } : {}),
   });
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };

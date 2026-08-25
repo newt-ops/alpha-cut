@@ -39,20 +39,61 @@ const RouteFallback: React.FC = () => (
   </div>
 );
 
-// Inner layout switcher that removes Navbar/Footer for full-screen /admin and /app routes
+const getHostnameType = () => {
+  if (typeof window === 'undefined') return 'main';
+  const host = window.location.hostname.toLowerCase();
+  if (host === 'admin.alpha-cut.com' || host.startsWith('admin.')) return 'admin';
+  if (host === 'dashboard.alpha-cut.com' || host.startsWith('dashboard.')) return 'dashboard';
+  if (host === 'app.alpha-cut.com' || host.startsWith('app.')) return 'app';
+  return 'main';
+};
+
+// Hostname-aware layout switcher supporting alpha-cut.com, admin.alpha-cut.com, dashboard.alpha-cut.com, app.alpha-cut.com
 const AppRoutes: React.FC = () => {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
-  const isMiniAppRoute = location.pathname.startsWith('/app');
-  const isDashboardRoute = location.pathname.startsWith('/dashboard');
+  const hostType = getHostnameType();
+  const isProductionCustomDomain =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'alpha-cut.com' ||
+      window.location.hostname === 'www.alpha-cut.com' ||
+      window.location.hostname.endsWith('.vercel.app'));
 
-  if (isAdminRoute) {
+  // Dynamic robots noindex injection for private app subdomains
+  React.useEffect(() => {
+    let meta = document.querySelector('meta[name="robots"]');
+    if (hostType === 'admin' || hostType === 'dashboard' || hostType === 'app') {
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'robots');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', 'noindex, nofollow');
+    } else if (meta && hostType === 'main') {
+      meta.setAttribute('content', 'index, follow');
+    }
+  }, [hostType]);
+
+  // Production Legacy Path Redirects to Subdomains
+  React.useEffect(() => {
+    if (isProductionCustomDomain) {
+      if (location.pathname.startsWith('/admin')) {
+        window.location.href = `https://admin.alpha-cut.com${location.search}`;
+      } else if (location.pathname.startsWith('/dashboard')) {
+        window.location.href = `https://dashboard.alpha-cut.com${location.search}`;
+      } else if (location.pathname.startsWith('/app')) {
+        window.location.href = `https://app.alpha-cut.com${location.search}`;
+      }
+    }
+  }, [location, isProductionCustomDomain]);
+
+  // 1. ADMIN SUBDOMAIN (admin.alpha-cut.com) or Local /admin Fallback
+  if (hostType === 'admin' || location.pathname.startsWith('/admin')) {
     return (
       <ErrorBoundary>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route
-              path="/admin"
+              path="*"
               element={
                 <RequireAdmin>
                   <AdminPage />
@@ -65,13 +106,14 @@ const AppRoutes: React.FC = () => {
     );
   }
 
-  if (isDashboardRoute) {
+  // 2. CLIENT DASHBOARD SUBDOMAIN (dashboard.alpha-cut.com) or Local /dashboard Fallback
+  if (hostType === 'dashboard' || location.pathname.startsWith('/dashboard')) {
     return (
       <ErrorBoundary>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route
-              path="/dashboard"
+              path="*"
               element={
                 <RequireAuth>
                   <DashboardPage />
@@ -84,18 +126,20 @@ const AppRoutes: React.FC = () => {
     );
   }
 
-  if (isMiniAppRoute) {
+  // 3. TELEGRAM MINI APP SUBDOMAIN (app.alpha-cut.com) or Local /app Fallback
+  if (hostType === 'app' || location.pathname.startsWith('/app')) {
     return (
       <ErrorBoundary>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
-            <Route path="/app" element={<TelegramMiniAppPage />} />
+            <Route path="*" element={<TelegramMiniAppPage />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>
     );
   }
 
+  // 4. PUBLIC MARKETING SITE (alpha-cut.com)
   return (
     <>
       <Navbar />
