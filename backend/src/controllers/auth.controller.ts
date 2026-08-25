@@ -52,7 +52,7 @@ const generateOtpCode = (): string => {
 
 const verifyTurnstileToken = async (req: Request): Promise<boolean> => {
   const token = req.body?.['cf-turnstile-response'] || req.body?.turnstileToken;
-  const secretKey = process.env.TURNSTILE_SECRET || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '0x4AAAAAAEcK-mP0HILAUZFBV_a-iy28gIw';
+  const secretKey = process.env.TURNSTILE_SECRET || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '0x4AAAAAAEcL2ykQ03gnjjhlX2fUWVhcYEk';
   
   if (typeof token !== 'string' || !token.trim()) {
     console.warn('[TURNSTILE VERIFY WARN]: Missing token in request body');
