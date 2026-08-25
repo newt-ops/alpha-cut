@@ -38,6 +38,17 @@ export const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
 
+  // Keep latest callbacks in refs so useEffect never re-runs on inline prop functions
+  const onVerifyRef = useRef(onVerify);
+  const onExpireRef = useRef(onExpire);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onVerifyRef.current = onVerify;
+    onExpireRef.current = onExpire;
+    onErrorRef.current = onError;
+  }, [onVerify, onExpire, onError]);
+
   useEffect(() => {
     let checkInterval: any = null;
 
@@ -46,9 +57,9 @@ export const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({
         try {
           widgetIdRef.current = window.turnstile.render(containerRef.current, {
             sitekey: SITE_KEY,
-            callback: (token: string) => onVerify(token),
-            'expired-callback': () => onExpire && onExpire(),
-            'error-callback': () => onError && onError(),
+            callback: (token: string) => onVerifyRef.current?.(token),
+            'expired-callback': () => onExpireRef.current?.(),
+            'error-callback': () => onErrorRef.current?.(),
             theme: theme === 'auto' ? 'dark' : theme,
           });
         } catch (e) {
@@ -77,10 +88,10 @@ export const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({
         } catch (e) {}
       }
     };
-  }, [onVerify, onExpire, onError, theme]);
+  }, [theme]);
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', margin: '14px 0 6px 0' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', margin: '14px 0 6px 0', minHeight: '65px' }}>
       <div ref={containerRef} />
     </div>
   );
