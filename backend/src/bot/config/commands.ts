@@ -2,7 +2,7 @@ import { Telegraf } from 'telegraf';
 import { config } from '../../config/env.js';
 
 const sanitizeUrl = (rawUrl?: string): string => {
-  if (!rawUrl) return 'https://alpha-cut-nine.vercel.app';
+  if (!rawUrl) return 'https://alpha-cut.com';
   const trimmed = rawUrl.trim().replace(/\/$/, '');
   if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
     return `https://${trimmed}`;

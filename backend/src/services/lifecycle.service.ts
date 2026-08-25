@@ -35,7 +35,7 @@ const sendTransactionalEmail = async ({ toEmail, subject, htmlContent }: { toEma
     return;
   }
   try {
-    const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || 'Alpha Cut <onboarding@resend.dev>';
+    const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || 'Alpha Cut <verification@alpha-cut.com>';
     await resend.emails.send({
       from: SENDER_EMAIL,
       to: [toEmail],

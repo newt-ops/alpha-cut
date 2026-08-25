@@ -39,7 +39,7 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https://*.googleusercontent.com'],
-        connectSrc: ["'self'", 'https://accounts.google.com', 'https://api.cloudinary.com', 'https://alpha-cut.onrender.com'],
+        connectSrc: ["'self'", 'https://accounts.google.com', 'https://api.cloudinary.com', 'https://api.alpha-cut.com', 'https://alpha-cut.onrender.com'],
         frameSrc: ["'self'", 'https://accounts.google.com', 'https://www.youtube.com', 'https://player.vimeo.com'],
       },
     },
@@ -49,6 +49,8 @@ app.use(
 
 const allowedOrigins = [
   config.clientUrl,
+  'https://alpha-cut.com',
+  'https://www.alpha-cut.com',
   'https://alpha-cut-nine.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000',
@@ -203,7 +205,7 @@ app.get('/', (req, res) => {
         </div>
 
         <div class="btn-group">
-          <a href="https://alpha-cut-nine.vercel.app" class="btn btn-primary">Open Alpha Cut Web Platform</a>
+          <a href="https://alpha-cut.com" class="btn btn-primary">Open Alpha Cut Web Platform</a>
           <a href="https://t.me/alpha_cut_bot" class="btn btn-secondary">Open Telegram Bot</a>
         </div>
       </div>

@@ -4,7 +4,7 @@ import path from 'path';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const proxyTarget = env.VITE_API_URL || 'https://alpha-cut.onrender.com';
+  const proxyTarget = env.VITE_API_URL || 'https://api.alpha-cut.com';
 
   return {
     plugins: [react()],

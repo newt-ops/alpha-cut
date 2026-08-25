@@ -153,13 +153,13 @@ RESEND_API_KEY=your_resend_api_key_here
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_BOT_USERNAME=@alphacut_co_bot
 TELEGRAM_WEBHOOK_SECRET=your_telegram_webhook_secret_here
-CLIENT_URL=http://localhost:5173
-SERVER_URL=http://localhost:5000
+CLIENT_URL=https://alpha-cut.com
+SERVER_URL=https://api.alpha-cut.com
 ```
 
 ### Frontend (`frontend/.env`)
 ```env
-VITE_API_URL=http://localhost:5000
+VITE_API_URL=https://api.alpha-cut.com
 VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
 ```
 
