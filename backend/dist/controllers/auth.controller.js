@@ -33,8 +33,12 @@ const generateOtpCode = () => {
 const verifyTurnstileToken = async (req) => {
     const token = req.body?.['cf-turnstile-response'] || req.body?.turnstileToken;
     const secretKey = process.env.TURNSTILE_SECRET || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '0x4AAAAAAEcL2ykQ03gnjjhlX2fUWVhcYEk';
+    // Diagnostic: log which key source is active (mask the value for safety)
+    const keySource = process.env.TURNSTILE_SECRET ? 'TURNSTILE_SECRET' : process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY ? 'CLOUDFLARE_TURNSTILE_SECRET_KEY' : 'hardcoded-fallback';
+    const keyPreview = secretKey.slice(0, 12) + '...' + secretKey.slice(-4);
+    console.log(`[TURNSTILE DEBUG] keySource=${keySource} keyPreview=${keyPreview} hasToken=${!!token} tokenLen=${token?.length ?? 0}`);
     if (typeof token !== 'string' || !token.trim()) {
-        console.warn('[TURNSTILE VERIFY WARN]: Missing token in request body');
+        console.warn('[TURNSTILE VERIFY WARN]: Missing token in request body. Body keys:', Object.keys(req.body || {}));
         if (process.env.NODE_ENV !== 'production' && secretKey.startsWith('1x000000')) {
             return true;
         }
@@ -52,9 +56,7 @@ const verifyTurnstileToken = async (req) => {
             body: formData,
         });
         const data = await response.json();
-        if (!data.success) {
-            console.error('[TURNSTILE SITEVERIFY REJECTED]:', JSON.stringify(data));
-        }
+        console.log(`[TURNSTILE SITEVERIFY RESULT]:`, JSON.stringify(data));
         return data.success === true;
     }
     catch (err) {
