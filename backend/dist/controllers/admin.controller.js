@@ -59,6 +59,30 @@ export const getAllClients = async (req, res, next) => {
         next(err);
     }
 };
+export const createClient = async (req, res, next) => {
+    try {
+        const { name, email, telegramChatId } = req.body;
+        if (!name || !email) {
+            return res.status(400).json({ success: false, message: 'Name and email are required' });
+        }
+        let existing = await User.findOne({ email: email.toLowerCase().trim() });
+        if (existing) {
+            return res.status(400).json({ success: false, message: 'User account with this email already exists' });
+        }
+        const client = new User({
+            name,
+            email: email.toLowerCase().trim(),
+            role: 'client',
+            telegramChatId: telegramChatId || undefined,
+            telegramLinkedAt: telegramChatId ? new Date() : undefined,
+        });
+        await client.save();
+        res.status(201).json({ success: true, client });
+    }
+    catch (err) {
+        next(err);
+    }
+};
 export const createProposal = async (req, res, next) => {
     try {
         const project = await lifecycleService.createProposal(req.user._id, req.body);
@@ -126,32 +150,27 @@ export const updateClientAdminNotes = async (req, res, next) => {
 };
 export const getStats = async (req, res, next) => {
     try {
+        const exchangeRate = 128.5; // 1 USD = 128.5 ETB
+        const toETB = (price, currency = 'ETB') => (currency === 'USD' ? Math.round(price * exchangeRate) : price);
+        const toUSD = (price, currency = 'ETB') => (currency === 'ETB' ? Number((price / exchangeRate).toFixed(2)) : price);
         const clientCount = await User.countDocuments({ role: 'client' });
         const allProjects = await Project.find({});
         const allContracts = await Contract.find({});
+        // Uniform Billable Filtering for Recognized Agency Revenue
+        const billableProjects = allProjects.filter((p) => p.status === 'in_progress' || p.status === 'delivered' || p.status === 'completed');
+        const billableContracts = allContracts.filter((c) => c.status === 'active' || c.status === 'completed');
         // One-Off Projects Revenue
-        const projRevenueETB = allProjects
-            .filter((p) => (p.status === 'delivered' || p.status === 'completed') && p.currency === 'ETB')
-            .reduce((sum, p) => sum + p.price, 0);
-        const projRevenueUSD = allProjects
-            .filter((p) => (p.status === 'delivered' || p.status === 'completed') && p.currency === 'USD')
-            .reduce((sum, p) => sum + p.price, 0);
-        // Retainer Contracts Revenue (Active & Completed)
-        const contractRevenueETB = allContracts
-            .filter((c) => (c.status === 'active' || c.status === 'completed') && c.currency === 'ETB')
-            .reduce((sum, c) => sum + (c.monthlyPrice * (c.durationMonths || 1)), 0);
-        const contractRevenueUSD = allContracts
-            .filter((c) => (c.status === 'active' || c.status === 'completed') && c.currency === 'USD')
-            .reduce((sum, c) => sum + (c.monthlyPrice * (c.durationMonths || 1)), 0);
+        const projRevenueETB = billableProjects.reduce((sum, p) => sum + toETB(p.price || 0, p.currency), 0);
+        const projRevenueUSD = billableProjects.reduce((sum, p) => sum + toUSD(p.price || 0, p.currency), 0);
+        // Retainer Contracts Revenue
+        const contractRevenueETB = billableContracts.reduce((sum, c) => sum + toETB(c.monthlyPrice * (c.durationMonths || 1), c.currency), 0);
+        const contractRevenueUSD = billableContracts.reduce((sum, c) => sum + toUSD(c.monthlyPrice * (c.durationMonths || 1), c.currency), 0);
         const revenueETB = projRevenueETB + contractRevenueETB;
-        const revenueUSD = projRevenueUSD + contractRevenueUSD;
+        const revenueUSD = Number(projRevenueUSD + contractRevenueUSD).toFixed(2);
+        // MRR (Monthly Recurring Revenue) — Query strictly active retainers
         const activeContracts = allContracts.filter((c) => c.status === 'active');
-        const recurringRevenueETB = activeContracts
-            .filter((c) => c.currency === 'ETB')
-            .reduce((sum, c) => sum + c.monthlyPrice, 0);
-        const recurringRevenueUSD = activeContracts
-            .filter((c) => c.currency === 'USD')
-            .reduce((sum, c) => sum + c.monthlyPrice, 0);
+        const recurringRevenueETB = activeContracts.reduce((sum, c) => sum + toETB(c.monthlyPrice || 0, c.currency), 0);
+        const recurringRevenueUSD = Number(activeContracts.reduce((sum, c) => sum + toUSD(c.monthlyPrice || 0, c.currency), 0)).toFixed(2);
         const statusCounts = {
             proposal_sent: allProjects.filter((p) => p.status === 'proposal_sent').length + allContracts.filter((c) => c.status === 'proposed').length,
             in_progress: allProjects.filter((p) => p.status === 'in_progress').length + allContracts.filter((c) => c.status === 'active').length,
@@ -167,85 +186,93 @@ export const getStats = async (req, res, next) => {
         const avgRating = ratings.length > 0
             ? (ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length).toFixed(1)
             : '5.0';
-        // Revenue by Package Tier Breakdown
+        // Revenue by Package Tier Breakdown (Using Billable Records)
         const revenueByTier = {
             basic: { USD: 0, ETB: 0 },
             professional: { USD: 0, ETB: 0 },
             premium: { USD: 0, ETB: 0 },
         };
-        allProjects.forEach((p) => {
+        billableProjects.forEach((p) => {
             if (p.packageTier && revenueByTier[p.packageTier]) {
-                revenueByTier[p.packageTier][p.currency || 'USD'] += p.price || 0;
+                revenueByTier[p.packageTier].ETB += toETB(p.price || 0, p.currency);
+                revenueByTier[p.packageTier].USD += toUSD(p.price || 0, p.currency);
             }
         });
-        allContracts.forEach((c) => {
+        billableContracts.forEach((c) => {
             if (c.packageTier && revenueByTier[c.packageTier]) {
-                revenueByTier[c.packageTier][c.currency || 'USD'] += (c.monthlyPrice * (c.durationMonths || 1)) || 0;
+                const val = c.monthlyPrice * (c.durationMonths || 1);
+                revenueByTier[c.packageTier].ETB += toETB(val, c.currency);
+                revenueByTier[c.packageTier].USD += toUSD(val, c.currency);
             }
         });
-        // Revenue by Editing Style Breakdown
+        // Revenue by Editing Style Breakdown (Using Billable Projects)
         const revenueByStyleMap = {};
-        allProjects.forEach((p) => {
+        billableProjects.forEach((p) => {
             const style = p.editingStyle || 'Custom Edit';
             if (!revenueByStyleMap[style])
                 revenueByStyleMap[style] = { USD: 0, ETB: 0 };
-            revenueByStyleMap[style][p.currency || 'USD'] += p.price || 0;
+            revenueByStyleMap[style].ETB += toETB(p.price || 0, p.currency);
+            revenueByStyleMap[style].USD += toUSD(p.price || 0, p.currency);
         });
         const revenueByStyle = Object.keys(revenueByStyleMap).map((style) => ({
             style,
-            USD: revenueByStyleMap[style].USD,
+            USD: Number(revenueByStyleMap[style].USD.toFixed(2)),
             ETB: revenueByStyleMap[style].ETB,
         }));
-        // Top Clients Leaderboard
+        // Top Clients Leaderboard (Using Billable Records)
         const clientRevenueMap = {};
-        allProjects.forEach((p) => {
+        billableProjects.forEach((p) => {
             const key = p.clientEmail || p.clientName;
             if (!clientRevenueMap[key])
                 clientRevenueMap[key] = { name: p.clientName, email: p.clientEmail, totalETB: 0, totalUSD: 0, count: 0 };
             clientRevenueMap[key].count += 1;
-            if (p.currency === 'ETB')
-                clientRevenueMap[key].totalETB += p.price;
-            else
-                clientRevenueMap[key].totalUSD += p.price;
+            clientRevenueMap[key].totalETB += toETB(p.price || 0, p.currency);
+            clientRevenueMap[key].totalUSD += toUSD(p.price || 0, p.currency);
         });
-        allContracts.forEach((c) => {
+        billableContracts.forEach((c) => {
             const key = c.clientEmail || c.clientName;
             if (!clientRevenueMap[key])
                 clientRevenueMap[key] = { name: c.clientName, email: c.clientEmail, totalETB: 0, totalUSD: 0, count: 0 };
             clientRevenueMap[key].count += 1;
             const totalVal = c.monthlyPrice * (c.durationMonths || 1);
-            if (c.currency === 'ETB')
-                clientRevenueMap[key].totalETB += totalVal;
-            else
-                clientRevenueMap[key].totalUSD += totalVal;
+            clientRevenueMap[key].totalETB += toETB(totalVal, c.currency);
+            clientRevenueMap[key].totalUSD += toUSD(totalVal, c.currency);
         });
         const topClients = Object.values(clientRevenueMap)
-            .sort((a, b) => b.totalUSD + b.totalETB - (a.totalUSD + a.totalETB))
+            .map((c) => ({ ...c, totalUSD: Number(c.totalUSD.toFixed(2)) }))
+            .sort((a, b) => b.totalETB - a.totalETB)
             .slice(0, 5);
-        // Timeline Revenue Trend Points
+        // Timeline Revenue Trend Points (Past 6 Months) (Using Billable Records)
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const monthlyTrendMap = {};
         const now = new Date();
         for (let i = 5; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const label = `${months[d.getMonth()]} ${d.getFullYear().toString().substring(2)}`;
+            const label = `${months[d.getMonth()]} ${d.getFullYear()}`;
             monthlyTrendMap[label] = { label, USD: 0, ETB: 0 };
         }
-        allProjects.forEach((p) => {
-            const d = new Date(p.createdAt);
-            const label = `${months[d.getMonth()]} ${d.getFullYear().toString().substring(2)}`;
-            if (monthlyTrendMap[label]) {
-                monthlyTrendMap[label][p.currency || 'USD'] += p.price || 0;
+        billableProjects.forEach((p) => {
+            if (p.createdAt) {
+                const d = new Date(p.createdAt);
+                const label = `${months[d.getMonth()]} ${d.getFullYear()}`;
+                if (monthlyTrendMap[label]) {
+                    monthlyTrendMap[label].ETB += toETB(p.price || 0, p.currency);
+                    monthlyTrendMap[label].USD += toUSD(p.price || 0, p.currency);
+                }
             }
         });
-        allContracts.forEach((c) => {
-            const d = new Date(c.createdAt);
-            const label = `${months[d.getMonth()]} ${d.getFullYear().toString().substring(2)}`;
-            if (monthlyTrendMap[label]) {
-                monthlyTrendMap[label][c.currency || 'USD'] += (c.monthlyPrice * (c.durationMonths || 1)) || 0;
+        billableContracts.forEach((c) => {
+            if (c.createdAt) {
+                const d = new Date(c.createdAt);
+                const label = `${months[d.getMonth()]} ${d.getFullYear()}`;
+                if (monthlyTrendMap[label]) {
+                    const totalVal = c.monthlyPrice * (c.durationMonths || 1);
+                    monthlyTrendMap[label].ETB += toETB(totalVal, c.currency);
+                    monthlyTrendMap[label].USD += toUSD(totalVal, c.currency);
+                }
             }
         });
-        const revenueTrends = Object.values(monthlyTrendMap);
+        const revenueTrends = Object.values(monthlyTrendMap).map((t) => ({ ...t, USD: Number(t.USD.toFixed(2)) }));
         const recentActivity = await Notification.find({}).sort({ createdAt: -1 }).limit(20);
         res.status(200).json({
             success: true,

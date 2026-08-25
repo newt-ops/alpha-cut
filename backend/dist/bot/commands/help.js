@@ -28,7 +28,7 @@ export const handleAboutCommand = async (ctx) => {
             `• <b>Founders:</b> Amir & Aymen\n` +
             `• <b>Agency Focus:</b> Retention short-form, kinetic typography, motion graphics, retainer contracts.\n` +
             `• <b>Email:</b> <code>alphacutagency@gmail.com</code>\n` +
-            `• <b>Web Platform:</b> https://alpha-cut-nine.vercel.app`;
+            `• <b>Web Platform:</b> https://alpha-cut.com`;
         ctx.reply(msg, { parse_mode: 'HTML', ...getSupportKeyboard() });
     }
     catch (err) {

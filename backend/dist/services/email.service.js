@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 import { config } from '../config/env.js';
 const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
-const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || 'Alpha Cut <onboarding@resend.dev>';
+const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || 'Alpha Cut <verification@alpha-cut.com>';
 export const sendVerificationEmail = async ({ toEmail, name, code }) => {
     const subject = 'Alpha Cut — Verify Your Email Address';
     const htmlContent = `

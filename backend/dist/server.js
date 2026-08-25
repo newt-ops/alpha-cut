@@ -20,6 +20,7 @@ import uploadRoutes from './routes/upload.routes.js';
 import portfolioRoutes from './routes/portfolio.routes.js';
 import contractRoutes from './routes/contract.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+import invoiceRoutes from './routes/invoice.routes.js';
 import { getAllPackageConfigs, getLiveExchangeRate } from './controllers/admin.controller.js';
 validateEnv();
 const app = express();
@@ -32,7 +33,7 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com'],
             imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https://*.googleusercontent.com'],
-            connectSrc: ["'self'", 'https://accounts.google.com', 'https://api.cloudinary.com', 'https://alpha-cut.onrender.com'],
+            connectSrc: ["'self'", 'https://accounts.google.com', 'https://api.cloudinary.com', 'https://api.alpha-cut.com', 'https://alpha-cut.onrender.com'],
             frameSrc: ["'self'", 'https://accounts.google.com', 'https://www.youtube.com', 'https://player.vimeo.com'],
         },
     },
@@ -40,6 +41,12 @@ app.use(helmet({
 }));
 const allowedOrigins = [
     config.clientUrl,
+    'https://alpha-cut.com',
+    'https://www.alpha-cut.com',
+    'https://app.alpha-cut.com',
+    'https://dashboard.alpha-cut.com',
+    'https://admin.alpha-cut.com',
+    'https://api.alpha-cut.com',
     'https://alpha-cut-nine.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
@@ -88,6 +95,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/admin/invoices', invoiceRoutes);
 app.use('/api', contractRoutes);
 app.get('/api/packages/exchange-rate', getLiveExchangeRate);
 app.get('/api/packages', getAllPackageConfigs);
@@ -182,7 +190,7 @@ app.get('/', (req, res) => {
         </div>
 
         <div class="btn-group">
-          <a href="https://alpha-cut-nine.vercel.app" class="btn btn-primary">Open Alpha Cut Web Platform</a>
+          <a href="https://alpha-cut.com" class="btn btn-primary">Open Alpha Cut Web Platform</a>
           <a href="https://t.me/alpha_cut_bot" class="btn btn-secondary">Open Telegram Bot</a>
         </div>
       </div>

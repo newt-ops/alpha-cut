@@ -66,18 +66,13 @@ export const completeContract = async (req, res, next) => {
 // Client: Get Own Retainer Contracts & Deliverables
 export const getClientContracts = async (req, res, next) => {
     try {
-        let query = {};
-        if (req.user.role === 'admin') {
-            query = {};
-        }
-        else {
-            query = {
-                $or: [
-                    { clientId: req.user._id },
-                    { clientEmail: req.user.email ? req.user.email.toLowerCase() : '' },
-                ],
-            };
-        }
+        const userEmail = req.user.email ? req.user.email.toLowerCase() : '';
+        const query = {
+            $or: [
+                { clientId: req.user._id },
+                ...(userEmail ? [{ clientEmail: userEmail }] : []),
+            ],
+        };
         const contracts = await Contract.find(query).sort({ createdAt: -1 });
         const contractIds = contracts.map((c) => c._id);
         const deliverables = await Deliverable.find({ contractId: { $in: contractIds } }).sort({ sequenceNumber: 1 });

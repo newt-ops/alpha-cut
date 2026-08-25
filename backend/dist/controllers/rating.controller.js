@@ -2,8 +2,11 @@ import { Rating } from '../models/Rating.js';
 import * as lifecycleService from '../services/lifecycle.service.js';
 export const getPublicRatings = async (req, res, next) => {
     try {
-        const { featured, page, limit } = req.query;
-        const filter = { hidden: false };
+        const { featured, page, limit, admin } = req.query;
+        const filter = {};
+        if (admin !== 'true') {
+            filter.hidden = false;
+        }
         if (featured === 'true') {
             filter.featured = true;
         }

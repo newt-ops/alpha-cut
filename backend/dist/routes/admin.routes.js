@@ -1,11 +1,12 @@
 import express from 'express';
 import { requireAuth, requireAdmin } from '../middleware/auth.middleware.js';
-import { searchUsers, getAllClients, createProposal, getAllProjects, markDelivered, getStats, updatePackageConfig, getAllPackageConfigs, updateProjectAdminNotes, updateClientAdminNotes, } from '../controllers/admin.controller.js';
+import { searchUsers, getAllClients, createClient, createProposal, getAllProjects, markDelivered, getStats, updatePackageConfig, getAllPackageConfigs, updateProjectAdminNotes, updateClientAdminNotes, } from '../controllers/admin.controller.js';
 const router = express.Router();
 router.use(requireAuth);
 router.use(requireAdmin);
 router.get('/users/search', searchUsers);
 router.get('/clients', getAllClients);
+router.post('/clients', createClient);
 router.put('/clients/:id/notes', updateClientAdminNotes);
 router.post('/projects', createProposal);
 router.get('/projects', getAllProjects);

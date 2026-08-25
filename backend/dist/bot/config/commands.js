@@ -1,7 +1,7 @@
 import { config } from '../../config/env.js';
 const sanitizeUrl = (rawUrl) => {
     if (!rawUrl)
-        return 'https://alpha-cut-nine.vercel.app';
+        return 'https://alpha-cut.com';
     const trimmed = rawUrl.trim().replace(/\/$/, '');
     if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
         return `https://${trimmed}`;
@@ -9,7 +9,7 @@ const sanitizeUrl = (rawUrl) => {
     return trimmed;
 };
 export const CLIENT_URL = sanitizeUrl(config.clientUrl);
-export const MINI_APP_URL = `${CLIENT_URL}/app`;
+export const MINI_APP_URL = process.env.MINI_APP_URL || (CLIENT_URL.includes('alpha-cut.com') ? 'https://app.alpha-cut.com' : `${CLIENT_URL}/app`);
 export const botCommands = [
     { command: 'start', description: 'Launch bot & main menu' },
     { command: 'menu', description: 'Open role-based control menu' },
