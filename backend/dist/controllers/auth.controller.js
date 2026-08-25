@@ -30,26 +30,37 @@ export const setRefreshCookie = (res, refreshToken) => {
 const generateOtpCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
-const verifyTurnstileToken = async (token, req) => {
-    const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '0x4AAAAAAEcK-mP0HILAUZFBV_a-iy28gIw';
-    if (!token) {
+const verifyTurnstileToken = async (req) => {
+    const token = req.body?.turnstileToken || req.body?.['cf-turnstile-response'];
+    const secretKey = process.env.TURNSTILE_SECRET || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '0x4AAAAAAEcK-mP0HILAUZFBV_a-iy28gIw';
+    if (typeof token !== 'string' || !token.trim() || token.length > 2048) {
+        console.warn('[TURNSTILE VERIFY WARN]: Missing or invalid token format in request body');
         if (process.env.NODE_ENV !== 'production' && secretKey.startsWith('1x000000')) {
             return true;
         }
         return false;
     }
     try {
-        const remoteIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
-        const formData = new URLSearchParams();
-        formData.append('secret', secretKey);
-        formData.append('response', token);
-        if (remoteIp)
-            formData.append('remoteip', remoteIp.split(',')[0].trim());
+        const remoteIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '';
+        const formData = new URLSearchParams({
+            secret: secretKey,
+            response: token,
+            ...(remoteIp ? { remoteip: remoteIp.split(',')[0].trim() } : {}),
+        });
         const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            signal: AbortSignal.timeout(10000),
             body: formData,
         });
+        if (!response.ok) {
+            console.error(`[TURNSTILE HTTP ERROR]: siteverify responded status ${response.status}`);
+            return false;
+        }
         const data = await response.json();
+        if (!data.success) {
+            console.error('[TURNSTILE CLOUDFLARE REJECTION]:', JSON.stringify(data));
+        }
         return data.success === true;
     }
     catch (err) {
@@ -59,8 +70,8 @@ const verifyTurnstileToken = async (token, req) => {
 };
 export const signup = async (req, res, next) => {
     try {
-        const { name, email, password, turnstileToken } = req.body;
-        const isHuman = await verifyTurnstileToken(turnstileToken, req);
+        const { name, email, password } = req.body;
+        const isHuman = await verifyTurnstileToken(req);
         if (!isHuman) {
             return res.status(400).json({ success: false, message: 'Security check failed. Please complete the "I am not a robot" verification.' });
         }
@@ -96,8 +107,8 @@ export const signup = async (req, res, next) => {
 };
 export const login = async (req, res, next) => {
     try {
-        const { email, password, turnstileToken } = req.body;
-        const isHuman = await verifyTurnstileToken(turnstileToken, req);
+        const { email, password } = req.body;
+        const isHuman = await verifyTurnstileToken(req);
         if (!isHuman) {
             return res.status(400).json({ success: false, message: 'Security check failed. Please complete the "I am not a robot" verification.' });
         }
@@ -290,8 +301,8 @@ export const resendVerification = async (req, res, next) => {
 };
 export const forgotPassword = async (req, res, next) => {
     try {
-        const { email, turnstileToken } = req.body;
-        const isHuman = await verifyTurnstileToken(turnstileToken, req);
+        const { email } = req.body;
+        const isHuman = await verifyTurnstileToken(req);
         if (!isHuman) {
             return res.status(400).json({ success: false, message: 'Security check failed. Please complete the "I am not a robot" verification.' });
         }

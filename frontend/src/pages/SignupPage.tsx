@@ -32,6 +32,11 @@ export const SignupPage: React.FC = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      setError('Please verify that you are not a robot before signing up.');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError('');

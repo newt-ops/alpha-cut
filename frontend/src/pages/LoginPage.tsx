@@ -37,6 +37,11 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      setError('Please verify that you are not a robot before logging in.');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError('');
@@ -130,7 +135,11 @@ export const LoginPage: React.FC = () => {
             />
           </div>
 
-          <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
+          <TurnstileWidget
+            onVerify={(token) => { setTurnstileToken(token); setError(''); }}
+            onExpire={() => setTurnstileToken('')}
+            onError={() => setTurnstileToken('')}
+          />
 
           <Button type="submit" variant="primary" fullWidth size="large" isLoading={isLoading} iconRight={IconCheck}>
             Log In
