@@ -19,6 +19,9 @@ const PortfolioPage = lazy(() => import('@pages/PortfolioPage').then((m) => ({ d
 const PackagesPage = lazy(() => import('@pages/PackagesPage').then((m) => ({ default: m.PackagesPage })));
 const AboutPage = lazy(() => import('@pages/AboutPage').then((m) => ({ default: m.AboutPage })));
 const RatingsPage = lazy(() => import('@pages/RatingsPage').then((m) => ({ default: m.RatingsPage })));
+const PrivacyPolicyPage = lazy(() => import('@pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
+const TermsOfServicePage = lazy(() => import('@pages/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage })));
+const RefundPolicyPage = lazy(() => import('@pages/RefundPolicyPage').then((m) => ({ default: m.RefundPolicyPage })));
 const LoginPage = lazy(() => import('@pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import('@pages/SignupPage').then((m) => ({ default: m.SignupPage })));
 const VerifyEmailPage = lazy(() => import('@pages/VerifyEmailPage').then((m) => ({ default: m.VerifyEmailPage })));
@@ -154,6 +157,9 @@ const AppRoutes: React.FC = () => {
               <Route path="/packages" element={<PackagesPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/ratings" element={<RatingsPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+              <Route path="/refund-policy" element={<RefundPolicyPage />} />
               <Route path="/rate-project/:projectId" element={<RateProjectPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />

@@ -1,0 +1,2127 @@
+Absolutely bro. Before Alpha Cut goes live, this is exactly the right moment to do a **production-readiness pass** instead of deploying first and fixing everything afterward.
+
+Below is the document I'd use as the **Alpha Cut Web Production & Launch Specification**. It covers the website itself, SEO, accessibility, GitHub, project structure, robots, sitemap, legal pages, security, performance, analytics, domain configuration, and launch checks.
+
+# Alpha Cut Web Production & Launch Specification
+
+**Project:** Alpha Cut
+**Official domain:** `https://alpha-cut.com`
+**Brand:** Alpha Cut
+**Tagline:** *Crafting Stories That Stand Out*
+**Repository:** `newt-ops/alpha-cut`
+**Backend:** Node.js + Express
+**API:** `https://api.alpha-cut.com`
+**Database:** MongoDB Atlas
+**DNS / Domain:** Cloudflare
+**Application:** `https://app.alpha-cut.com`
+**Client Dashboard:** `https://dashboard.alpha-cut.com`
+**Admin:** `https://admin.alpha-cut.com`
+
+---
+
+# 1. Purpose
+
+This document defines the production standards for the Alpha Cut web ecosystem before the first official public deployment.
+
+The goal is not simply to make the website "work."
+
+The goal is to make Alpha Cut:
+
+* Professional
+* Search-engine friendly
+* Accessible
+* Fast
+* Secure
+* Maintainable
+* Well documented
+* Legally presentable
+* Easy to deploy
+* Easy to expand
+* Consistent with the Alpha Cut brand
+
+The website should be treated as a real production product rather than a temporary portfolio.
+
+---
+
+# 2. Production Ecosystem
+
+The current architecture is:
+
+```text
+                         ALPHA CUT
+                       alpha-cut.com
+                            |
+                         Cloudflare
+                            |
+       +--------------------+--------------------+
+       |                    |                    |
+       v                    v                    v
+    Website                App              Dashboards
+       |                    |                    |
+alpha-cut.com       app.alpha-cut.com      +-----+-----+
+                                             |           |
+                                             v           v
+                                      dashboard.alpha  admin.alpha
+                                          -cut.com       -cut.com
+                                             |           |
+                                             +-----+-----+
+                                                   |
+                                                   v
+                                            api.alpha-cut.com
+                                                   |
+                                            Node.js + Express
+                                                   |
+                                            MongoDB Atlas
+```
+
+Additional services:
+
+```text
+Cloudflare
+├── DNS
+├── SSL/TLS
+└── Email Routing
+
+Resend
+└── Transactional verification emails
+
+GitHub
+└── Source control + project documentation
+```
+
+---
+
+# 3. Production Domain Rules
+
+The canonical public website should be:
+
+```text
+https://alpha-cut.com
+```
+
+Decide whether:
+
+```text
+https://www.alpha-cut.com
+```
+
+will redirect permanently to:
+
+```text
+https://alpha-cut.com
+```
+
+Recommended:
+
+```text
+www.alpha-cut.com
+        ↓
+301/308 redirect
+        ↓
+alpha-cut.com
+```
+
+This avoids having two versions of the same website indexed by search engines.
+
+Do not allow both versions to behave as independent websites.
+
+---
+
+# 4. Subdomain Map
+
+| Domain                    | Role                                      |
+| ------------------------- | ----------------------------------------- |
+| `alpha-cut.com`           | Public website                            |
+| `www.alpha-cut.com`       | Redirect to canonical domain              |
+| `api.alpha-cut.com`       | Backend API                               |
+| `app.alpha-cut.com`       | Alpha Cut application / Telegram Mini App |
+| `dashboard.alpha-cut.com` | Client dashboard                          |
+| `admin.alpha-cut.com`     | Internal administration                   |
+| `contact@alpha-cut.com`   | Business email                            |
+
+Each subdomain should have a clear purpose.
+
+---
+
+# 5. Repository / GitHub
+
+The GitHub repository is:
+
+```text
+newt-ops/alpha-cut
+```
+
+The repository should look professional before production.
+
+## Recommended repository files
+
+```text
+alpha-cut/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md
+│   │   └── feature_request.md
+│   ├── pull_request_template.md
+│   └── workflows/
+│       ├── ci.yml
+│       └── deploy.yml
+│
+├── public/
+│   ├── favicon.ico
+│   ├── favicon.svg
+│   ├── apple-touch-icon.png
+│   ├── robots.txt
+│   ├── sitemap.xml
+│   ├── site.webmanifest
+│   └── images/
+│
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── layouts/
+│   ├── pages/
+│   ├── sections/
+│   ├── hooks/
+│   ├── lib/
+│   ├── utils/
+│   ├── data/
+│   ├── types/
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── index.css
+│
+├── docs/
+│   ├── architecture.md
+│   ├── deployment.md
+│   ├── seo.md
+│   ├── accessibility.md
+│   └── security.md
+│
+├── .env.example
+├── .gitignore
+├── LICENSE
+├── README.md
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── ...
+```
+
+The exact structure can change depending on the implementation, but the principle should remain:
+
+> Separate application code, static assets, documentation, configuration, and project infrastructure.
+
+---
+
+# 6. GitHub Repository README
+
+The README should communicate what Alpha Cut is without requiring someone to understand the source code.
+
+Recommended sections:
+
+```text
+Alpha Cut
+Crafting Stories That Stand Out
+
+About
+Features
+Tech Stack
+Project Structure
+Development
+Environment Variables
+Running Locally
+Deployment
+Architecture
+Contributing
+License
+```
+
+Do not expose:
+
+* API keys
+* MongoDB credentials
+* Resend API keys
+* OAuth secrets
+* Cloudinary secrets
+* JWT secrets
+* `.env` files
+
+---
+
+# 7. `.gitignore`
+
+At minimum:
+
+```text
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+coverage/
+.vscode/
+```
+
+Adjust according to the actual project.
+
+Never commit:
+
+```text
+.env
+```
+
+or production credentials.
+
+---
+
+# 8. Environment Variables
+
+Create:
+
+```text
+.env.example
+```
+
+Example:
+
+```env
+VITE_API_URL=
+VITE_SITE_URL=
+```
+
+For backend:
+
+```env
+PORT=
+MONGODB_URI=
+JWT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=
+RESEND_API_KEY=
+FRONTEND_URL=
+APP_URL=
+DASHBOARD_URL=
+ADMIN_URL=
+```
+
+The actual values remain in the hosting provider's secret/environment-variable system.
+
+---
+
+# 9. GitHub Branch Strategy
+
+For a small team, keep it simple.
+
+Recommended:
+
+```text
+main
+```
+
+Production branch.
+
+Development work can happen through feature branches:
+
+```text
+feature/seo
+feature/accessibility
+feature/client-dashboard
+fix/mobile-navigation
+```
+
+Then merge into `main` after testing.
+
+Avoid having dozens of unnecessary branches.
+
+---
+
+# 10. GitHub Issues
+
+Create issue labels such as:
+
+```text
+bug
+feature
+enhancement
+documentation
+security
+accessibility
+seo
+performance
+design
+good-first-issue
+```
+
+This makes future development easier to organize.
+
+---
+
+# 11. GitHub Profile
+
+The GitHub organization/profile should also look professional.
+
+Recommended profile README or organization description:
+
+```text
+Alpha Cut
+Crafting Stories That Stand Out.
+
+Professional video editing and post-production services.
+```
+
+The public repository should show:
+
+* Good README
+* Logo
+* Description
+* Topics
+* License
+* Clean commit history
+* No exposed secrets
+
+Recommended GitHub repository topics:
+
+```text
+alpha-cut
+video-editing
+creative-agency
+video-production
+react
+typescript
+vite
+```
+
+Only use technically accurate topics.
+
+---
+
+# 12. SEO Strategy
+
+SEO should be treated as a system, not simply adding a `<title>`.
+
+Alpha Cut needs:
+
+* Title tags
+* Meta descriptions
+* Canonical URLs
+* Open Graph metadata
+* Twitter/X metadata
+* Structured data
+* Sitemap
+* Robots.txt
+* Semantic HTML
+* Proper headings
+* Image alt text
+* Fast loading
+* Mobile usability
+* Search-friendly URLs
+
+---
+
+# 13. Global Title
+
+Recommended homepage title:
+
+```text
+Alpha Cut | Professional Video Editing
+```
+
+Alternative:
+
+```text
+Alpha Cut | Video Editing That Makes Stories Stand Out
+```
+
+Keep the title concise and meaningful.
+
+---
+
+# 14. Homepage Meta Description
+
+Example:
+
+```text
+Alpha Cut creates engaging, polished video edits for creators, brands, and businesses. Crafting stories that stand out.
+```
+
+The final copy should accurately describe the actual services.
+
+Avoid keyword stuffing.
+
+---
+
+# 15. Page Titles
+
+Each important page should have its own title.
+
+Example:
+
+```text
+Home
+Alpha Cut | Professional Video Editing
+```
+
+```text
+Services
+Video Editing Services | Alpha Cut
+```
+
+```text
+Portfolio
+Video Editing Portfolio | Alpha Cut
+```
+
+```text
+About
+About Alpha Cut | Video Editing Agency
+```
+
+```text
+Contact
+Contact Alpha Cut | Start Your Project
+```
+
+---
+
+# 16. Canonical URLs
+
+Every indexable page should have a canonical URL.
+
+Example:
+
+```html
+<link
+  rel="canonical"
+  href="https://alpha-cut.com/"
+/>
+```
+
+For portfolio:
+
+```html
+<link
+  rel="canonical"
+  href="https://alpha-cut.com/portfolio"
+/>
+```
+
+This tells search engines which URL represents the preferred version.
+
+---
+
+# 17. Open Graph
+
+Configure social sharing metadata.
+
+Example:
+
+```html
+<meta property="og:title" content="Alpha Cut | Professional Video Editing" />
+
+<meta
+  property="og:description"
+  content="Crafting Stories That Stand Out."
+/>
+
+<meta
+  property="og:image"
+  content="https://alpha-cut.com/og-image.jpg"
+/>
+
+<meta property="og:url" content="https://alpha-cut.com/" />
+
+<meta property="og:type" content="website" />
+
+<meta property="og:site_name" content="Alpha Cut" />
+```
+
+Create a dedicated social sharing image.
+
+Recommended:
+
+```text
+public/og-image.jpg
+```
+
+Suggested size:
+
+```text
+1200 × 630
+```
+
+---
+
+# 18. Twitter/X Metadata
+
+Even if X is not a major marketing channel, social metadata is inexpensive to support.
+
+Example:
+
+```html
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Alpha Cut | Professional Video Editing" />
+<meta
+  name="twitter:description"
+  content="Crafting Stories That Stand Out."
+/>
+<meta
+  name="twitter:image"
+  content="https://alpha-cut.com/og-image.jpg"
+/>
+```
+
+---
+
+# 19. Semantic HTML
+
+Use HTML according to meaning.
+
+Prefer:
+
+```html
+<header>
+<nav>
+<main>
+<section>
+<article>
+<aside>
+<footer>
+```
+
+instead of using `<div>` for everything.
+
+Example:
+
+```html
+<header>
+  <nav>
+    ...
+  </nav>
+</header>
+
+<main>
+  <section>
+    ...
+  </section>
+</main>
+
+<footer>
+  ...
+</footer>
+```
+
+This improves:
+
+* Accessibility
+* SEO
+* Maintainability
+* Screen-reader navigation
+
+---
+
+# 20. Heading Structure
+
+Each page should have one clear primary heading.
+
+Example:
+
+```html
+<h1>Video Editing That Makes Your Story Stand Out</h1>
+```
+
+Then:
+
+```text
+h1
+ ├── h2
+ │    ├── h3
+ │    └── h3
+ └── h2
+```
+
+Don't use headings simply because they look visually large.
+
+CSS controls appearance.
+
+HTML communicates structure.
+
+---
+
+# 21. Image SEO
+
+Every meaningful image should have descriptive `alt`.
+
+Bad:
+
+```html
+<img alt="image" />
+```
+
+Better:
+
+```html
+<img
+  src="/portfolio/client-project.jpg"
+  alt="Short-form video edit created for a fitness creator"
+/>
+```
+
+Decorative images can use:
+
+```html
+alt=""
+```
+
+Do not stuff keywords into alt text.
+
+---
+
+# 22. Image Performance
+
+Use:
+
+* WebP
+* AVIF where appropriate
+* Responsive images
+* Proper dimensions
+* Lazy loading for below-the-fold images
+
+Example:
+
+```html
+<img
+  src="/images/project.webp"
+  alt="..."
+  loading="lazy"
+  width="..."
+  height="..."
+/>
+```
+
+Do not lazy-load the primary above-the-fold hero image if it delays the Largest Contentful Paint.
+
+---
+
+# 23. Video Performance
+
+Because Alpha Cut is a video-editing agency, video performance is especially important.
+
+Do not automatically load huge original video files.
+
+Use:
+
+* Compressed previews
+* Poster images
+* Appropriate codecs
+* Lazy loading
+* Streaming where appropriate
+* CDN/media hosting
+
+Portfolio videos should be optimized specifically for web playback.
+
+Avoid serving a massive 4K master file just because the original was recorded in 4K.
+
+---
+
+# 24. URL Structure
+
+Use readable URLs.
+
+Good:
+
+```text
+/portfolio
+/services
+/about
+/contact
+```
+
+Potential portfolio detail:
+
+```text
+/portfolio/fitness-brand-short-form
+```
+
+Avoid:
+
+```text
+/page?id=93842
+```
+
+where a clean slug is possible.
+
+---
+
+# 25. Robots.txt
+
+Create:
+
+```text
+public/robots.txt
+```
+
+Basic production version:
+
+```text
+User-agent: *
+Allow: /
+
+Sitemap: https://alpha-cut.com/sitemap.xml
+```
+
+This tells search engines that the public website can be crawled.
+
+---
+
+# 26. Do Not Index Private Areas
+
+The following should generally **not be publicly indexed**:
+
+```text
+/admin
+/dashboard
+/auth
+/login
+/api
+```
+
+However, don't rely only on `robots.txt` for security.
+
+Robots.txt is **not an access-control mechanism**.
+
+Private pages must still require authentication.
+
+For protected pages, consider:
+
+```html
+<meta name="robots" content="noindex, nofollow" />
+```
+
+and enforce authorization at the backend.
+
+---
+
+# 27. Sitemap
+
+Create:
+
+```text
+public/sitemap.xml
+```
+
+Only include canonical, public, indexable pages.
+
+Example:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+>
+  <url>
+    <loc>https://alpha-cut.com/</loc>
+  </url>
+
+  <url>
+    <loc>https://alpha-cut.com/services</loc>
+  </url>
+
+  <url>
+    <loc>https://alpha-cut.com/portfolio</loc>
+  </url>
+
+  <url>
+    <loc>https://alpha-cut.com/about</loc>
+  </url>
+
+  <url>
+    <loc>https://alpha-cut.com/contact</loc>
+  </url>
+</urlset>
+```
+
+Do not put:
+
+```text
+api.alpha-cut.com
+admin.alpha-cut.com
+dashboard.alpha-cut.com
+```
+
+into the public marketing sitemap unless there is a specific reason they are public and indexable.
+
+---
+
+# 28. Dynamic Sitemap
+
+If Alpha Cut eventually has many portfolio projects, generate the sitemap dynamically or during the build.
+
+Example:
+
+```text
+Portfolio
+├── project-1
+├── project-2
+├── project-3
+├── project-4
+└── ...
+```
+
+The sitemap should automatically include published projects.
+
+Unpublished/private projects should not appear.
+
+---
+
+# 29. Structured Data
+
+Add Schema.org structured data where appropriate.
+
+For Alpha Cut, potentially:
+
+### Organization
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Alpha Cut",
+  "url": "https://alpha-cut.com"
+}
+```
+
+If the business information is accurate and applicable, additional properties can be included.
+
+Potentially:
+
+* Logo
+* Website
+* Contact information
+* Social profiles
+
+Do not add fake information.
+
+---
+
+# 30. Breadcrumbs
+
+For deeper pages, structured breadcrumb navigation can help both users and search engines.
+
+Example:
+
+```text
+Home
+  >
+Portfolio
+  >
+Fitness Brand Campaign
+```
+
+For a small website, don't create breadcrumbs where they add no value.
+
+---
+
+# 31. Local SEO
+
+If Alpha Cut targets clients specifically in Ethiopia/Addis Ababa, local SEO can be considered.
+
+But don't claim a physical office or location that doesn't actually exist.
+
+If Alpha Cut has a legitimate business location later, we can add appropriate local business information.
+
+---
+
+# 32. Accessibility
+
+Accessibility should be built into the interface from the beginning.
+
+Minimum target:
+
+> **WCAG 2.2 AA-oriented implementation**
+
+This means we should pay attention to:
+
+* Keyboard navigation
+* Focus states
+* Color contrast
+* Labels
+* Semantic HTML
+* Screen readers
+* Motion
+* Forms
+* Error messages
+* Touch targets
+
+---
+
+# 33. Keyboard Navigation
+
+Everything interactive must be accessible without a mouse.
+
+Test:
+
+```text
+Tab
+Shift + Tab
+Enter
+Space
+Escape
+Arrow keys where appropriate
+```
+
+Users should be able to:
+
+* Open navigation
+* Navigate links
+* Submit forms
+* Close modals
+* Operate controls
+
+without a mouse.
+
+---
+
+# 34. Focus States
+
+Never remove focus outlines without replacing them with an equally visible focus style.
+
+Bad:
+
+```css
+outline: none;
+```
+
+Better:
+
+```css
+:focus-visible {
+  outline: 2px solid ...;
+  outline-offset: 2px;
+}
+```
+
+Use the actual Alpha Cut design system rather than blindly copying a color.
+
+---
+
+# 35. Color Contrast
+
+Alpha Cut's visual design should maintain sufficient contrast.
+
+Pay particular attention to:
+
+* Body text
+* Buttons
+* Placeholder text
+* Navigation
+* Footer
+* Links
+* Text over images
+
+Do not sacrifice readability for aesthetic minimalism.
+
+---
+
+# 36. Motion Accessibility
+
+Because Alpha Cut is a creative/video brand, the website may contain animations.
+
+Respect:
+
+```css
+prefers-reduced-motion
+```
+
+Example:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
+  }
+}
+```
+
+The exact implementation can be adapted to the animation library.
+
+---
+
+# 37. Forms
+
+Every form field needs a proper label.
+
+Bad:
+
+```text
+[ Enter email ]
+```
+
+Better:
+
+```html
+<label for="email">Email address</label>
+<input id="email" type="email" />
+```
+
+Error messages should be clear.
+
+Example:
+
+```text
+Please enter a valid email address.
+```
+
+Don't only communicate errors through color.
+
+---
+
+# 38. Touch Targets
+
+Interactive controls should be large enough to comfortably use on mobile.
+
+Pay particular attention to:
+
+* Menu buttons
+* Close buttons
+* Navigation
+* Form controls
+* Video controls
+* CTA buttons
+
+---
+
+# 39. Accessibility Testing
+
+Before production, test using:
+
+* Keyboard only
+* Screen reader
+* Browser zoom
+* Mobile viewport
+* Reduced-motion preference
+* Lighthouse accessibility audit
+* Automated accessibility testing
+
+Automated tools are useful, but they do not replace human testing.
+
+---
+
+# 40. Performance
+
+Alpha Cut is a media-heavy website, so performance is critical.
+
+Target:
+
+* Fast initial page load
+* Optimized images
+* Optimized video
+* Minimal JavaScript
+* Lazy loading
+* Good caching
+* Responsive layouts
+* Good Core Web Vitals
+
+---
+
+# 41. Core Web Vitals
+
+Pay attention to:
+
+### LCP
+
+Largest Contentful Paint.
+
+The main hero content should load quickly.
+
+### INP
+
+Interaction to Next Paint.
+
+Buttons and interactions should feel responsive.
+
+### CLS
+
+Cumulative Layout Shift.
+
+Reserve space for:
+
+* Images
+* Videos
+* Fonts
+* Dynamic components
+
+Avoid elements suddenly jumping around during loading.
+
+---
+
+# 42. Font Strategy
+
+Do not load huge numbers of font weights.
+
+Only load the weights actually used.
+
+Prefer:
+
+```text
+400
+500
+600
+700
+```
+
+or whatever the design requires.
+
+Use modern font loading strategies and avoid blocking the entire page unnecessarily.
+
+---
+
+# 43. Favicon
+
+Provide:
+
+```text
+favicon.ico
+favicon.svg
+apple-touch-icon.png
+```
+
+The Alpha Cut favicon should be recognizable at very small sizes.
+
+---
+
+# 44. Web Manifest
+
+Create:
+
+```text
+public/site.webmanifest
+```
+
+Example:
+
+```json
+{
+  "name": "Alpha Cut",
+  "short_name": "Alpha Cut",
+  "start_url": "/",
+  "display": "standalone"
+}
+```
+
+Add appropriate icons and theme information based on the final brand design.
+
+A manifest does not automatically mean we need to build a full PWA.
+
+---
+
+# 45. Security Headers
+
+Production hosting should have appropriate security headers.
+
+Consider:
+
+```text
+Content-Security-Policy
+Strict-Transport-Security
+X-Content-Type-Options
+Referrer-Policy
+Permissions-Policy
+```
+
+Do not blindly copy a very restrictive CSP before testing the application.
+
+Build it around the actual resources the website requires.
+
+---
+
+# 46. HTTPS
+
+Everything should use HTTPS:
+
+```text
+https://alpha-cut.com
+https://api.alpha-cut.com
+https://app.alpha-cut.com
+https://dashboard.alpha-cut.com
+https://admin.alpha-cut.com
+```
+
+HTTP traffic should redirect to HTTPS.
+
+---
+
+# 47. API Security
+
+The API at:
+
+```text
+api.alpha-cut.com
+```
+
+should have:
+
+* CORS restrictions
+* Rate limiting
+* Input validation
+* Authentication
+* Authorization
+* Secure headers
+* Error handling
+* Request size limits
+* Logging
+* Secure secrets
+* Database validation
+
+Never trust client-side validation alone.
+
+---
+
+# 48. Authentication
+
+Authentication should distinguish roles.
+
+Potential roles:
+
+```text
+Client
+Editor
+Admin
+Super Admin
+```
+
+The backend determines what each role can do.
+
+Never rely on hiding frontend buttons as a security mechanism.
+
+For example:
+
+```text
+Admin button hidden
+```
+
+does not mean the API is secure.
+
+The backend must reject unauthorized requests.
+
+---
+
+# 49. Error Pages
+
+Create proper pages for:
+
+```text
+404
+403
+500
+```
+
+The 404 page should remain branded.
+
+Example:
+
+```text
+404
+
+Looks like this cut didn't make the final timeline.
+
+The page you're looking for doesn't exist.
+```
+
+Keep it clean and useful.
+
+---
+
+# 50. Loading States
+
+Every asynchronous interface should have appropriate loading states.
+
+Examples:
+
+```text
+Loading portfolio...
+Loading project...
+Submitting...
+Uploading...
+Authenticating...
+```
+
+Avoid freezing the entire interface unnecessarily.
+
+---
+
+# 51. Empty States
+
+Create proper empty states.
+
+Example:
+
+```text
+No active projects yet.
+
+Once your project starts, you'll see it here.
+```
+
+This is particularly important for:
+
+* Dashboard
+* Admin
+* Portfolio
+* Notifications
+* Projects
+
+---
+
+# 52. Error Handling
+
+Never expose raw backend errors to users.
+
+Bad:
+
+```text
+MongoServerError: E11000 duplicate key...
+```
+
+Better:
+
+```text
+An account with this email already exists.
+```
+
+Log technical details internally.
+
+Show users useful messages.
+
+---
+
+# 53. Analytics
+
+Install analytics only after deciding what data is actually needed.
+
+Potential tools:
+
+* Google Analytics
+* Search Console
+* Cloudflare Analytics
+
+Track useful events such as:
+
+```text
+Contact form submitted
+Portfolio project opened
+CTA clicked
+Service selected
+Client onboarding started
+```
+
+Do not collect unnecessary personal data.
+
+---
+
+# 54. Google Search Console
+
+After production launch:
+
+1. Add `alpha-cut.com`
+2. Verify domain ownership
+3. Submit sitemap
+4. Inspect important URLs
+5. Monitor indexing
+6. Monitor search performance
+7. Fix crawl issues
+
+Sitemap:
+
+```text
+https://alpha-cut.com/sitemap.xml
+```
+
+---
+
+# 55. Social Profiles
+
+Keep Alpha Cut's social identity consistent.
+
+Where applicable:
+
+```text
+Alpha Cut
+@alphacut
+```
+
+Use the same:
+
+* Logo
+* Brand name
+* Tagline
+* Profile image
+* Description
+* Website
+
+Link social profiles from the website only when they actually exist.
+
+---
+
+# 56. Legal Pages
+
+Before production, create appropriate legal pages.
+
+At minimum:
+
+```text
+/privacy-policy
+/terms-of-service
+```
+
+Potentially:
+
+```text
+/cookie-policy
+/refund-policy
+```
+
+depending on how Alpha Cut operates.
+
+---
+
+# 57. Privacy Policy
+
+The privacy policy should explain:
+
+* What information is collected
+* Why it is collected
+* How it is stored
+* How it is used
+* Third-party services
+* Cookies
+* Analytics
+* Client data
+* File uploads
+* User rights
+* Contact information
+* Data retention
+
+Do not copy a random privacy policy from another website.
+
+The policy should reflect Alpha Cut's actual practices.
+
+---
+
+# 58. Terms of Service
+
+Terms should cover relevant service rules such as:
+
+* Service scope
+* Client responsibilities
+* Payment
+* Revisions
+* Delivery
+* Intellectual property
+* Content ownership
+* Cancellation
+* Refunds
+* Prohibited content
+* Liability
+* Account rules
+
+The exact terms should be reviewed appropriately for the jurisdictions and business model involved.
+
+---
+
+# 59. Refund Policy
+
+If Alpha Cut accepts payments, create a clear refund/cancellation policy.
+
+It should explain:
+
+* When refunds are available
+* When they are not
+* What happens after work begins
+* Revision policy
+* Cancellation process
+
+Don't publish a policy that doesn't reflect how Alpha Cut actually operates.
+
+---
+
+# 60. Cookie Policy
+
+A separate cookie policy may be appropriate if the website uses non-essential cookies or tracking.
+
+Document:
+
+* Necessary cookies
+* Analytics
+* Marketing cookies
+* Third-party services
+* Cookie controls
+
+Do not add a complicated cookie system if the website doesn't actually need it.
+
+---
+
+# 61. Legal Footer
+
+The footer should include links such as:
+
+```text
+Privacy Policy
+Terms of Service
+Contact
+```
+
+Potentially:
+
+```text
+Refund Policy
+Cookie Policy
+```
+
+depending on what Alpha Cut actually uses.
+
+---
+
+# 62. Contact Information
+
+Use a real business contact method.
+
+Example:
+
+```text
+contact@alpha-cut.com
+```
+
+Do not invent:
+
+* Physical addresses
+* Phone numbers
+* Registration numbers
+* Business claims
+
+Only publish information that is accurate.
+
+---
+
+# 63. Production Environment
+
+Maintain separate environments.
+
+At minimum:
+
+```text
+Development
+Production
+```
+
+Preferably:
+
+```text
+Development
+Staging
+Production
+```
+
+Example:
+
+```text
+Development
+localhost
+
+Production
+alpha-cut.com
+```
+
+Do not test destructive changes directly against production data.
+
+---
+
+# 64. Environment Separation
+
+Development should not accidentally use:
+
+```text
+Production MongoDB
+Production API keys
+Production Resend credentials
+Production OAuth secrets
+```
+
+unless intentionally configured.
+
+Keep environment variables separated.
+
+---
+
+# 65. Database
+
+MongoDB Atlas should be treated as production infrastructure.
+
+Use:
+
+* Strong database credentials
+* IP/network restrictions where appropriate
+* Least privilege
+* Backups
+* Monitoring
+* Separate development/production databases where practical
+
+Never expose MongoDB credentials to the frontend.
+
+---
+
+# 66. Cloudflare Production Checklist
+
+Verify:
+
+```text
+[ ] Domain connected
+[ ] Nameservers correct
+[ ] DNS records correct
+[ ] HTTPS active
+[ ] HTTP redirects to HTTPS
+[ ] www canonical redirect configured
+[ ] API subdomain working
+[ ] App subdomain working
+[ ] Dashboard subdomain working
+[ ] Admin subdomain working
+[ ] Email routing configured
+```
+
+---
+
+# 67. SEO Production Checklist
+
+```text
+[ ] Homepage title
+[ ] Page-specific titles
+[ ] Meta descriptions
+[ ] Canonical URLs
+[ ] Open Graph metadata
+[ ] Social sharing image
+[ ] Twitter metadata
+[ ] robots.txt
+[ ] sitemap.xml
+[ ] Structured data
+[ ] Semantic HTML
+[ ] Correct heading hierarchy
+[ ] Image alt text
+[ ] Clean URLs
+[ ] 404 page
+[ ] Search Console configured
+```
+
+---
+
+# 68. Accessibility Checklist
+
+```text
+[ ] Keyboard navigation
+[ ] Visible focus states
+[ ] Good color contrast
+[ ] Form labels
+[ ] Accessible errors
+[ ] Accessible buttons
+[ ] Image alt text
+[ ] Semantic HTML
+[ ] Reduced-motion support
+[ ] Mobile usability
+[ ] Screen-reader testing
+[ ] Zoom testing
+```
+
+---
+
+# 69. Performance Checklist
+
+```text
+[ ] Images compressed
+[ ] WebP/AVIF where appropriate
+[ ] Videos optimized
+[ ] Hero media optimized
+[ ] Lazy loading
+[ ] Fonts optimized
+[ ] No unnecessary libraries
+[ ] Code splitting where useful
+[ ] Layout shift minimized
+[ ] Core Web Vitals tested
+[ ] Mobile tested
+```
+
+---
+
+# 70. Security Checklist
+
+```text
+[ ] HTTPS
+[ ] Secure environment variables
+[ ] No secrets in GitHub
+[ ] CORS configured
+[ ] Rate limiting
+[ ] Input validation
+[ ] Authentication
+[ ] Authorization
+[ ] Secure cookies/tokens
+[ ] Security headers
+[ ] API request limits
+[ ] Error sanitization
+[ ] Database access restricted
+[ ] File upload restrictions
+```
+
+---
+
+# 71. GitHub Checklist
+
+```text
+[ ] Professional README
+[ ] Description
+[ ] Repository topics
+[ ] LICENSE
+[ ] .gitignore
+[ ] .env.example
+[ ] No secrets
+[ ] Issue templates
+[ ] PR template
+[ ] CI workflow
+[ ] Clean project structure
+[ ] Documentation
+```
+
+---
+
+# 72. Pre-Launch Testing
+
+Before production:
+
+### Desktop
+
+Test:
+
+```text
+Chrome
+Firefox
+Edge
+Safari where available
+```
+
+### Mobile
+
+Test:
+
+```text
+Android
+iOS
+```
+
+At minimum test:
+
+```text
+320px
+375px
+390px
+768px
+1024px
+1280px+
+```
+
+---
+
+# 73. Browser Testing
+
+Check:
+
+```text
+[ ] Navigation
+[ ] Animations
+[ ] Forms
+[ ] Video
+[ ] Images
+[ ] Links
+[ ] Authentication
+[ ] API requests
+[ ] Error states
+[ ] Loading states
+[ ] Mobile menu
+```
+
+---
+
+# 74. Link Testing
+
+Every link should work.
+
+Check:
+
+```text
+Internal links
+External links
+Social links
+Email links
+CTA buttons
+Footer links
+Legal links
+Portfolio links
+```
+
+No placeholder:
+
+```text
+href="#"
+```
+
+should remain unless intentionally used.
+
+---
+
+# 75. SEO Crawl Test
+
+Before launch:
+
+```text
+robots.txt
+sitemap.xml
+canonical tags
+titles
+descriptions
+indexability
+404
+redirects
+```
+
+Make sure staging/private environments are not accidentally indexed.
+
+---
+
+# 76. Production Build
+
+Before deploying:
+
+```bash
+npm run build
+```
+
+Then test the production build locally if appropriate.
+
+The production build should have:
+
+* No compilation errors
+* No console errors
+* No missing assets
+* No broken routes
+* No obvious performance problems
+
+---
+
+# 77. Console Cleanup
+
+Before launch, open browser DevTools.
+
+There should not be unnecessary:
+
+```text
+Errors
+Warnings
+Failed network requests
+404 assets
+CORS failures
+```
+
+A production website should not ship with obvious broken console behavior.
+
+---
+
+# 78. Accessibility Audit
+
+Run an accessibility audit and manually test.
+
+Don't treat:
+
+```text
+Lighthouse = 100
+```
+
+as proof that the website is fully accessible.
+
+Automated testing catches only part of the problem.
+
+---
+
+# 79. SEO Audit
+
+Check:
+
+```text
+Title
+Description
+Canonical
+Robots
+Sitemap
+Structured data
+Open Graph
+Heading structure
+Image alt
+URL structure
+```
+
+---
+
+# 80. Launch Sequence
+
+Recommended order:
+
+```text
+1. Finalize website
+        ↓
+2. Finalize folder structure
+        ↓
+3. Clean GitHub repository
+        ↓
+4. Configure environment variables
+        ↓
+5. Configure Cloudflare
+        ↓
+6. Connect production domain
+        ↓
+7. Connect API subdomain
+        ↓
+8. Deploy public website
+        ↓
+9. Configure app subdomain
+        ↓
+10. Configure dashboard
+        ↓
+11. Configure admin
+        ↓
+12. Configure authentication
+        ↓
+13. Configure Google OAuth
+        ↓
+14. Configure email
+        ↓
+15. Configure Resend
+        ↓
+16. Configure robots.txt
+        ↓
+17. Configure sitemap
+        ↓
+18. Configure analytics
+        ↓
+19. Configure Search Console
+        ↓
+20. Test everything
+        ↓
+21. Production launch
+```
+
+---
+
+# 81. Final Alpha Cut Production Architecture
+
+```text
+                         INTERNET
+                            |
+                       Cloudflare
+                            |
+                     alpha-cut.com
+                            |
+       +--------------------+--------------------+
+       |                    |                    |
+       v                    v                    v
+    WEBSITE                APP              DASHBOARDS
+       |                    |                    |
+alpha-cut.com       app.alpha-cut.com      +-----+-----+
+                                             |           |
+                                             v           v
+                                      dashboard.alpha  admin.alpha
+                                          -cut.com       -cut.com
+                                             |           |
+                                             +-----+-----+
+                                                   |
+                                                   v
+                                            api.alpha-cut.com
+                                                   |
+                                            Node.js + Express
+                                                   |
+                         +-------------------------+------------------+
+                         |                         |                  |
+                         v                         v                  v
+                   MongoDB Atlas                Resend           Telegram
+                                                  |                  |
+                                           Verification         Mini App
+                                             emails
+```
+
+---
+
+# 82. Final Launch Definition
+
+Alpha Cut should **not** be considered production-ready merely because:
+
+```text
+alpha-cut.com
+```
+
+opens successfully.
+
+Production readiness means:
+
+```text
+Domain
+   +
+DNS
+   +
+Hosting
+   +
+API
+   +
+Authentication
+   +
+SEO
+   +
+Accessibility
+   +
+Performance
+   +
+Security
+   +
+Legal
+   +
+Analytics
+   +
+GitHub
+   +
+Documentation
+   +
+Testing
+```
+
+are all properly handled.
+
+---
+
+# 83. The Core Principle
+
+Alpha Cut should be built with a simple rule:
+
+> **Build only what we need now, but structure it so we don't have to rebuild everything later.**
+
+We don't need to launch with:
+
+* A huge client portal
+* Complex analytics
+* Dozens of email types
+* A massive admin system
+* Every possible automation
+
+But the architecture should already support them.
+
+The first public website should be **fast, polished, accessible, searchable, secure, legally presentable, and professionally documented.**
+
+That gives Alpha Cut a proper foundation for the larger agency platform we're building.

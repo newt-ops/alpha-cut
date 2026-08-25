@@ -201,7 +201,7 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom Bar & Submitting Credit */}
+      {/* Bottom Bar & Legal Links */}
       <div
         style={{
           maxWidth: '1280px',
@@ -215,9 +215,21 @@ export const Footer: React.FC = () => {
           gap: '16px',
         }}
       >
-        <p style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
+        <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
           &copy; {new Date().getFullYear()} Alpha Cut Agency. All rights reserved.
         </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: '13px' }}>
+          <Link to="/privacy-policy" style={{ color: 'var(--ink-soft)', textDecoration: 'none' }}>
+            Privacy Policy
+          </Link>
+          <Link to="/terms-of-service" style={{ color: 'var(--ink-soft)', textDecoration: 'none' }}>
+            Terms of Service
+          </Link>
+          <Link to="/refund-policy" style={{ color: 'var(--ink-soft)', textDecoration: 'none' }}>
+            Refund Policy
+          </Link>
+        </div>
 
         {/* Developer Credit */}
         <a

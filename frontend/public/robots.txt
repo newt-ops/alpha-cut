@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Protected App & Admin Routes
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /auth/
+Disallow: /api/
+
+Sitemap: https://alpha-cut.com/sitemap.xml
