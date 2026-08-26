@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, useRef, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
@@ -6,7 +6,7 @@ import { Input } from '@components/ui/Input';
 import { useToast } from '@components/ui/Toast';
 import { customFetch } from '../utils/api';
 import { IconArrowRight, IconUser } from '@icons/icons';
-import { TurnstileWidget } from '@components/ui/TurnstileWidget';
+import { TurnstileWidget, TurnstileRef } from '@components/ui/TurnstileWidget';
 
 export const ForgotPasswordPage: React.FC = () => {
   const { toast } = useToast();
@@ -16,10 +16,16 @@ export const ForgotPasswordPage: React.FC = () => {
   const [turnstileToken, setTurnstileToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const turnstileRef = useRef<TurnstileRef>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email) return;
+
+    if (!turnstileToken) {
+      toast({ message: 'Please verify that you are not a robot first.', type: 'error' });
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -36,6 +42,8 @@ export const ForgotPasswordPage: React.FC = () => {
       toast({ message: res.message, type: 'info' });
       setTimeout(() => navigate('/reset-password', { state: { email } }), 2000);
     } catch (err: any) {
+      setTurnstileToken('');
+      turnstileRef.current?.reset();
       toast({ message: err.message, type: 'error' });
     } finally {
       setIsLoading(false);
@@ -90,7 +98,12 @@ export const ForgotPasswordPage: React.FC = () => {
             required
           />
 
-          <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
+          <TurnstileWidget
+            ref={turnstileRef}
+            onVerify={(token) => setTurnstileToken(token)}
+            onExpire={() => setTurnstileToken('')}
+            onError={() => setTurnstileToken('')}
+          />
 
           <Button type="submit" variant="primary" fullWidth isLoading={isLoading} iconRight={IconArrowRight}>
             Send Reset Code

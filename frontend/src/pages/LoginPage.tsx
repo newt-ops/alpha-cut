@@ -1,4 +1,4 @@
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
@@ -7,7 +7,7 @@ import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
 import { IconGoogle, IconUser, IconCheck } from '@icons/icons';
 import { Logo } from '@components/ui/Logo';
-import { TurnstileWidget } from '@components/ui/TurnstileWidget';
+import { TurnstileWidget, TurnstileRef } from '@components/ui/TurnstileWidget';
 
 export const LoginPage: React.FC = () => {
   const { login, initiateGoogleRedirect, isAuthenticated, user } = useAuth();
@@ -21,6 +21,7 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+  const turnstileRef = useRef<TurnstileRef>(null);
 
   const from = (location.state as any)?.from?.pathname || (user?.role === 'admin' ? '/admin' : '/dashboard');
 
@@ -48,6 +49,8 @@ export const LoginPage: React.FC = () => {
       await login(email, password, turnstileToken);
       toast({ message: 'Welcome back!', type: 'success' });
     } catch (err: any) {
+      setTurnstileToken('');
+      turnstileRef.current?.reset();
       if (err.message && err.message.includes('verify your email')) {
         toast({ message: 'Email address not verified yet. Please check your inbox.', type: 'info' });
         navigate('/verify-email');
@@ -136,6 +139,7 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <TurnstileWidget
+            ref={turnstileRef}
             onVerify={(token) => { setTurnstileToken(token); setError(''); }}
             onExpire={() => setTurnstileToken('')}
             onError={() => setTurnstileToken('')}

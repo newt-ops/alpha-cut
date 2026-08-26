@@ -1,4 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+
+export interface TurnstileRef {
+  reset: () => void;
+}
 
 interface TurnstileWidgetProps {
   onVerify: (token: string) => void;
@@ -29,12 +33,12 @@ declare global {
 // Official Cloudflare Turnstile Site Key for Alpha Cut
 const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAEcL2_e7K7MECywi';
 
-export const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({
+export const TurnstileWidget = forwardRef<TurnstileRef, TurnstileWidgetProps>(({
   onVerify,
   onExpire,
   onError,
   theme = 'dark',
-}) => {
+}, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
 
@@ -48,6 +52,18 @@ export const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({
     onExpireRef.current = onExpire;
     onErrorRef.current = onError;
   }, [onVerify, onExpire, onError]);
+
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      if (window.turnstile && widgetIdRef.current) {
+        try {
+          window.turnstile.reset(widgetIdRef.current);
+        } catch (e) {
+          console.warn('[TURNSTILE] Reset error:', e);
+        }
+      }
+    },
+  }));
 
   useEffect(() => {
     let checkInterval: any = null;
@@ -95,4 +111,6 @@ export const TurnstileWidget: React.FC<TurnstileWidgetProps> = ({
       <div ref={containerRef} />
     </div>
   );
-};
+});
+
+TurnstileWidget.displayName = 'TurnstileWidget';

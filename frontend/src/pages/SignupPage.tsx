@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, useRef, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
@@ -6,7 +6,7 @@ import { Input } from '@components/ui/Input';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
 import { IconGoogle, IconUser, IconCheck } from '@icons/icons';
-import { TurnstileWidget } from '@components/ui/TurnstileWidget';
+import { TurnstileWidget, TurnstileRef } from '@components/ui/TurnstileWidget';
 
 export const SignupPage: React.FC = () => {
   const { signup, initiateGoogleRedirect } = useAuth();
@@ -20,6 +20,7 @@ export const SignupPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+  const turnstileRef = useRef<TurnstileRef>(null);
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
@@ -44,6 +45,8 @@ export const SignupPage: React.FC = () => {
       toast({ message: 'Account created! Verification code sent to your email.', type: 'success' });
       navigate('/verify-email');
     } catch (err: any) {
+      setTurnstileToken('');
+      turnstileRef.current?.reset();
       setError(err.message || 'Failed to create account');
     } finally {
       setIsLoading(false);
@@ -125,7 +128,12 @@ export const SignupPage: React.FC = () => {
             required
           />
 
-          <TurnstileWidget onVerify={(token) => setTurnstileToken(token)} />
+          <TurnstileWidget
+            ref={turnstileRef}
+            onVerify={(token) => setTurnstileToken(token)}
+            onExpire={() => setTurnstileToken('')}
+            onError={() => setTurnstileToken('')}
+          />
 
           <Button type="submit" variant="primary" fullWidth size="large" isLoading={isLoading} iconRight={IconCheck}>
             Create Account
