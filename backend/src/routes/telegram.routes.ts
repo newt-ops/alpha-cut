@@ -31,12 +31,42 @@ router.post('/webhook/:secret', async (req: Request, res: Response): Promise<any
   }
 });
 
+export const validateInitData = (initData: string, botToken: string): boolean => {
+  try {
+    const params = new URLSearchParams(initData);
+    const hash = params.get('hash');
+    if (!hash) return false;
+    params.delete('hash');
+
+    const dataCheckString = Array.from(params.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n');
+
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
+    const computedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+    return computedHash === hash;
+  } catch (e) {
+    return false;
+  }
+};
+
 // Telegram WebApp InitData Signature Authentication Bridge
 router.post('/webapp/auth', async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
     const { initData } = req.body;
     if (!initData) {
       return res.status(400).json({ success: false, message: 'initData parameter is required' });
+    }
+
+    // Validate initData HMAC signature if bot token is configured
+    if (config.telegramBotToken) {
+      const isValid = validateInitData(initData, config.telegramBotToken);
+      if (!isValid) {
+        console.warn('[TELEGRAM AUTH WARN] Invalid initData HMAC signature verification failed');
+        return res.status(403).json({ success: false, message: 'Telegram authentication signature check failed.' });
+      }
     }
 
     const urlParams = new URLSearchParams(initData);

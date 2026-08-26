@@ -16,6 +16,42 @@ export const initTelegramApp = (): any => {
   return tg;
 };
 
+export const getInitData = (): string => {
+  const tg = getTelegramWebApp();
+  return tg?.initData || '';
+};
+
+export const getTelegramUser = (): any => {
+  const tg = getTelegramWebApp();
+  return tg?.initDataUnsafe?.user || null;
+};
+
+export const closeMiniApp = (): void => {
+  const tg = getTelegramWebApp();
+  if (tg?.close) {
+    try {
+      tg.close();
+    } catch (e) {}
+  }
+};
+
+export const openTelegramLink = (url: string): void => {
+  const tg = getTelegramWebApp();
+  if (tg?.openTelegramLink) {
+    try {
+      tg.openTelegramLink(url);
+      return;
+    } catch (e) {}
+  }
+  if (tg?.openLink) {
+    try {
+      tg.openLink(url);
+      return;
+    } catch (e) {}
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+};
+
 export const triggerHaptic = (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'light'): void => {
   const tg = getTelegramWebApp();
   if (tg?.HapticFeedback) {

@@ -1,109 +1,62 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { TelegramAppLayout, TELEGRAM_BLUE } from '@components/layout/TelegramAppLayout';
+import React, { useState, useEffect } from 'react';
+import { TelegramAppLayout } from '@components/layout/TelegramAppLayout';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { Modal } from '@components/ui/Modal';
-import { Input } from '@components/ui/Input';
-import { customFetch } from '../utils/api';
+import { Skeleton } from '@components/ui/Skeleton';
+import { StarRating } from '@components/ui/StarRating';
 import { useToast } from '@components/ui/Toast';
+import { useTelegramAuth } from '../hooks/useTelegramAuth';
+import { useProjectsQuery } from '../hooks/useProjects';
+import { useContractsQuery } from '../hooks/useContracts';
+import { TelegramLinkScreen } from '../components/telegram/TelegramLinkScreen';
+import { TelegramProjectCard } from '../components/telegram/TelegramProjectCard';
+import { TelegramContractCard } from '../components/telegram/TelegramContractCard';
+import { TelegramProfileView } from '../components/telegram/TelegramProfileView';
+import { Project, Contract } from '../types';
 import {
   triggerHaptic,
   triggerHapticNotification,
-  showTelegramConfirm,
 } from '../utils/telegramSdk';
-import { StarRating } from '@components/ui/StarRating';
-import { useProjectsQuery } from '../hooks/useProjects';
-import { useContractsQuery } from '../hooks/useContracts';
-import { Project, Contract } from '../types';
 import {
-  IconCheck,
-  IconExternalLink,
-  IconShield,
-  IconUser,
-  IconFileText,
-  IconZap,
-  IconSliders,
-  IconClock,
-  IconFilm,
-  IconStar,
   IconRefreshCw,
-  IconPlay,
+  IconFilm,
+  IconZap,
+  IconStar,
+  IconCheck,
 } from '@icons/icons';
 
 export const TelegramMiniAppPage: React.FC = () => {
   const { toast } = useToast();
-  const { data: projects = [], refetch: refetchProjects } = useProjectsQuery();
-  const { data: contracts = [], refetch: refetchContracts } = useContractsQuery();
+  const {
+    user,
+    telegramUser,
+    isAuthenticated,
+    isUnlinked,
+    isLoading: authLoading,
+    linkAccount,
+    unlinkAccount,
+    tgFetch,
+  } = useTelegramAuth();
+
+  const { data: projects = [], refetch: refetchProjects, isLoading: projectsLoading } = useProjectsQuery();
+  const { data: contracts = [], refetch: refetchContracts, isLoading: contractsLoading } = useContractsQuery();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [telegramUser, setTelegramUser] = useState<any>(null);
-
-  // Active Bottom Navigation Tab: 'work' | 'profile'
-  const [activeNavTab, setActiveNavTab] = useState<'work' | 'profile'>('work');
-
-  // Deep Link Target Item State
-  const [targetItem, setTargetItem] = useState<Project | Contract | null>(null);
-  const [targetType, setTargetType] = useState<string>('summary');
-
-  // Account Linking Form State
-  const [linkCode, setLinkCode] = useState('');
-  const [submittingLink, setSubmittingLink] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [activeNavTab, setActiveNavTab] = useState<'projects' | 'contracts' | 'profile'>('projects');
 
   // Revision Modal State
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [revisionProject, setRevisionProject] = useState<Project | null>(null);
   const [revisionNotes, setRevisionNotes] = useState('');
+  const [submittingRevision, setSubmittingRevision] = useState(false);
 
   // Rating Modal State
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [ratingProject, setRatingProject] = useState<Project | null>(null);
   const [ratingStars, setRatingStars] = useState(5);
   const [ratingReview, setRatingReview] = useState('');
-
-  const parseStartParam = (startParam: string | null, fetchedProjects: Project[], fetchedContracts: Contract[]) => {
-    if (!startParam) return;
-
-    if (startParam.startsWith('proposal_') || startParam.startsWith('delivery_')) {
-      const projId = startParam.replace('proposal_', '').replace('delivery_', '');
-      const foundProj = fetchedProjects.find((p) => p._id === projId);
-      if (foundProj) {
-        setTargetItem(foundProj);
-        setTargetType(startParam.startsWith('delivery_') ? 'delivery' : 'proposal');
-      }
-    } else if (startParam.startsWith('contract_')) {
-      const contractId = startParam.replace('contract_', '');
-      const foundContract = fetchedContracts.find((c) => c._id === contractId);
-      if (foundContract) {
-        setTargetItem(foundContract);
-        setTargetType('contract');
-      }
-    }
-  };
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const meRes = await customFetch('/api/auth/me').catch(() => ({ success: false }));
-        if (meRes.success && meRes.user) {
-          setUser(meRes.user);
-          setIsAuthenticated(true);
-        }
-      } catch (e) {}
-    };
-    checkAuth();
-  }, []);
-
-  useEffect(() => {
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.initDataUnsafe?.user) {
-      setTelegramUser(tg.initDataUnsafe.user);
-    }
-    const startParam = tg?.initDataUnsafe?.start_param || new URLSearchParams(window.location.search).get('startapp');
-    parseStartParam(startParam, projects, contracts);
-  }, [projects, contracts]);
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   const handleManualRefresh = async () => {
     try {
@@ -111,48 +64,142 @@ export const TelegramMiniAppPage: React.FC = () => {
       setRefreshing(true);
       await Promise.all([refetchProjects(), refetchContracts()]);
       triggerHapticNotification('success');
-      toast({ message: 'Workspace refreshed', type: 'success' });
+      toast({ message: 'Workspace synced', type: 'success' });
     } catch (e) {
-      toast({ message: 'Refresh failed', type: 'error' });
+      toast({ message: 'Sync failed', type: 'error' });
     } finally {
       setRefreshing(false);
     }
   };
 
-  const handleLinkAccount = async (e: React.FormEvent) => {
+  const handleAcceptProposal = async (project: Project) => {
+    try {
+      triggerHaptic('medium');
+      await tgFetch(`/api/projects/${project._id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'in_progress' }),
+      });
+      triggerHapticNotification('success');
+      toast({ message: 'Proposal accepted! Project is now in production.', type: 'success' });
+      refetchProjects();
+    } catch (err: any) {
+      triggerHapticNotification('error');
+      toast({ message: err.message || 'Failed to accept proposal', type: 'error' });
+    }
+  };
+
+  const handleOpenRevisionModal = (project: Project) => {
+    setRevisionProject(project);
+    setRevisionNotes('');
+    setShowRevisionModal(true);
+  };
+
+  const handleSubmitRevision = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!linkCode.trim()) {
-      toast({ message: 'Please enter a valid link code', type: 'error' });
+    if (!revisionProject || !revisionNotes.trim()) {
+      toast({ message: 'Please provide revision notes for the editor', type: 'error' });
       return;
     }
 
     try {
-      setSubmittingLink(true);
+      setSubmittingRevision(true);
       triggerHaptic('medium');
-      const res = await customFetch('/api/auth/telegram/link-code', {
+      await tgFetch(`/api/projects/${revisionProject._id}/revision`, {
         method: 'POST',
-        body: JSON.stringify({ code: linkCode.trim().toUpperCase() }),
+        body: JSON.stringify({ notes: revisionNotes.trim() }),
       });
-
-      if (res.success) {
-        triggerHapticNotification('success');
-        toast({ message: 'Account linked successfully!', type: 'success' });
-        window.location.reload();
-      }
+      triggerHapticNotification('success');
+      toast({ message: 'Revision request sent to editing team!', type: 'success' });
+      setShowRevisionModal(false);
+      refetchProjects();
     } catch (err: any) {
       triggerHapticNotification('error');
-      toast({ message: err.message || 'Account linking failed', type: 'error' });
+      toast({ message: err.message || 'Failed to submit revision', type: 'error' });
     } finally {
-      setSubmittingLink(false);
+      setSubmittingRevision(false);
     }
   };
 
+  const handleConfirmDelivery = async (project: Project) => {
+    try {
+      triggerHaptic('heavy');
+      await tgFetch(`/api/projects/${project._id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'completed' }),
+      });
+      triggerHapticNotification('success');
+      toast({ message: 'Delivery confirmed! Project marked completed.', type: 'success' });
+      refetchProjects();
+    } catch (err: any) {
+      triggerHapticNotification('error');
+      toast({ message: err.message || 'Failed to confirm delivery', type: 'error' });
+    }
+  };
+
+  const handleOpenRatingModal = (project: Project) => {
+    setRatingProject(project);
+    setRatingStars(5);
+    setRatingReview('');
+    setShowRatingModal(true);
+  };
+
+  const handleSubmitRating = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ratingProject || !ratingReview.trim()) {
+      toast({ message: 'Please enter a short review comment', type: 'error' });
+      return;
+    }
+
+    try {
+      setSubmittingRating(true);
+      triggerHaptic('medium');
+      await tgFetch('/api/ratings', {
+        method: 'POST',
+        body: JSON.stringify({
+          projectId: ratingProject._id,
+          stars: ratingStars,
+          review: ratingReview.trim(),
+        }),
+      });
+      triggerHapticNotification('success');
+      toast({ message: 'Thank you for rating your video edit!', type: 'success' });
+      setShowRatingModal(false);
+      refetchProjects();
+    } catch (err: any) {
+      triggerHapticNotification('error');
+      toast({ message: err.message || 'Failed to submit rating', type: 'error' });
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <TelegramAppLayout>
+        <div style={{ padding: '24px 0', display: 'grid', gap: '16px' }}>
+          <Skeleton height="36px" width="60%" />
+          <Skeleton height="140px" style={{ borderRadius: '16px' }} />
+          <Skeleton height="140px" style={{ borderRadius: '16px' }} />
+        </div>
+      </TelegramAppLayout>
+    );
+  }
+
+  if (isUnlinked || !user) {
+    return (
+      <TelegramAppLayout>
+        <TelegramLinkScreen onLinkSubmit={linkAccount} telegramUser={telegramUser} />
+      </TelegramAppLayout>
+    );
+  }
+
   return (
     <TelegramAppLayout activeTab={activeNavTab} onTabChange={(tab) => setActiveNavTab(tab as any)}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      {/* Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
-          <Badge variant="gold" size="small">MINI APP WORKSPACE</Badge>
-          <h1 className="font-display" style={{ fontSize: '24px', marginTop: '4px', color: 'var(--ink)' }}>
+          <Badge variant="gold" size="small">EXECUTIVE WORKSPACE</Badge>
+          <h1 className="font-display" style={{ fontSize: '20px', marginTop: '4px', color: 'var(--ink)' }}>
             Alpha Cut Client
           </h1>
         </div>
@@ -161,67 +208,148 @@ export const TelegramMiniAppPage: React.FC = () => {
         </Button>
       </div>
 
-      {!user ? (
-        <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-          <h3 className="font-display" style={{ fontSize: '18px', marginBottom: '8px' }}>Link Your Account</h3>
-          <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginBottom: '16px' }}>
-            Enter your 6-digit link code generated from your web account dashboard.
-          </p>
-          <form onSubmit={handleLinkAccount} style={{ display: 'grid', gap: '12px' }}>
-            <Input
-              placeholder="e.g. AC-9821"
-              value={linkCode}
-              onChange={(e) => setLinkCode(e.target.value)}
-              required
-            />
-            <Button variant="primary" type="submit" isLoading={submittingLink} fullWidth>
-              Link Telegram Account
-            </Button>
-          </form>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '16px' }}>
-          <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--accent-gold)' }} />
-              ) : (
-                <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'rgba(201,160,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-gold)', fontWeight: 800 }}>
-                  {user.name ? user.name.charAt(0).toUpperCase() : 'C'}
-                </div>
-              )}
-              <div>
-                <span style={{ fontSize: '15px', fontWeight: 700, display: 'block', color: 'var(--ink)' }}>{user.name}</span>
-                <span style={{ fontSize: '12px', color: 'var(--accent-gold)' }}>{user.email}</span>
-              </div>
-            </div>
+      {/* Tab Content */}
+      {activeNavTab === 'projects' && (
+        <div style={{ display: 'grid', gap: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 className="font-display" style={{ fontSize: '16px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <IconFilm size={16} color="var(--accent-gold)" /> Video Projects ({projects.length})
+            </h2>
           </div>
 
-          <h2 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)' }}>Active Retainer Contracts & Proposals</h2>
-
-          {projects.length === 0 && contracts.length === 0 ? (
-            <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', textAlign: 'center', border: '1px solid var(--line)' }}>
-              <p style={{ color: 'var(--ink-soft)', fontSize: '13px' }}>No active proposals or retainer contracts found.</p>
+          {projectsLoading ? (
+            <div style={{ display: 'grid', gap: '12px' }}>
+              <Skeleton height="140px" style={{ borderRadius: '16px' }} />
+              <Skeleton height="140px" style={{ borderRadius: '16px' }} />
+            </div>
+          ) : projects.length === 0 ? (
+            <div style={{ backgroundColor: 'var(--surface)', padding: '32px 20px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--line)' }}>
+              <IconFilm size={32} color="var(--ink-soft)" style={{ margin: '0 auto 12px' }} />
+              <h3 className="font-display" style={{ fontSize: '16px', marginBottom: '6px' }}>No Active Projects</h3>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '13px' }}>
+                When your proposal offers or video edits are sent, they will appear right here.
+              </p>
             </div>
           ) : (
             <div style={{ display: 'grid', gap: '12px' }}>
-              {projects.map((p) => (
-                <div key={p._id} style={{ backgroundColor: 'var(--surface)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <h3 className="font-display" style={{ fontSize: '16px' }}>{p.editingStyle}</h3>
-                    <Badge variant={p.status === 'completed' ? 'success' : 'gold'} size="small">
-                      {p.status.toUpperCase()}
-                    </Badge>
-                  </div>
-                  <p style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
-                    Price: <strong>{p.price} {p.currency}</strong> • Deadline: {new Date(p.deadline).toLocaleDateString()}
-                  </p>
-                </div>
+              {projects.map((project) => (
+                <TelegramProjectCard
+                  key={project._id}
+                  project={project}
+                  onAcceptProposal={handleAcceptProposal}
+                  onRequestRevision={handleOpenRevisionModal}
+                  onConfirmDelivery={handleConfirmDelivery}
+                  onRateProject={handleOpenRatingModal}
+                />
               ))}
             </div>
           )}
         </div>
       )}
+
+      {activeNavTab === 'contracts' && (
+        <div style={{ display: 'grid', gap: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 className="font-display" style={{ fontSize: '16px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <IconZap size={16} color="#24A1DE" /> Retainer Contracts ({contracts.length})
+            </h2>
+          </div>
+
+          {contractsLoading ? (
+            <Skeleton height="160px" style={{ borderRadius: '16px' }} />
+          ) : contracts.length === 0 ? (
+            <div style={{ backgroundColor: 'var(--surface)', padding: '32px 20px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--line)' }}>
+              <IconZap size={32} color="var(--ink-soft)" style={{ margin: '0 auto 12px' }} />
+              <h3 className="font-display" style={{ fontSize: '16px', marginBottom: '6px' }}>No Active Retainers</h3>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '13px' }}>
+                You currently have no monthly video editing retainer contracts running.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '12px' }}>
+              {contracts.map((contract) => (
+                <TelegramContractCard key={contract._id} contract={contract} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeNavTab === 'profile' && (
+        <TelegramProfileView
+          user={user}
+          telegramUser={telegramUser}
+          projects={projects}
+          contracts={contracts}
+          onUnlinkAccount={unlinkAccount}
+        />
+      )}
+
+      {/* Revision Modal */}
+      <Modal isOpen={showRevisionModal} onClose={() => setShowRevisionModal(false)} title="Request Edit Revision">
+        <form onSubmit={handleSubmitRevision} style={{ display: 'grid', gap: '14px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
+            Describe the exact timestamps and changes you want revised for <strong>{revisionProject?.editingStyle}</strong>.
+          </p>
+          <textarea
+            value={revisionNotes}
+            onChange={(e) => setRevisionNotes(e.target.value)}
+            placeholder="e.g. At 0:14 change caption highlight to gold, add sound effect at 0:28..."
+            rows={4}
+            required
+            style={{
+              width: '100%',
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              border: '1px solid var(--line)',
+              borderRadius: '10px',
+              padding: '12px',
+              color: 'var(--ink)',
+              fontSize: '13px',
+              outline: 'none',
+              resize: 'vertical',
+            }}
+          />
+          <Button variant="primary" type="submit" isLoading={submittingRevision} fullWidth>
+            Submit Revision Request
+          </Button>
+        </form>
+      </Modal>
+
+      {/* Rating Modal */}
+      <Modal isOpen={showRatingModal} onClose={() => setShowRatingModal(false)} title="Rate Your Video Edit">
+        <form onSubmit={handleSubmitRating} style={{ display: 'grid', gap: '16px', textAlign: 'center' }}>
+          <p style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
+            How satisfied are you with the final render for <strong>{ratingProject?.editingStyle}</strong>?
+          </p>
+          
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <StarRating rating={ratingStars} onChange={(stars) => setRatingStars(stars)} size={28} />
+          </div>
+
+          <textarea
+            value={ratingReview}
+            onChange={(e) => setRatingReview(e.target.value)}
+            placeholder="Write a brief comment about the editing quality, pacing, or turnaround..."
+            rows={3}
+            required
+            style={{
+              width: '100%',
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              border: '1px solid var(--line)',
+              borderRadius: '10px',
+              padding: '12px',
+              color: 'var(--ink)',
+              fontSize: '13px',
+              outline: 'none',
+              resize: 'vertical',
+            }}
+          />
+
+          <Button variant="primary" type="submit" isLoading={submittingRating} fullWidth iconRight={IconCheck}>
+            Submit Review
+          </Button>
+        </form>
+      </Modal>
     </TelegramAppLayout>
   );
 };

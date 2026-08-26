@@ -1,18 +1,18 @@
 import React, { useEffect, ReactNode } from 'react';
 import { triggerHapticSelection } from '../../utils/telegramSdk';
-import { IconZap, IconUser } from '@icons/icons';
+import { IconFilm, IconZap, IconUser } from '@icons/icons';
 
 export const TELEGRAM_BLUE = '#24A1DE';
 
 interface TelegramAppLayoutProps {
   children: ReactNode;
-  activeTab?: 'work' | 'profile' | string;
+  activeTab?: 'projects' | 'contracts' | 'profile' | string;
   onTabChange?: (tabId: string) => void;
 }
 
 export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
   children,
-  activeTab = 'work',
+  activeTab = 'projects',
   onTabChange,
 }) => {
   useEffect(() => {
@@ -43,8 +43,9 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
   };
 
   const navItems = [
-    { id: 'work', label: 'Proposals & Work', icon: IconZap },
-    { id: 'profile', label: 'Profile', icon: IconUser },
+    { id: 'projects', label: 'Projects', icon: IconFilm },
+    { id: 'contracts', label: 'Retainers', icon: IconZap },
+    { id: 'profile', label: 'Account', icon: IconUser },
   ];
 
   return (
@@ -53,32 +54,33 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
         minHeight: '100vh',
         backgroundColor: 'var(--bg)',
         color: 'var(--ink)',
-        paddingBottom: onTabChange ? '96px' : '24px',
+        paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))',
+        paddingBottom: onTabChange ? 'calc(96px + env(safe-area-inset-bottom, 0px))' : 'calc(24px + env(safe-area-inset-bottom, 0px))',
         boxSizing: 'border-box',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '16px' }}>
+      <div style={{ maxWidth: '560px', margin: '0 auto', padding: '0 16px' }}>
         {children}
       </div>
 
-      {/* Floating Glassmorphic 2-Tab Navigation Bar */}
+      {/* Floating Glassmorphic 3-Tab Navigation Bar */}
       {onTabChange && (
         <div
           style={{
             position: 'fixed',
-            bottom: '16px',
+            bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
             left: '50%',
             transform: 'translateX(-50%)',
             width: 'calc(100% - 32px)',
             maxWidth: '480px',
-            backgroundColor: 'rgba(18, 22, 28, 0.85)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
+            backgroundColor: 'rgba(18, 22, 28, 0.88)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
             borderRadius: '24px',
             border: '1px solid rgba(255, 255, 255, 0.12)',
             display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
+            gridTemplateColumns: 'repeat(3, 1fr)',
             height: '60px',
             zIndex: 100,
             boxShadow: '0 12px 36px rgba(0, 0, 0, 0.45)',
@@ -103,13 +105,13 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
                   backgroundColor: isActive ? 'rgba(36, 161, 222, 0.18)' : 'transparent',
                   color: isActive ? TELEGRAM_BLUE : 'var(--ink-soft)',
                   fontWeight: isActive ? 600 : 400,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   cursor: 'pointer',
-                  gap: '8px',
+                  gap: '6px',
                   transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
               >
-                <Icon size={18} color={isActive ? TELEGRAM_BLUE : 'var(--ink-soft)'} />
+                <Icon size={17} color={isActive ? TELEGRAM_BLUE : 'var(--ink-soft)'} />
                 <span>{item.label}</span>
               </button>
             );
