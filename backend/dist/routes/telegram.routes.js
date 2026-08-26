@@ -34,14 +34,17 @@ export const validateInitData = (initData, botToken) => {
         const hash = params.get('hash');
         if (!hash)
             return false;
-        params.delete('hash');
-        const dataCheckString = Array.from(params.entries())
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([k, v]) => `${k}=${v}`)
-            .join('\n');
+        const pairs = [];
+        params.forEach((value, key) => {
+            if (key !== 'hash') {
+                pairs.push(`${key}=${value}`);
+            }
+        });
+        pairs.sort();
+        const dataCheckString = pairs.join('\n');
         const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
         const computedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
-        return computedHash === hash;
+        return computedHash.toLowerCase() === hash.toLowerCase();
     }
     catch (e) {
         return false;
