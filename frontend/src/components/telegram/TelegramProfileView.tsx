@@ -42,8 +42,9 @@ export const TelegramProfileView: React.FC<TelegramProfileViewProps> = ({
     }
   };
 
-  const activeProjectsCount = projects.filter((p) => p.status === 'in_progress' || p.status === 'revision_requested').length;
-  const completedProjectsCount = projects.filter((p) => p.status === 'completed').length;
+  const activeProjectsCount = (projects || []).filter((p) => p && (p.status === 'in_progress' || p.status === 'revision_requested')).length;
+  const completedProjectsCount = (projects || []).filter((p) => p && p.status === 'completed').length;
+  const safeContractsCount = (contracts || []).length;
 
   return (
     <div style={{ display: 'grid', gap: '16px' }}>
@@ -59,10 +60,10 @@ export const TelegramProfileView: React.FC<TelegramProfileViewProps> = ({
           gap: '14px',
         }}
       >
-        {user.avatarUrl ? (
+        {user?.avatarUrl ? (
           <img
             src={user.avatarUrl}
-            alt={user.name}
+            alt={user.name || 'User'}
             style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-gold)' }}
           />
         ) : (
@@ -81,18 +82,18 @@ export const TelegramProfileView: React.FC<TelegramProfileViewProps> = ({
               border: '2px solid var(--accent-gold)',
             }}
           >
-            {user.name ? user.name.charAt(0).toUpperCase() : 'C'}
+            {user?.name ? user.name.charAt(0).toUpperCase() : 'C'}
           </div>
         )}
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h2 className="font-display" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)' }}>
-              {user.name}
+              {user?.name || 'Client Account'}
             </h2>
-            <Badge variant="gold" size="small">{user.role?.toUpperCase() || 'CLIENT'}</Badge>
+            <Badge variant="gold" size="small">{(user?.role || 'CLIENT').toUpperCase()}</Badge>
           </div>
           <span style={{ fontSize: '13px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
-            {user.email}
+            {user?.email || ''}
           </span>
         </div>
       </div>
@@ -107,7 +108,7 @@ export const TelegramProfileView: React.FC<TelegramProfileViewProps> = ({
         </div>
         <div style={{ backgroundColor: 'var(--surface)', padding: '12px', borderRadius: '12px', border: '1px solid var(--line)', textAlign: 'center' }}>
           <span style={{ fontSize: '20px', fontWeight: 800, color: '#24A1DE', display: 'block' }}>
-            {contracts.length}
+            {safeContractsCount}
           </span>
           <span style={{ fontSize: '10px', color: 'var(--ink-soft)', textTransform: 'uppercase', fontWeight: 600 }}>Retainers</span>
         </div>

@@ -48,8 +48,8 @@ export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ cont
             </span>
           </div>
         </div>
-        <Badge variant={contract.status === 'active' ? 'success' : 'neutral'} size="small">
-          {contract.status.toUpperCase()}
+        <Badge variant={contract?.status === 'active' ? 'success' : 'neutral'} size="small">
+          {(contract?.status || 'active').toUpperCase()}
         </Badge>
       </div>
 
@@ -68,13 +68,13 @@ export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ cont
         <div>
           <span style={{ fontSize: '10px', color: 'var(--ink-soft)', display: 'block', textTransform: 'uppercase' }}>MONTHLY RETAINER</span>
           <strong style={{ fontSize: '14px', color: 'var(--accent-gold)' }}>
-            {contract.monthlyPrice} {contract.currency}
+            {contract?.monthlyPrice ?? 0} {contract?.currency || 'USD'}
           </strong>
         </div>
         <div>
           <span style={{ fontSize: '10px', color: 'var(--ink-soft)', display: 'block', textTransform: 'uppercase' }}>START DATE</span>
           <span style={{ fontSize: '13px', color: 'var(--ink)' }}>
-            {contract.startDate ? new Date(contract.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Active'}
+            {contract?.startDate ? new Date(contract.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Active'}
           </span>
         </div>
       </div>
