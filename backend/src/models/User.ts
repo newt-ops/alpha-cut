@@ -10,6 +10,7 @@ export interface IUser extends Document {
   verificationCode?: string | null;
   verificationCodeExpires?: Date | null;
   verificationCooldown?: Date | null;
+  verificationAttempts?: number | null;
   telegramChatId?: string | null;
   telegramLinkedAt?: Date | null;
   avatarUrl?: string | null;
@@ -61,6 +62,10 @@ const userSchema = new Schema<IUser>(
     verificationCooldown: {
       type: Date,
       default: null,
+    },
+    verificationAttempts: {
+      type: Number,
+      default: 0,
     },
     telegramChatId: {
       type: String,

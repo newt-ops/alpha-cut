@@ -245,13 +245,30 @@ export const verifyEmail = async (req, res, next) => {
         if (!user.verificationCode || !user.verificationCodeExpires || user.verificationCodeExpires < new Date()) {
             return res.status(400).json({ success: false, message: 'Verification code has expired. Please request a new code.' });
         }
+        if ((user.verificationAttempts || 0) >= 5) {
+            user.verificationCode = null;
+            user.verificationCodeExpires = null;
+            await user.save();
+            return res.status(400).json({ success: false, message: 'Maximum verification attempts exceeded. Please request a new code.' });
+        }
         const isMatch = await bcrypt.compare(code, user.verificationCode);
         if (!isMatch) {
-            return res.status(400).json({ success: false, message: 'Invalid verification code' });
+            user.verificationAttempts = (user.verificationAttempts || 0) + 1;
+            if (user.verificationAttempts >= 5) {
+                user.verificationCode = null;
+                user.verificationCodeExpires = null;
+            }
+            await user.save();
+            const remaining = Math.max(0, 5 - user.verificationAttempts);
+            return res.status(400).json({
+                success: false,
+                message: remaining > 0 ? `Invalid verification code. ${remaining} attempts remaining.` : 'Maximum verification attempts exceeded. Please request a new code.',
+            });
         }
         user.emailVerified = true;
         user.verificationCode = null;
         user.verificationCodeExpires = null;
+        user.verificationAttempts = 0;
         await user.save();
         const { accessToken, refreshToken } = generateTokens(user);
         setRefreshCookie(res, refreshToken);
@@ -287,6 +304,7 @@ export const resendVerification = async (req, res, next) => {
         user.verificationCode = await bcrypt.hash(rawOtp, 10);
         user.verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
         user.verificationCooldown = new Date(Date.now() + 60 * 1000);
+        user.verificationAttempts = 0;
         await user.save();
         await sendVerificationEmail({ toEmail: user.email, name: user.name, code: rawOtp });
         res.status(200).json({ success: true, message: 'New verification code sent' });
@@ -312,6 +330,7 @@ export const forgotPassword = async (req, res, next) => {
         const rawOtp = generateOtpCode();
         user.verificationCode = await bcrypt.hash(rawOtp, 10);
         user.verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
+        user.verificationAttempts = 0;
         await user.save();
         await sendPasswordResetEmail({ toEmail: user.email, name: user.name, code: rawOtp });
         res.status(200).json({
@@ -330,13 +349,30 @@ export const resetPassword = async (req, res, next) => {
         if (!user || !user.verificationCode || !user.verificationCodeExpires || user.verificationCodeExpires < new Date()) {
             return res.status(400).json({ success: false, message: 'Invalid or expired password reset code.' });
         }
+        if ((user.verificationAttempts || 0) >= 5) {
+            user.verificationCode = null;
+            user.verificationCodeExpires = null;
+            await user.save();
+            return res.status(400).json({ success: false, message: 'Maximum password reset attempts exceeded. Please request a new code.' });
+        }
         const isMatch = await bcrypt.compare(code, user.verificationCode);
         if (!isMatch) {
-            return res.status(400).json({ success: false, message: 'Invalid password reset code.' });
+            user.verificationAttempts = (user.verificationAttempts || 0) + 1;
+            if (user.verificationAttempts >= 5) {
+                user.verificationCode = null;
+                user.verificationCodeExpires = null;
+            }
+            await user.save();
+            const remaining = Math.max(0, 5 - user.verificationAttempts);
+            return res.status(400).json({
+                success: false,
+                message: remaining > 0 ? `Invalid password reset code. ${remaining} attempts remaining.` : 'Maximum password reset attempts exceeded. Please request a new code.',
+            });
         }
         user.passwordHash = await bcrypt.hash(newPassword, 12);
         user.verificationCode = null;
         user.verificationCodeExpires = null;
+        user.verificationAttempts = 0;
         await user.save();
         res.status(200).json({ success: true, message: 'Password reset successfully. You can now log in.' });
     }

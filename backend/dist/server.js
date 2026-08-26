@@ -181,11 +181,11 @@ app.get('/', (req, res) => {
         <div class="status-grid">
           <div class="status-item">
             <div class="status-label">API Health</div>
-            <div class="status-value">🟢 Online</div>
+            <div class="status-value">Online</div>
           </div>
           <div class="status-item">
             <div class="status-label">MongoDB</div>
-            <div class="status-value">${mongoose.connection.readyState === 1 ? '🟢 Connected' : '🟡 Connecting'}</div>
+            <div class="status-value">${mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting'}</div>
           </div>
         </div>
 
