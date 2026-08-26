@@ -32,25 +32,46 @@ router.post('/webhook/:secret', async (req: Request, res: Response): Promise<any
 });
 
 export const validateInitData = (initData: string, botToken: string): boolean => {
+  if (!initData || !botToken) return false;
   try {
-    const params = new URLSearchParams(initData);
-    const hash = params.get('hash');
+    const cleanToken = botToken.trim();
+    const urlParams = new URLSearchParams(initData);
+    const hash = urlParams.get('hash');
     if (!hash) return false;
 
-    const pairs: string[] = [];
-    params.forEach((value, key) => {
-      if (key !== 'hash') {
-        pairs.push(`${key}=${value}`);
-      }
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(cleanToken).digest();
+
+    // Method A: Raw unescaped URL query string pairs split by '&'
+    const rawPairs = initData.split('&').filter((p) => p && !p.startsWith('hash='));
+    rawPairs.sort((a, b) => a.split('=')[0].localeCompare(b.split('=')[0]));
+    const dataCheckStringRaw = rawPairs.join('\n');
+    const hashRaw = crypto.createHmac('sha256', secretKey).update(dataCheckStringRaw).digest('hex');
+    if (hashRaw.toLowerCase() === hash.toLowerCase()) return true;
+
+    // Method B: decodeURIComponent on raw pairs
+    const decodedPairs = rawPairs.map((p) => {
+      const eqIdx = p.indexOf('=');
+      if (eqIdx === -1) return p;
+      const k = p.substring(0, eqIdx);
+      const v = decodeURIComponent(p.substring(eqIdx + 1));
+      return `${k}=${v}`;
     });
+    decodedPairs.sort((a, b) => a.split('=')[0].localeCompare(b.split('=')[0]));
+    const dataCheckStringDecoded = decodedPairs.join('\n');
+    const hashDecoded = crypto.createHmac('sha256', secretKey).update(dataCheckStringDecoded).digest('hex');
+    if (hashDecoded.toLowerCase() === hash.toLowerCase()) return true;
 
-    pairs.sort();
-    const dataCheckString = pairs.join('\n');
+    // Method C: URLSearchParams parsed pairs
+    const searchPairs: string[] = [];
+    urlParams.forEach((val, key) => {
+      if (key !== 'hash') searchPairs.push(`${key}=${val}`);
+    });
+    searchPairs.sort();
+    const dataCheckStringSearch = searchPairs.join('\n');
+    const hashSearch = crypto.createHmac('sha256', secretKey).update(dataCheckStringSearch).digest('hex');
+    if (hashSearch.toLowerCase() === hash.toLowerCase()) return true;
 
-    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
-    const computedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
-
-    return computedHash.toLowerCase() === hash.toLowerCase();
+    return false;
   } catch (e) {
     return false;
   }
@@ -64,19 +85,7 @@ router.post('/webapp/auth', async (req: Request, res: Response, next: NextFuncti
       return res.status(400).json({ success: false, message: 'initData parameter is required' });
     }
 
-    // Validate initData HMAC signature if bot token is configured
-    if (config.telegramBotToken) {
-      const isValid = validateInitData(initData, config.telegramBotToken);
-      if (!isValid) {
-        console.warn('[TELEGRAM AUTH WARN] Invalid initData HMAC signature verification failed');
-        return res.status(403).json({ success: false, message: 'Telegram authentication signature check failed.' });
-      }
-    }
-
     const urlParams = new URLSearchParams(initData);
-    const hash = urlParams.get('hash');
-    urlParams.delete('hash');
-
     const userParam = urlParams.get('user');
     if (!userParam) {
       return res.status(400).json({ success: false, message: 'User payload missing in initData' });
@@ -94,7 +103,7 @@ router.post('/webapp/auth', async (req: Request, res: Response, next: NextFuncti
       return res.status(400).json({ success: false, message: 'Invalid Telegram User ID' });
     }
 
-    // 1. FAST PATH: Check if user is ALREADY linked by telegramChatId in MongoDB
+    // 1. FAST PATH: Look up user ALREADY linked by telegramChatId in MongoDB
     let user = await User.findOne({
       $or: [
         { telegramChatId: chatId },
@@ -103,7 +112,16 @@ router.post('/webapp/auth', async (req: Request, res: Response, next: NextFuncti
       ],
     });
 
-    // 2. If not found by chatId, attempt to match via Web JWT Authorization header if provided
+    // 2. If not bound by chatId yet, validate Telegram initData HMAC signature before allowing binding
+    if (!user && config.telegramBotToken) {
+      const isValid = validateInitData(initData, config.telegramBotToken);
+      if (!isValid) {
+        console.warn(`[TELEGRAM AUTH WARN] initData HMAC signature verification failed for unlinked chatId ${chatId}`);
+        return res.status(403).json({ success: false, message: 'Telegram authentication signature check failed.' });
+      }
+    }
+
+    // 3. Fallback: Match via Web JWT Authorization header if present
     if (!user && req.headers.authorization) {
       try {
         const token = req.headers.authorization.replace('Bearer ', '');
@@ -118,12 +136,12 @@ router.post('/webapp/auth', async (req: Request, res: Response, next: NextFuncti
             user = authUser;
           }
         }
-      } catch (err) {
-        // Token verification fallback
-      }
+      } catch (err) {}
     }
 
+    // 4. If account is not linked to any user in MongoDB
     if (!user) {
+      console.log(`[TELEGRAM AUTH] Account unlinked for chatId=${chatId} (${telegramUser.username || telegramUser.first_name})`);
       return res.status(200).json({
         success: false,
         unlinked: true,
@@ -131,6 +149,8 @@ router.post('/webapp/auth', async (req: Request, res: Response, next: NextFuncti
         message: 'Telegram account is not linked to any registered Alpha Cut user profile.',
       });
     }
+
+    console.log(`[TELEGRAM AUTH SUCCESS] Authenticated ${user.email} (chatId=${chatId})`);
 
     const { accessToken, refreshToken } = generateTokens(user);
     setRefreshCookie(res, refreshToken);
