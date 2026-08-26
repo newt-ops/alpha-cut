@@ -1,4 +1,4 @@
-export type ProjectStatus = 'proposal_sent' | 'in_progress' | 'declined' | 'delivered' | 'completed';
+export type ProjectStatus = 'proposal_sent' | 'in_progress' | 'revision_requested' | 'declined' | 'delivered' | 'completed';
 export type ContractStatus = 'proposed' | 'active' | 'completed' | 'declined' | 'cancelled';
 export type PackageTier = 'basic' | 'professional' | 'premium';
 export type Currency = 'USD' | 'ETB';
@@ -63,6 +63,7 @@ export interface Contract {
   deliverables: Deliverable[];
   startDate: string;
   endDate?: string;
+  notes?: string;
   rated?: boolean;
   createdAt: string;
 }

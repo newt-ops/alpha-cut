@@ -142,11 +142,15 @@ export const TelegramProfileView: React.FC<TelegramProfileViewProps> = ({
         </a>
 
         <Button
-          variant={confirmUnlink ? 'danger' : 'ghost'}
+          variant={confirmUnlink ? 'secondary' : 'ghost'}
           fullWidth
           isLoading={unlinking}
           onClick={handleUnlink}
-          style={{ color: confirmUnlink ? '#ffffff' : 'var(--ink-soft)' }}
+          style={{
+            color: confirmUnlink ? '#ffffff' : 'var(--ink-soft)',
+            backgroundColor: confirmUnlink ? '#dc2626' : 'transparent',
+            borderColor: confirmUnlink ? '#dc2626' : 'transparent',
+          }}
         >
           {confirmUnlink ? 'Tap again to confirm Disconnect' : 'Disconnect Telegram Account'}
         </Button>

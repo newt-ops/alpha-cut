@@ -48,7 +48,7 @@ export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ cont
             </span>
           </div>
         </div>
-        <Badge variant={contract?.status === 'active' ? 'success' : 'neutral'} size="small">
+        <Badge variant={contract?.status === 'active' ? 'success' : 'surface'} size="small">
           {(contract?.status || 'active').toUpperCase()}
         </Badge>
       </div>
