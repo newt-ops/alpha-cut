@@ -1,476 +1,599 @@
-Bro, this actually makes the problem much clearer.
+BRO. 💀 **We found it.**
 
-**Your frontend integration looks basically correct. Your backend Siteverify code is also structurally correct.** The suspicious part is now the **configuration/environment**, plus one security bug in the helper.
+Your backend is working and Cloudflare isn't the problem.
 
-### What your current flow does
+The log literally says:
 
-You have:
+```text
+[TURNSTILE DEBUG] ... hasToken=false tokenLen=0
+```
+
+and:
+
+```text
+Body keys: [ 'email', 'password' ]
+```
+
+That means the request arriving at:
+
+```text
+https://api.alpha-cut.com/api/auth/login
+```
+
+contains **no Turnstile token whatsoever**.
+
+So the actual flow is:
 
 ```text
 Turnstile
    ↓
-token generated ✅
+☑️ Verified in browser
    ↓
-LoginPage stores token ✅
+Frontend has token
    ↓
-AuthContext sends token ✅
+❌ Token NOT included in actual HTTP request
    ↓
-Express receives token
-   ↓
-verifyTurnstileToken()
-   ↓
-Cloudflare Siteverify
-   ↓
-??? 
-```
-
-So if you're still getting:
-
-> Security check failed...
-
-then `data.success` is coming back as `false`, **or the Siteverify request is failing**.
-
-And Cloudflare previously saying:
-
-> Siteverify isn't being called for this widget
-
-is especially important. If you've now added this code, we need to determine whether **this deployed backend is actually executing this code**.
-
----
-
-# 🚨 First thing I'd check: Render environment variable
-
-Your code looks for:
-
-```ts
-process.env.TURNSTILE_SECRET
-```
-
-or:
-
-```ts
-process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY
-```
-
-So your Render backend needs **one of those exact names**.
-
-I'd standardize it to:
-
-```env
-TURNSTILE_SECRET_KEY=your_cloudflare_secret
-```
-
-and change the code to:
-
-```ts
-const secretKey = process.env.TURNSTILE_SECRET_KEY;
-```
-
-Don't keep three possible names. It makes debugging harder.
-
-In Render:
-
-**Backend Service → Environment → Environment Variables**
-
-Add:
-
-```text
-Key:
-TURNSTILE_SECRET_KEY
-
-Value:
-<your Cloudflare Turnstile secret key>
-```
-
-Then **redeploy**.
-
----
-
-# 🚨 Second issue: your fallback is dangerous
-
-This:
-
-```ts
-return process.env.NODE_ENV !== 'production';
-```
-
-is not something I'd keep.
-
-It means:
-
-```text
-Development → Siteverify fails → LOGIN ALLOWED 😬
-Production → Siteverify fails → LOGIN DENIED
-```
-
-For security middleware, we want verification failure to **fail closed**.
-
-Change it to:
-
-```ts
-catch (err) {
-  console.error('[TURNSTILE SITEVERIFY EXCEPTION]:', err);
-  return false;
-}
-```
-
-And also explicitly check the secret:
-
-```ts
-const secretKey = process.env.TURNSTILE_SECRET_KEY;
-
-if (!secretKey) {
-  console.error('[TURNSTILE] TURNSTILE_SECRET_KEY is not configured');
-  return false;
-}
-```
-
----
-
-# 🚨 Third: check the actual Cloudflare response
-
-This is the most important diagnostic.
-
-You already have:
-
-```ts
-console.log(`[TURNSTILE SITEVERIFY RESULT]:`, JSON.stringify(data));
-```
-
-Go to:
-
-**Render → your backend → Logs**
-
-Then attempt login once.
-
-We want to see something like:
-
-```json
+API receives:
 {
-  "success": true,
-  "hostname": "www.alpha-cut.com"
+  email,
+  password
 }
+   ↓
+Backend: "Where's the token?" 😭
+   ↓
+Security check failed
 ```
 
-If instead you see:
+## The interesting part
 
-```json
-{
-  "success": false,
-  "error-codes": [...]
-}
-```
-
-**the error code is the answer.**
-
-For example, if you see something related to:
-
-```text
-invalid-input-secret
-```
-
-→ wrong/missing Render secret.
-
-If:
-
-```text
-invalid-input-response
-```
-
-→ token isn't valid/reaching Cloudflare correctly.
-
-If:
-
-```text
-timeout-or-duplicate
-```
-
-→ you're reusing an expired/consumed token.
-
----
-
-# ⚠️ There's another thing I noticed
-
-Your frontend sends:
-
-```json
-{
-  "email": "...",
-  "password": "...",
-  "turnstileToken": "...",
-  "cf-turnstile-response": "..."
-}
-```
-
-You don't need both.
-
-Your backend already supports:
-
-```ts
-req.body?.['cf-turnstile-response'] || req.body?.turnstileToken
-```
-
-I'd simplify the frontend to:
+You showed me this earlier:
 
 ```ts
 body: JSON.stringify({
   email,
   password,
   turnstileToken,
+  'cf-turnstile-response': turnstileToken,
 }),
 ```
 
-and backend:
+So **either**:
 
-```ts
-const token = req.body?.turnstileToken;
-```
+1. the code you showed isn't the code actually running in production,
+2. `apiFetch()` is modifying/stripping the request body,
+3. the deployed frontend is an older build,
+4. or the login function being called by the production page isn't this version.
 
-Cleaner.
-
-Alternatively, use Cloudflare's conventional name everywhere:
-
-```text
-cf-turnstile-response
-```
-
-Either is fine. **Just use one.**
-
-I'd personally use:
+The backend log proves that the backend itself is receiving only:
 
 ```text
-turnstileToken
+email
+password
 ```
-
-between your frontend and API, because it's explicit and easy to understand.
 
 ---
 
-# 🔥 There's also a hostname issue we should verify
+# 🔥 First thing: inspect `apiFetch`
 
-Your site is:
+This is now my #1 suspect.
 
-```text
-https://www.alpha-cut.com/
+You have:
+
+```ts
+apiFetch('/api/auth/login', {
+  method: 'POST',
+  body: JSON.stringify({
+    email,
+    password,
+    turnstileToken,
+  }),
+});
 ```
 
-But you might be testing auth on:
+But we need to see what `apiFetch()` actually does before it sends the request.
 
-```text
-https://alpha-cut.com/login
+It might be doing something like:
+
+```ts
+JSON.stringify(...)
 ```
 
-or:
+again, or reconstructing the body.
+
+### Send me this file/function:
+
+```text
+frontend/src/lib/api.ts
+```
+
+or wherever `apiFetch` is defined.
+
+**That's the next piece I want to inspect.**
+
+---
+
+# Also check the production browser
+
+Open:
 
 ```text
 https://www.alpha-cut.com/login
 ```
 
-or potentially:
+Open:
 
-```text
-https://dashboard.alpha-cut.com/login
-```
-
-Your Turnstile widget needs to be configured for the hostname you're actually using.
-
-Go to:
-
-**Cloudflare → Turnstile → your widget → Hostnames**
-
-Make sure the appropriate production hostname is there.
-
-For example:
-
-```text
-www.alpha-cut.com
-alpha-cut.com
-```
-
-If the authentication page is on:
-
-```text
-dashboard.alpha-cut.com
-```
-
-then that needs to be handled too.
-
----
-
-# Another important thing: your hardcoded site key
-
-You have:
-
-```ts
-const SITE_KEY =
-  import.meta.env.VITE_TURNSTILE_SITE_KEY ||
-  '0x4AAAAAAEcL2_e7K7MECywi';
-```
-
-I'd remove the fallback before production.
-
-Use:
-
-```ts
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
-
-if (!SITE_KEY) {
-  throw new Error('VITE_TURNSTILE_SITE_KEY is not configured');
-}
-```
-
-Then in your frontend environment:
-
-```env
-VITE_TURNSTILE_SITE_KEY=0x4AAAAAAEcL2_e7K7MECywi
-```
-
-This prevents accidentally deploying with the wrong widget key.
-
----
-
-# What I would change
-
-Your final architecture should look like this:
-
-### Frontend
-
-```text
-VITE_TURNSTILE_SITE_KEY
-        ↓
-TurnstileWidget
-        ↓
-token
-        ↓
-POST /api/auth/login
-        ↓
-{
-  email,
-  password,
-  turnstileToken
-}
-```
-
-### Backend
-
-```text
-TURNSTILE_SECRET_KEY
-        ↓
-POST /api/auth/login
-        ↓
-verifyTurnstileToken()
-        ↓
-Cloudflare Siteverify
-        ↓
-success === true?
-     ↙       ↘
-   YES        NO
-    ↓          ↓
-authenticate  reject
-```
-
----
-
-# One more architectural improvement
-
-Eventually I'd move this:
-
-```ts
-verifyTurnstileToken(req)
-```
-
-out of `auth.controller.ts`.
-
-Something like:
-
-```text
-backend/src/
-│
-├── controllers/
-│   └── auth.controller.ts
-│
-├── middleware/
-│   └── turnstile.middleware.ts
-│
-├── services/
-│   └── turnstile.service.ts
-│
-└── routes/
-    └── auth.routes.ts
-```
+**F12 → Network**
 
 Then:
+
+1. Complete Turnstile
+2. Enter email/password
+3. Click Login
+4. Find:
+
+```text
+/api/auth/login
+```
+
+5. Click it
+6. Go to **Payload** / **Request**
+
+You should see:
+
+```json
+{
+  "email": "...",
+  "password": "...",
+  "turnstileToken": "..."
+}
+```
+
+### But I expect you'll currently see:
+
+```json
+{
+  "email": "...",
+  "password": "..."
+}
+```
+
+That would confirm the frontend production build isn't sending it.
+
+---
+
+# There's another very important clue
+
+Your Render log says:
+
+```text
+Body keys: [ 'email', 'password' ]
+```
+
+So this isn't:
+
+> "Cloudflare rejected my token."
+
+It's earlier than that.
+
+It's:
+
+> **"I never received a token to send to Cloudflare."**
+
+That's why Cloudflare's dashboard isn't showing Siteverify calls.
+
+Your backend literally never reaches the meaningful Siteverify request because this check catches it:
+
+```ts
+if (typeof token !== 'string' || !token.trim()) {
+    return false;
+}
+```
+
+Therefore:
+
+```text
+Cloudflare Siteverify
+        ↑
+        │
+        ❌ never reached
+```
+
+---
+
+# Don't change Cloudflare configuration yet
+
+Seriously, **don't touch the Turnstile widget configuration right now.**
+
+Your site key is clearly loading:
+
+```text
+keyPreview=0x4AAAAAAEcL...cYEk
+```
+
+The widget is appearing and being checked.
+
+Our current problem is purely:
+
+> **Turnstile token → frontend login request**
+
+---
+
+# One thing your coding agent should NOT do
+
+Don't "fix" this by doing something like:
+
+```ts
+if (!turnstileToken) {
+   // skip Turnstile
+}
+```
+
+or:
+
+```ts
+if (!token) return true;
+```
+
+That would make the security check meaningless.
+
+We want:
+
+```text
+No token → reject
+Token → Siteverify
+Siteverify success → continue
+Siteverify failure → reject
+```
+
+---
+
+## So we're very close now 😎
+
+Send me the implementation of **`apiFetch()`**.
+
+That's the next thing to inspect. Once I see it, I can probably pinpoint exactly why your `turnstileToken` disappears between `AuthContext.tsx` and `api.alpha-cut.com`.
+
+Bro, this confirms something important:
+
+**`apiFetch()` is NOT stripping the token.** The implementation is actually fine.
+
+This:
+
+```ts
+const res = await fetch(fullUrl, {
+  ...options,
+  headers,
+  credentials: 'include',
+});
+```
+
+preserves:
+
+```ts
+options.body
+```
+
+So if `AuthContext.login()` really passes:
+
+```ts
+body: JSON.stringify({
+  email,
+  password,
+  turnstileToken,
+})
+```
+
+then the browser should send it.
+
+But Render says it receives:
+
+```text
+Body keys: [ 'email', 'password' ]
+```
+
+Therefore, the token is disappearing **before `apiFetch()` sends the request**, or you're running an older frontend build.
+
+## 🎯 My strongest suspicion
+
+Look at your production frontend deployment.
+
+Your local source currently has:
+
+```ts
+turnstileToken
+```
+
+but the live `www.alpha-cut.com` may still be serving an **older build** where login only sends:
+
+```json
+{
+  "email": "...",
+  "password": "..."
+}
+```
+
+This is very common when you're developing locally and the production deployment hasn't rebuilt from the latest commit.
+
+---
+
+# Do this exact test
+
+Open:
+
+**[https://www.alpha-cut.com/login](https://www.alpha-cut.com/login)**
+
+Then:
+
+### 1. F12 → Network
+
+Complete Turnstile and click Login.
+
+Find:
+
+```text
+POST https://api.alpha-cut.com/api/auth/login
+```
+
+Click it.
+
+### 2. Open "Payload"
+
+Look at **Request Payload**.
+
+### If you see:
+
+```json
+{
+  "email": "...",
+  "password": "..."
+}
+```
+
+🔥 We've confirmed it.
+
+Your **live frontend is running an old/different login implementation**.
+
+### If you see:
+
+```json
+{
+  "email": "...",
+  "password": "...",
+  "turnstileToken": "..."
+}
+```
+
+then something else is happening, because Render should receive that field.
+
+In that case we'd inspect the API/proxy/body parser next.
+
+---
+
+# There's another test that will settle this immediately
+
+Add a temporary log immediately before `apiFetch()`:
+
+```ts
+console.log('[LOGIN DEBUG] Turnstile token:', {
+  exists: !!turnstileToken,
+  length: turnstileToken?.length,
+});
+```
+
+So:
+
+```ts
+const login = async (
+  email: string,
+  password: string,
+  turnstileToken?: string
+) => {
+  console.log('[LOGIN DEBUG] Turnstile token:', {
+    exists: !!turnstileToken,
+    length: turnstileToken?.length,
+  });
+
+  try {
+    const data = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        password,
+        turnstileToken,
+      }),
+    });
+
+    // ...
+  }
+}
+```
+
+Then production should show something like:
+
+```text
+[LOGIN DEBUG] Turnstile token:
+{
+  exists: true,
+  length: 200+
+}
+```
+
+If instead:
+
+```text
+exists: false
+length: 0
+```
+
+then the problem is **between `TurnstileWidget` and `AuthContext.login()`**.
+
+---
+
+# And I noticed something else 👀
+
+Your login page does:
+
+```ts
+const [turnstileToken, setTurnstileToken] = useState('');
+```
+
+and:
+
+```tsx
+onVerify={(token) => {
+  setTurnstileToken(token);
+  setError('');
+}}
+```
+
+That's correct.
+
+But React state updates asynchronously.
+
+If your code does something like:
+
+```text
+Turnstile callback
+    ↓
+setTurnstileToken(token)
+    ↓
+user immediately clicks login
+```
+
+normally React handles this fine because the state update causes a render.
+
+Still, we should verify rather than guess.
+
+---
+
+# One improvement I'd make
+
+Instead of relying only on state, your component could expose the current token through a ref, but **I don't think we need that yet**.
+
+Your current implementation should work.
+
+---
+
+# 🚨 One more possibility: schema validation
+
+Your route is:
 
 ```ts
 router.post(
   '/login',
   validateRequest(loginSchema),
-  verifyTurnstile,
   login
 );
 ```
 
-That makes the controller responsible for authentication and the middleware responsible for bot protection.
+This is interesting.
 
-But **don't refactor everything yet**. First let's get the current implementation working.
+If your `loginSchema` uses something like Zod:
 
----
+```ts
+z.object({
+  email: z.string(),
+  password: z.string()
+})
+```
 
-## 🎯 Do this now
+depending on how `validateRequest()` is implemented, it could **strip unknown properties**.
 
-I would have your coding agent make these changes:
-
-### 1. Change environment variable
+That would produce exactly this behavior:
 
 ```text
-TURNSTILE_SECRET_KEY
-```
+Frontend sends:
 
-### 2. Remove the insecure development bypass
-
-```ts
-catch {
-  return false;
-}
-```
-
-### 3. Check that the secret exists
-
-```ts
-if (!secretKey) {
-  console.error('[TURNSTILE] Secret key missing');
-  return false;
-}
-```
-
-### 4. Send only one token field
-
-```ts
 {
   email,
   password,
   turnstileToken
 }
+
+        ↓
+
+validateRequest(loginSchema)
+
+        ↓
+
+Controller receives:
+
+{
+  email,
+  password
+}
 ```
 
-### 5. Keep the Siteverify logging temporarily
+💀
 
-```ts
-console.log('[TURNSTILE SITEVERIFY RESULT]', data);
-```
+And that would perfectly explain your Render log.
 
-### 6. Deploy to Render
+### This is now my #2 suspect.
 
-Then try **one login attempt**.
-
-### 7. Check Render logs
-
-Look specifically for:
+So I want to see:
 
 ```text
-[TURNSTILE SITEVERIFY RESULT]
+auth.routes.ts
 ```
 
-**Send me exactly what appears after that line** (you can redact anything sensitive).
+especially:
 
-That response will tell us whether we're dealing with a **secret key problem, hostname/site-key problem, token problem, or deployment/configuration problem**.
+```ts
+loginSchema
+validateRequest()
+```
+
+If the schema doesn't include `turnstileToken`, your validation middleware may be removing it before the controller sees it.
+
+---
+
+# The complete debugging chain
+
+We're now narrowing this down to:
+
+```text
+TurnstileWidget
+       ↓
+   token exists?
+       ↓
+LoginPage
+       ↓
+AuthContext.login()
+       ↓
+   apiFetch()
+       ↓
+Browser Network Payload
+       ↓
+validateRequest(loginSchema)
+       ↓
+auth.controller.ts
+       ↓
+Siteverify
+```
+
+We already know:
+
+```text
+Controller receives token ❌
+```
+
+And `apiFetch()` looks fine.
+
+So the next two places are:
+
+**① Browser Network Payload**
+
+and
+
+**② `loginSchema` / `validateRequest()`**
+
+---
+
+### Send me these two pieces next:
+
+```text
+1. loginSchema
+2. validateRequest implementation
+```
+
+I strongly suspect **your validation middleware is stripping `turnstileToken`**. That would be a very clean explanation for why your frontend appears correct but your controller receives only `email` and `password`.

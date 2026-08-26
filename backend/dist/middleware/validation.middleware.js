@@ -16,23 +16,33 @@ export const signupSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
     email: z.string().email('Invalid email address'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
-});
+    turnstileToken: z.string().optional(),
+    'cf-turnstile-response': z.string().optional(),
+}).passthrough();
 export const loginSchema = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(1, 'Password is required'),
-});
+    turnstileToken: z.string().optional(),
+    'cf-turnstile-response': z.string().optional(),
+}).passthrough();
 export const verifyEmailSchema = z.object({
     email: z.string().email('Invalid email address'),
     code: z.string().length(6, 'Verification code must be 6 digits'),
-});
+    turnstileToken: z.string().optional(),
+    'cf-turnstile-response': z.string().optional(),
+}).passthrough();
 export const forgotPasswordSchema = z.object({
     email: z.string().email('Invalid email address'),
-});
+    turnstileToken: z.string().optional(),
+    'cf-turnstile-response': z.string().optional(),
+}).passthrough();
 export const resetPasswordSchema = z.object({
     email: z.string().email('Invalid email address'),
     code: z.string().length(6, 'Reset code must be 6 digits'),
     newPassword: z.string().min(8, 'Password must be at least 8 characters'),
-});
+    turnstileToken: z.string().optional(),
+    'cf-turnstile-response': z.string().optional(),
+}).passthrough();
 export const createProposalSchema = z.object({
     clientEmail: z.string().email('Invalid client email address'),
     editingStyle: z.string().min(1, 'Editing style is required'),
