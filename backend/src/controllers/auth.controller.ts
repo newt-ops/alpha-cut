@@ -51,16 +51,30 @@ const generateOtpCode = (): string => {
 };
 
 const verifyTurnstileToken = async (req: Request): Promise<boolean> => {
-  const token = req.body?.['cf-turnstile-response'] || req.body?.turnstileToken;
-  const secretKey = process.env.TURNSTILE_SECRET || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY || '0x4AAAAAAEcL2ykQ03gnjjhlX2fUWVhcYEk';
-  
-  // Diagnostic: log which key source is active (mask the value for safety)
-  const keySource = process.env.TURNSTILE_SECRET ? 'TURNSTILE_SECRET' : process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY ? 'CLOUDFLARE_TURNSTILE_SECRET_KEY' : 'hardcoded-fallback';
+  const token = req.body?.turnstileToken || req.body?.['cf-turnstile-response'];
+  const secretKey =
+    process.env.TURNSTILE_SECRET_KEY ||
+    process.env.TURNSTILE_SECRET ||
+    process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY ||
+    '0x4AAAAAAEcL2ykQ03gnjjhlX2fUWVhcYEk';
+
+  if (!secretKey) {
+    console.error('[TURNSTILE] Secret key missing in server configuration');
+    return false;
+  }
+
+  const keySource = process.env.TURNSTILE_SECRET_KEY
+    ? 'TURNSTILE_SECRET_KEY'
+    : process.env.TURNSTILE_SECRET
+    ? 'TURNSTILE_SECRET'
+    : process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY
+    ? 'CLOUDFLARE_TURNSTILE_SECRET_KEY'
+    : 'hardcoded-fallback';
   const keyPreview = secretKey.slice(0, 12) + '...' + secretKey.slice(-4);
   console.log(`[TURNSTILE DEBUG] keySource=${keySource} keyPreview=${keyPreview} hasToken=${!!token} tokenLen=${token?.length ?? 0}`);
 
   if (typeof token !== 'string' || !token.trim()) {
-    console.warn('[TURNSTILE VERIFY WARN]: Missing token in request body. Body keys:', Object.keys(req.body || {}));
+    console.warn('[TURNSTILE VERIFY WARN]: Missing turnstileToken in request body. Body keys:', Object.keys(req.body || {}));
     if (process.env.NODE_ENV !== 'production' && secretKey.startsWith('1x000000')) {
       return true;
     }
@@ -81,11 +95,11 @@ const verifyTurnstileToken = async (req: Request): Promise<boolean> => {
     });
 
     const data = await response.json();
-    console.log(`[TURNSTILE SITEVERIFY RESULT]:`, JSON.stringify(data));
+    console.log('[TURNSTILE SITEVERIFY RESULT]:', JSON.stringify(data));
     return data.success === true;
   } catch (err) {
     console.error('[TURNSTILE SITEVERIFY EXCEPTION]:', err);
-    return process.env.NODE_ENV !== 'production';
+    return false;
   }
 };
 
