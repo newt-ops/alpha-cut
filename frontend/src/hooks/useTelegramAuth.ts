@@ -12,6 +12,7 @@ export interface TelegramAuthState {
   error: string | null;
   accessToken: string | null;
   linkAccount: (code: string) => Promise<boolean>;
+  linkAccountWithCredentials: (email: string, password: string) => Promise<boolean>;
   unlinkAccount: () => Promise<boolean>;
   refetchAuth: () => Promise<void>;
   tgFetch: (endpoint: string, options?: RequestInit) => Promise<any>;
@@ -71,11 +72,15 @@ export const useTelegramAuth = (): TelegramAuthState => {
 
     try {
       if (initData) {
-        // Fast path: Authenticate using Telegram WebApp initData
+        // Fast path: Authenticate using Telegram WebApp initData + existing token fallback
+        const token = localStorage.getItem('token');
         const fullUrl = `${API_BASE}/api/telegram/webapp/auth`;
         const res = await fetch(fullUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ initData }),
           credentials: 'include',
         });
@@ -165,6 +170,55 @@ export const useTelegramAuth = (): TelegramAuthState => {
     }
   };
 
+  const linkAccountWithCredentials = async (email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const initData = getInitData();
+      const loginRes = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include',
+      });
+
+      const loginData = await loginRes.json();
+      if (!loginRes.ok || !loginData.success) {
+        throw new Error(loginData.message || 'Invalid email or password');
+      }
+
+      const token = loginData.accessToken;
+      if (token) {
+        localStorage.setItem('token', token);
+        setAccessToken(token);
+
+        // Bind Telegram chatId to logged-in user profile
+        const authRes = await fetch(`${API_BASE}/api/telegram/webapp/auth`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ initData }),
+          credentials: 'include',
+        });
+        const authData = await authRes.json();
+        setUser(authData.user || loginData.user);
+      } else {
+        setUser(loginData.user);
+      }
+
+      setIsAuthenticated(true);
+      setIsUnlinked(false);
+      return true;
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const unlinkAccount = async (): Promise<boolean> => {
     try {
       await tgFetch('/api/telegram/unlink', { method: 'POST' });
@@ -188,6 +242,7 @@ export const useTelegramAuth = (): TelegramAuthState => {
     error,
     accessToken,
     linkAccount,
+    linkAccountWithCredentials,
     unlinkAccount,
     refetchAuth: authenticateWithTelegram,
     tgFetch,

@@ -35,6 +35,7 @@ export const TelegramMiniAppPage: React.FC = () => {
     isUnlinked,
     isLoading: authLoading,
     linkAccount,
+    linkAccountWithCredentials,
     unlinkAccount,
     tgFetch,
   } = useTelegramAuth();
@@ -188,7 +189,11 @@ export const TelegramMiniAppPage: React.FC = () => {
   if (isUnlinked || !user) {
     return (
       <TelegramAppLayout>
-        <TelegramLinkScreen onLinkSubmit={linkAccount} telegramUser={telegramUser} />
+        <TelegramLinkScreen
+          onLinkSubmit={linkAccount}
+          onLinkWithCredentials={linkAccountWithCredentials}
+          telegramUser={telegramUser}
+        />
       </TelegramAppLayout>
     );
   }
