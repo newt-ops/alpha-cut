@@ -5,14 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Alpha Cut — High-Impact Video Editing Agency</title>
 
-    <!-- Google tag (gtag.js) GA4 -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3NHS5VZHML"></script>
+    <!-- Google tag (gtag.js) GA4 (Loaded non-blockingly after page load) -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-3NHS5VZHML', { send_page_view: false });
+
+      window.addEventListener('load', function() {
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-3NHS5VZHML';
+        document.head.appendChild(script);
+      });
     </script>
     <meta name="description" content="Alpha Cut is a boutique video editing agency specializing in retention-driven short-form, viral animation breakdowns, cinematic editing, and monthly video retainers." />
     <meta name="keywords" content="video editing agency, short form video editor, viral animation breakdown, retainers video editing, YouTube video editor, TikTok editor, Instagram reels editor" />

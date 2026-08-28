@@ -1,4 +1,4 @@
-Report from Aug 28, 2026, 11:04:31 PM
+Report from Aug 28, 2026, 11:10:54 PM
 https://alpha-cut.com/
 Enter a valid URL
 
@@ -15,7 +15,7 @@ Discover what your real users are experiencing
 No Data
 
 Diagnose performance issues
-50
+67
 Performance
 94
 Accessibility
@@ -23,19 +23,19 @@ Accessibility
 Best Practices
 100
 SEO
-2/3
+3/3
 Agentic Browsing
-50
+67
 FCP
-+2
++3
 LCP
-+2
++3
 TBT
 +30
 CLS
-+9
++25
 SI
-+8
++6
 Performance
 Values are estimated and may vary. The performance score is calculated directly from these metrics.See calculator.
 0–49
@@ -44,23 +44,18 @@ Values are estimated and may vary. The performance score is calculated directly 
 Final Screenshot
 
 Metrics
-Collapse view
+Expand view
 First Contentful Paint
-4.2 s
-First Contentful Paint marks the time at which the first text or image is painted. Learn more about the First Contentful Paint metric.
+3.9 s
 Largest Contentful Paint
-6.9 s
-Largest Contentful Paint marks the time at which the largest text or image is painted. Learn more about the Largest Contentful Paint metric
+5.9 s
 Total Blocking Time
-10 ms
-Sum of all time periods between FCP and Time to Interactive, when task length exceeded 50ms, expressed in milliseconds. Learn more about the Total Blocking Time metric.
+30 ms
 Cumulative Layout Shift
-0.328
-Cumulative Layout Shift measures the movement of visible elements within the viewport. Learn more about the Cumulative Layout Shift metric.
+0
 Speed Index
-4.2 s
-Speed Index shows how quickly the contents of a page are visibly populated. Learn more about the Speed Index metric.
-Captured at Aug 28, 2026, 11:04 PM GMT+3
+5.4 s
+Captured at Aug 28, 2026, 11:10 PM GMT+3
 Emulated Moto G Power with Lighthouse 13.4.1
 Single page session
 Initial page load
@@ -84,70 +79,44 @@ FCP
 LCP
 
 TBT
-
-CLS
 Insights
-Render-blocking requests Est savings of 1,650 ms
+Render-blocking requests Est savings of 1,050 ms
 Requests are blocking the page's initial render, which may delay LCP. Deferring or inlining can move these network requests out of the critical path.LCPFCPUnscored
 URL
 Transfer Size
 Duration
 alpha-cut.com 1st party
-3.8 KiB	170 ms
-/assets/index-BeOWLPhY.css(www.alpha-cut.com)
+3.8 KiB	160 ms
+/assets/index-CWVlrcvJ.css(www.alpha-cut.com)
 3.8 KiB
-170 ms
+160 ms
 Google Fonts cdn 
-1.9 KiB	750 ms
+1.7 KiB	750 ms
 /css2?family=…(fonts.googleapis.com)
-1.9 KiB
+1.7 KiB
 750 ms
-Improve image delivery Est savings of 128 KiB
-Reducing the download time of images can improve the perceived load time of the page and LCP. Learn more about optimizing image sizeLCPFCPUnscored
-URL
-Resource Size
-Est Savings
-alpha-cut.com 1st party
-128.8 KiB	128.3 KiB
-Alpha Cut Logo
-<img src="/alpha-logo-light.png" alt="Alpha Cut Logo" class="app-logo-img" width="28" height="28" style="height: 28px; width: auto; max-height: 28px; flex-shrink: 0;">
-/alpha-logo-light.png(www.alpha-cut.com)
-128.8 KiB
-128.3 KiB
-Using a modern image format (WebP, AVIF) or increasing the image compression could improve this image's download size.
-27.5 KiB
-This image file is larger than it needs to be (887x702) for its displayed dimensions (62x49). Use responsive images to reduce the image download size.
-128.2 KiB
-Layout shift culprits
-Layout shifts occur when elements move absent any user interaction. Investigate the causes of layout shifts, such as elements being added, removed, or their fonts changing as the page loads.CLSUnscored
-Element
-Layout shift score
-Total
-0.328
-ALPHACUT High-impact, retention-focused video editing for creators, brands, an…
-<footer style="background-color: var(--surface); border-top: 1px solid var(--line);">
-0.328
-ALPHA CUT — HIGH IMPACT VIDEO EDITING
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-0.000
-…v20/-F6qfjptA….woff2(fonts.gstatic.com)
-Web font
-ALPHACUT
-<span class="logo-text font-display" style="font-size: 17px; font-weight: 800; letter-spacing: -0.02em;">
-0.000
+Forced reflow
+A forced reflow occurs when JavaScript queries geometric properties (such as offsetWidth) after styles have been invalidated by a change to the DOM state. This can result in poor performance. Learn more about forced reflows and possible mitigations.Unscored
+Top function call
+Total reflow time
+/assets/vendor-re….js:18:1872(www.alpha-cut.com)
+51 ms
+Source
+Total reflow time
+/assets/vendor-mo….js:9:101428(www.alpha-cut.com)
+51 ms
 Network dependency tree
 Avoid chaining critical requests by reducing the length of chains, reducing the download size of resources, or deferring the download of unnecessary resources to improve page load.LCPUnscored
-Maximum critical path latency: 1,680 ms
+Maximum critical path latency: 1,302 ms
 Initial Navigation
-https://www.alpha-cut.com - 535 ms, 2.11 KiB
-/assets/index-BeOWLPhY.css(www.alpha-cut.com) - 946 ms, 3.78 KiB
-/css2?family=…(fonts.googleapis.com) - 544 ms, 1.88 KiB
-…v38/6NU58FyLN….woff2(fonts.gstatic.com) - 1,096 ms, 80.58 KiB
-…v38/6NU78FyLN….woff2(fonts.gstatic.com) - 1,096 ms, 66.60 KiB
-…v20/-F63fjptA….woff2(fonts.gstatic.com) - 1,097 ms, 10.61 KiB
-…v20/-F6qfjptA….woff2(fonts.gstatic.com) - 1,680 ms, 10.68 KiB
-…v20/UcC73FwrK….woff2(fonts.gstatic.com) - 1,095 ms, 48.09 KiB
-/assets/index-wKUWPOWl.js(www.alpha-cut.com) - 929 ms, 16.69 KiB
+https://www.alpha-cut.com - 183 ms, 2.07 KiB
+/assets/index-CWVlrcvJ.css(www.alpha-cut.com) - 350 ms, 3.81 KiB
+/css2?family=…(fonts.googleapis.com) - 192 ms, 1.74 KiB
+…v38/6NUu8FyLN….woff2(fonts.gstatic.com) - 471 ms, 36.50 KiB
+…v20/-F6qfjptA….woff2(fonts.gstatic.com) - 470 ms, 10.62 KiB
+…v20/-F6qfjptA….woff2(fonts.gstatic.com) - 1,302 ms, 10.67 KiB
+…v20/UcC73FwrK….woff2(fonts.gstatic.com) - 471 ms, 48.09 KiB
+/assets/index-DGhI5KSr.js(www.alpha-cut.com) - 387 ms, 16.77 KiB
 Preconnected origins
 preconnect hints help the browser establish a connection earlier in the page load, saving time when the first request for that origin is made. The following are the origins that the page preconnected to.
 Origin
@@ -158,10 +127,6 @@ head > link
 https://fonts.gstatic.com/
 head > link
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-https://api.alpha-cut.com/
-head > link
-<link rel="preconnect" href="https://api.alpha-cut.com">
-Unused preconnect. Check that the `crossorigin` attribute is used properly.
 Preconnect candidates
 Add preconnect hints to your most important origins, but try to use no more than 4.
 Origin
@@ -178,6 +143,22 @@ telegram.org
 /js/telegram-web-app.js(telegram.org)
 4d
 23 KiB
+Improve image delivery Est savings of 15 KiB
+Reducing the download time of images can improve the perceived load time of the page and LCP. Learn more about optimizing image sizeLCPFCPUnscored
+URL
+Resource Size
+Est Savings
+alpha-cut.com 1st party
+14.9 KiB	14.5 KiB
+Alpha Cut Logo
+<img src="/alpha-logo-light.png" alt="Alpha Cut Logo" class="app-logo-img" width="35" height="28" style="height: 28px; width: 35px; max-height: 28px; aspect-ratio: 200 / 158;">
+/alpha-logo-light.png(www.alpha-cut.com)
+14.9 KiB
+14.5 KiB
+Using a modern image format (WebP, AVIF) or increasing the image compression could improve this image's download size.
+9.8 KiB
+This image file is larger than it needs to be (200x158) for its displayed dimensions (53x41). Use responsive images to reduce the image download size.
+13.9 KiB
 LCP breakdown
 3rd parties
 These insights are also available in the Chrome DevTools Performance Panel - record a trace to view more detailed information.
@@ -193,10 +174,10 @@ Other Google APIs/SDKs utility
 97.8 KiB
 81.7 KiB
 Google Tag Manager tag-manager 
-165.5 KiB	67.9 KiB
+165.5 KiB	68.3 KiB
 /gtag/js?id=G-3NHS5VZHML(www.googletagmanager.com)
 165.5 KiB
-67.9 KiB
+68.3 KiB
 cloudflare.com
 26.4 KiB	23.1 KiB
 …v0/api.js?render=explicit(challenges.cloudflare.com)
@@ -212,21 +193,17 @@ telegram.org
 /js/telegram-web-app.js(telegram.org)
 23.1 KiB
 5.4 KiB
-Avoid enormous network payloads Total size was 28,686 KiB
+Avoid enormous network payloads Total size was 15,712 KiB
 Large network payloads cost users real money and are highly correlated with long load times. Learn how to reduce payload sizes.Unscored
 URL
 Transfer Size
 w3.org
-25,487.5 KiB
+14,319.4 KiB
 …sintel/trailer_hd.mp4(media.w3.org)
 14,279.7 KiB
 …sintel/trailer_hd.mp4(media.w3.org)
-11,207.8 KiB
+39.7 KiB
 w3schools.com
-2,311.9 KiB
-/html/mov_bbb.mp4(www.w3schools.com)
-770.6 KiB
-/html/mov_bbb.mp4(www.w3schools.com)
 770.6 KiB
 /html/mov_bbb.mp4(www.w3schools.com)
 770.6 KiB
@@ -234,128 +211,34 @@ Google Tag Manager tag-manager
 166.1 KiB
 /gtag/js?id=G-3NHS5VZHML(www.googletagmanager.com)
 166.1 KiB
-Google Fonts cdn 
-147.2 KiB
-…v38/6NU58FyLN….woff2(fonts.gstatic.com)
-80.6 KiB
-…v38/6NU78FyLN….woff2(fonts.gstatic.com)
-66.6 KiB
-alpha-cut.com 1st party
-129.3 KiB
-/alpha-logo-light.png(www.alpha-cut.com)
-129.3 KiB
 Other Google APIs/SDKs utility 
 99.0 KiB
 /gsi/client(accounts.google.com)
 99.0 KiB
+alpha-cut.com 1st party
+93.3 KiB
+/assets/vendor-re….js(www.alpha-cut.com)
+53.9 KiB
+/assets/vendor-mo….js(www.alpha-cut.com)
+39.3 KiB
+Google Fonts cdn 
+84.6 KiB
+…v20/UcC73FwrK….woff2(fonts.gstatic.com)
+48.1 KiB
+…v38/6NUu8FyLN….woff2(fonts.gstatic.com)
+36.5 KiB
+cloudflare.com
+26.9 KiB
+…e694063b5082/api.js(challenges.cloudflare.com)
+26.9 KiB
 Avoid long main-thread tasks 1 long task found
+Lists the longest tasks on the main thread, useful for identifying worst contributors to input delay. Learn how to avoid long main-thread tasksTBTUnscored
+URL
+Start Time
+Duration
+Google Tag Manager tag-manager 
+77 ms
+/gtag/js?id=G-3NHS5VZHML(www.googletagmanager.com)
+5,144 ms
+77 ms
 More information about the performance of your application. These numbers don't directly affect the Performance score.
-Passed audits (16)
-Show
-94
-Accessibility
-These checks highlight opportunities to improve the accessibility of your web app. Automatic detection can only detect a subset of issues and does not guarantee the accessibility of your web app, so manual testing is also encouraged.
-Contrast
-Background and foreground colors do not have a sufficient contrast ratio.
-Low-contrast text is difficult or impossible for many users to read. Learn how to provide sufficient color contrast.
-Failing Elements
-View Packages & Rates
-<span>
-View Packages & Rates
-<button type="button" class="btn-primary " tabindex="0" style="display: inline-flex; align-items: center; justify-content: center;">
-Split View (50/50)
-<button type="button" style="padding: 8px 18px; border-radius: 100px; font-size: 12px;">
-EDUCATIONAL
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-EDUCATIONAL 9:16 SHORT-FORM Viral Animation Breakdowns High-energy kinetic typ…
-<div style="background-color: var(--surface); border-radius: var(--radius-lg);">
-PERSONAL BRAND
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-PERSONAL BRAND 9:16 & 16:9 Cinematic Short-Film Editorial grade color grading,…
-<div style="background-color: var(--surface); border-radius: var(--radius-lg);">
-PRODUCT / SAAS
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-PRODUCT / SAAS 9:16 & 16:9 SaaS & App Animations Vector UI recreations, simula…
-<div style="background-color: var(--surface); border-radius: var(--radius-lg);">
-THE ALPHA CUT EDGE
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-THE ALPHA CUT EDGE Why Top Creators & Brands Choose Us We combine high-retenti…
-<section style="background-color: var(--surface); padding: 64px 40px;">
-LIGHTNING SPEED
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-LIGHTNING SPEED 48-Hour Fast Delivery Never miss your posting schedule. Get st…
-<div style="background-color: var(--bg); padding: 28px 24px; border-radius: var(--radi…;">
-ALGORITHM-READY
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-ALGORITHM-READY +84% Retention Engineering We craft kinetic hooks in the first…
-<div style="background-color: var(--bg); padding: 28px 24px; border-radius: var(--radi…;">
-ZERO FRICTION
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-ZERO FRICTION Dedicated Client Portal Track live progress, upload raw camera f…
-<div style="background-color: var(--bg); padding: 28px 24px; border-radius: var(--radi…;">
-STUDIO QUALITY
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-STUDIO QUALITY Mastered SFX & Color Grading Pro audio levelling, dynamic sound…
-<div style="background-color: var(--bg); padding: 28px 24px; border-radius: var(--radi…;">
-Kinetic Motion Graphics
-<strong>
-01 / BASIC ESSENTIAL Basic Edit Tier Clean, essential cutting & standard visua…
-<div style="background-color: var(--surface); border-radius: 24px;">
-Cinematic Color Grading
-<strong>
-01 / BASIC ESSENTIAL Basic Edit Tier Clean, essential cutting & standard visua…
-<div style="background-color: var(--surface); border-radius: 24px;">
-★ MOST POPULAR TIER
-<div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%);">
-HIGH GROWTH
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-★ MOST POPULAR TIER 02 / PROFESSIONAL HIGH GROWTH Professional Tier Advanced c…
-<div style="background-color: var(--surface); border-radius: 24px;">
-Custom Animated Captions
-<strong>
-★ MOST POPULAR TIER 02 / PROFESSIONAL HIGH GROWTH Professional Tier Advanced c…
-<div style="background-color: var(--surface); border-radius: 24px;">
-Heavy Custom 3D Graphics
-<strong>
-★ MOST POPULAR TIER 02 / PROFESSIONAL HIGH GROWTH Professional Tier Advanced c…
-<div style="background-color: var(--surface); border-radius: 24px;">
-Select Professional Tier Tier
-<span>
-Select Professional Tier Tier
-<button type="button" class="btn-primary " tabindex="0" style="display: inline-flex; align-items: center; justify-content: center;">
-CLIENT REVIEWS & TESTIMONIALS
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-CLIENT REVIEWS & TESTIMONIALS Trusted by Creators, Founders & Agencies 5.0 / 5.…
-<section style="position: relative; background-color: var(--surface); padding: 60px 36px;">
-VIRAL ANIMATION BREAKDOWN
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-“ VIRAL ANIMATION BREAKDOWN "Alpha Cut completely transformed our YouTube Shor…
-<div style="position: relative; background-color: var(--bg); padding: 32px 26px 26px;">
-CINEMATIC SHORT-FILM
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-“ CINEMATIC SHORT-FILM "The turn-around time and kinetic typography quality ar…
-<div style="position: relative; background-color: var(--bg); padding: 32px 26px 26px;">
-SAAS & APP ANIMATION
-<span class="font-mono " style="display: inline-flex; align-items: center; gap: 6px; border-radius: 100px;">
-“ SAAS & APP ANIMATION "Managing deliverables through the client portal is sea…
-<div style="position: relative; background-color: var(--bg); padding: 32px 26px 26px;">
-These are opportunities to improve the legibility of your content.
-Navigation
-Heading elements are not in a sequentially-descending order
-Properly ordered headings that do not skip levels convey the semantic structure of the page, making it easier to navigate and understand when using assistive technologies. Learn more about heading order.
-Failing Elements
-Raw vs. The AI Revolution in 60 Seconds
-<h3 class="font-display" style="font-size: clamp(22px, 3.5vw, 30px); font-weight: 800; margin-top: 8px;">
-These are opportunities to improve keyboard navigation in your application.
-Audio and video
-<video> elements contain a <track> element with [kind="captions"]
-These are opportunities to provide alternative content for audio and video. This may improve the experience for users with hearing or vision impairments.
-Best practices
-Identical links have the same purpose.
-These items highlight common accessibility best practices.
-Additional items to manually check (10)
-Show
-These items address areas which an automated testing tool cannot cover. Learn more in our guide on conducting an accessibility review.
-Passed audits (19)
-Show
-Not applicable (40)

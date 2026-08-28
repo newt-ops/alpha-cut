@@ -171,8 +171,8 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
           />
         </div>
 
-        {/* Ambient Video Preview Loop (when not actively full-screen playing) */}
-        {currentVideoSrc && !youtubeEmbedUrl && !isPlaying ? (
+        {/* Ambient Video Preview Loop (when hovered and not actively full-screen playing) */}
+        {currentVideoSrc && !youtubeEmbedUrl && isHovered && !isPlaying ? (
           <video
             src={currentVideoSrc}
             autoPlay
