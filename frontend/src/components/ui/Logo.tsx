@@ -10,13 +10,13 @@ export interface LogoProps {
 export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, className = '' }) => {
   const { theme } = useTheme();
 
-  const sizeMap: Record<string, { img: number; text: string }> = {
-    small: { img: 22, text: '14px' },
-    medium: { img: 28, text: '17px' },
-    large: { img: 40, text: '22px' },
+  const sizeMap: Record<string, { height: number; width: number; text: string }> = {
+    small: { height: 22, width: 28, text: '14px' },
+    medium: { height: 28, width: 35, text: '17px' },
+    large: { height: 40, width: 51, text: '22px' },
   };
 
-  const { img: imgSize, text: textSize } = sizeMap[size] || sizeMap.medium;
+  const { height: imgHeight, width: imgWidth, text: textSize } = sizeMap[size] || sizeMap.medium;
 
   const logoSrc = theme === 'dark' ? '/alpha-logo-dark.png' : '/alpha-logo-light.png';
 
@@ -36,12 +36,13 @@ export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, cl
         src={logoSrc}
         alt="Alpha Cut Logo"
         className="app-logo-img"
-        width={imgSize}
-        height={imgSize}
+        width={imgWidth}
+        height={imgHeight}
         style={{
-          height: `${imgSize}px`,
-          width: 'auto',
-          maxHeight: `${imgSize}px`,
+          height: `${imgHeight}px`,
+          width: `${imgWidth}px`,
+          maxHeight: `${imgHeight}px`,
+          aspectRatio: '200 / 158',
           flexShrink: 0,
         }}
       />

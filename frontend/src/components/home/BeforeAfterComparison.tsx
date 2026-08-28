@@ -19,6 +19,8 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
   title = 'Raw Footage vs. Alpha Cut Retention Edit',
 }) => {
   const [sliderPos, setSliderPos] = useState(50);
+  const [isInView, setIsInView] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const rawVideoRef = useRef<HTMLVideoElement>(null);
   const editedVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -27,12 +29,30 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
   };
 
   useEffect(() => {
-    // Keep both video streams synchronized
-    if (rawVideoRef.current && editedVideoRef.current) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    // Keep both video streams synchronized when in view
+    if (isInView && rawVideoRef.current && editedVideoRef.current) {
       rawVideoRef.current.play().catch(() => {});
       editedVideoRef.current.play().catch(() => {});
     }
-  }, [rawVideoUrl, editedVideoUrl]);
+  }, [isInView, rawVideoUrl, editedVideoUrl]);
 
   return (
     <div
@@ -147,23 +167,20 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
         </div>
       </div>
 
-      {/* Main Interactive Comparison Display */}
+      {/* Interactive Drag Canvas Box */}
       <div
         style={{
           position: 'relative',
           width: '100%',
-          maxWidth: '340px',
-          aspectRatio: '9 / 16',
-          margin: '0 auto',
-          borderRadius: '38px',
-          border: '2px solid rgba(201, 160, 107, 0.35)',
+          aspectRatio: '16 / 9',
+          borderRadius: 'var(--radius-md)',
           overflow: 'hidden',
-          backgroundColor: '#0F0704',
-          boxShadow: '0 30px 70px -10px rgba(201, 160, 107, 0.4), 0 25px 45px -15px rgba(0, 0, 0, 0.95)',
+          border: '1px solid var(--line)',
           userSelect: 'none',
+          boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.4)',
         }}
       >
-        {/* Layer 1: RAW FOOTAGE (Base Layer) */}
+        {/* Layer 1: RAW UNEDITED FEED (Bottom Layer) */}
         <div
           style={{
             position: 'absolute',
@@ -177,7 +194,7 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
             filter: 'grayscale(35%) contrast(85%)',
           }}
         >
-          {rawVideoUrl ? (
+          {isInView && rawVideoUrl ? (
             <video
               ref={rawVideoRef}
               src={rawVideoUrl}
@@ -249,7 +266,7 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
             boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
           }}
         >
-          {editedVideoUrl ? (
+          {isInView && editedVideoUrl ? (
             <video
               ref={editedVideoRef}
               src={editedVideoUrl}

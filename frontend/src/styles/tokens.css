@@ -55,7 +55,9 @@
   }
   .site-header .app-logo-img {
     height: 24px !important;
+    width: 30px !important;
     max-height: 24px !important;
+    aspect-ratio: 200 / 158 !important;
   }
 }
 
