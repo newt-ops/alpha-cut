@@ -1,4 +1,4 @@
-Report from Aug 28, 2026, 11:10:54 PM
+Report from Aug 28, 2026, 11:14:23 PM
 https://alpha-cut.com/
 Enter a valid URL
 
@@ -15,7 +15,7 @@ Discover what your real users are experiencing
 No Data
 
 Diagnose performance issues
-67
+71
 Performance
 94
 Accessibility
@@ -25,11 +25,11 @@ Best Practices
 SEO
 3/3
 Agentic Browsing
-67
+71
 FCP
-+3
++5
 LCP
-+3
++5
 TBT
 +30
 CLS
@@ -44,18 +44,23 @@ Values are estimated and may vary. The performance score is calculated directly 
 Final Screenshot
 
 Metrics
-Expand view
+Collapse view
 First Contentful Paint
-3.9 s
+3.1 s
+First Contentful Paint marks the time at which the first text or image is painted. Learn more about the First Contentful Paint metric.
 Largest Contentful Paint
-5.9 s
+5.4 s
+Largest Contentful Paint marks the time at which the largest text or image is painted. Learn more about the Largest Contentful Paint metric
 Total Blocking Time
-30 ms
+0 ms
+Sum of all time periods between FCP and Time to Interactive, when task length exceeded 50ms, expressed in milliseconds. Learn more about the Total Blocking Time metric.
 Cumulative Layout Shift
 0
+Cumulative Layout Shift measures the movement of visible elements within the viewport. Learn more about the Cumulative Layout Shift metric.
 Speed Index
-5.4 s
-Captured at Aug 28, 2026, 11:10 PM GMT+3
+5.0 s
+Speed Index shows how quickly the contents of a page are visibly populated. Learn more about the Speed Index metric.
+Captured at Aug 28, 2026, 11:14 PM GMT+3
 Emulated Moto G Power with Lighthouse 13.4.1
 Single page session
 Initial page load
@@ -80,7 +85,7 @@ LCP
 
 TBT
 Insights
-Render-blocking requests Est savings of 1,050 ms
+Render-blocking requests Est savings of 1,090 ms
 Requests are blocking the page's initial render, which may delay LCP. Deferring or inlining can move these network requests out of the critical path.LCPFCPUnscored
 URL
 Transfer Size
@@ -100,23 +105,23 @@ A forced reflow occurs when JavaScript queries geometric properties (such as off
 Top function call
 Total reflow time
 /assets/vendor-re….js:18:1872(www.alpha-cut.com)
-51 ms
+41 ms
 Source
 Total reflow time
 /assets/vendor-mo….js:9:101428(www.alpha-cut.com)
-51 ms
+41 ms
 Network dependency tree
 Avoid chaining critical requests by reducing the length of chains, reducing the download size of resources, or deferring the download of unnecessary resources to improve page load.LCPUnscored
-Maximum critical path latency: 1,302 ms
+Maximum critical path latency: 1,377 ms
 Initial Navigation
-https://www.alpha-cut.com - 183 ms, 2.07 KiB
-/assets/index-CWVlrcvJ.css(www.alpha-cut.com) - 350 ms, 3.81 KiB
-/css2?family=…(fonts.googleapis.com) - 192 ms, 1.74 KiB
-…v38/6NUu8FyLN….woff2(fonts.gstatic.com) - 471 ms, 36.50 KiB
-…v20/-F6qfjptA….woff2(fonts.gstatic.com) - 470 ms, 10.62 KiB
-…v20/-F6qfjptA….woff2(fonts.gstatic.com) - 1,302 ms, 10.67 KiB
-…v20/UcC73FwrK….woff2(fonts.gstatic.com) - 471 ms, 48.09 KiB
-/assets/index-DGhI5KSr.js(www.alpha-cut.com) - 387 ms, 16.77 KiB
+https://www.alpha-cut.com - 325 ms, 2.19 KiB
+/assets/index-CWVlrcvJ.css(www.alpha-cut.com) - 635 ms, 3.81 KiB
+/css2?family=…(fonts.googleapis.com) - 351 ms, 1.74 KiB
+…v38/6NUu8FyLN….woff2(fonts.gstatic.com) - 819 ms, 36.50 KiB
+…v20/-F6qfjptA….woff2(fonts.gstatic.com) - 818 ms, 10.62 KiB
+…v20/-F6qfjptA….woff2(fonts.gstatic.com) - 1,377 ms, 10.68 KiB
+…v20/UcC73FwrK….woff2(fonts.gstatic.com) - 818 ms, 48.09 KiB
+/assets/index-Dwt4qBVi.js(www.alpha-cut.com) - 502 ms, 16.77 KiB
 Preconnected origins
 preconnect hints help the browser establish a connection earlier in the page load, saving time when the first request for that origin is made. The following are the origins that the page preconnected to.
 Origin
@@ -163,7 +168,7 @@ LCP breakdown
 3rd parties
 These insights are also available in the Chrome DevTools Performance Panel - record a trace to view more detailed information.
 Diagnostics
-Reduce unused JavaScript Est savings of 173 KiB
+Reduce unused JavaScript Est savings of 183 KiB
 Reduce unused JavaScript and defer loading scripts until they are required to decrease bytes consumed by network activity. Learn how to reduce unused JavaScript.LCPFCPUnscored
 URL
 Transfer Size
@@ -174,15 +179,15 @@ Other Google APIs/SDKs utility
 97.8 KiB
 81.7 KiB
 Google Tag Manager tag-manager 
-165.5 KiB	68.3 KiB
+165.5 KiB	78.1 KiB
 /gtag/js?id=G-3NHS5VZHML(www.googletagmanager.com)
 165.5 KiB
-68.3 KiB
+78.1 KiB
 cloudflare.com
-26.4 KiB	23.1 KiB
+26.4 KiB	23.0 KiB
 …v0/api.js?render=explicit(challenges.cloudflare.com)
 26.4 KiB
-23.1 KiB
+23.0 KiB
 Minify JavaScript Est savings of 5 KiB
 Minifying JavaScript files can reduce payload sizes and script parse time. Learn how to minify JavaScript.LCPFCPUnscored
 URL
@@ -193,52 +198,5 @@ telegram.org
 /js/telegram-web-app.js(telegram.org)
 23.1 KiB
 5.4 KiB
-Avoid enormous network payloads Total size was 15,712 KiB
-Large network payloads cost users real money and are highly correlated with long load times. Learn how to reduce payload sizes.Unscored
-URL
-Transfer Size
-w3.org
-14,319.4 KiB
-…sintel/trailer_hd.mp4(media.w3.org)
-14,279.7 KiB
-…sintel/trailer_hd.mp4(media.w3.org)
-39.7 KiB
-w3schools.com
-770.6 KiB
-/html/mov_bbb.mp4(www.w3schools.com)
-770.6 KiB
-Google Tag Manager tag-manager 
-166.1 KiB
-/gtag/js?id=G-3NHS5VZHML(www.googletagmanager.com)
-166.1 KiB
-Other Google APIs/SDKs utility 
-99.0 KiB
-/gsi/client(accounts.google.com)
-99.0 KiB
-alpha-cut.com 1st party
-93.3 KiB
-/assets/vendor-re….js(www.alpha-cut.com)
-53.9 KiB
-/assets/vendor-mo….js(www.alpha-cut.com)
-39.3 KiB
-Google Fonts cdn 
-84.6 KiB
-…v20/UcC73FwrK….woff2(fonts.gstatic.com)
-48.1 KiB
-…v38/6NUu8FyLN….woff2(fonts.gstatic.com)
-36.5 KiB
-cloudflare.com
-26.9 KiB
-…e694063b5082/api.js(challenges.cloudflare.com)
-26.9 KiB
 Avoid long main-thread tasks 1 long task found
-Lists the longest tasks on the main thread, useful for identifying worst contributors to input delay. Learn how to avoid long main-thread tasksTBTUnscored
-URL
-Start Time
-Duration
-Google Tag Manager tag-manager 
-77 ms
-/gtag/js?id=G-3NHS5VZHML(www.googletagmanager.com)
-5,144 ms
-77 ms
 More information about the performance of your application. These numbers don't directly affect the Performance score.
