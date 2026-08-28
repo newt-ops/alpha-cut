@@ -185,6 +185,7 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
               loop
               muted
               playsInline
+              preload="none"
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -256,6 +257,7 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
               loop
               muted
               playsInline
+              preload="none"
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -361,6 +363,7 @@ export const BeforeAfterComparison: React.FC<BeforeAfterComparisonProps> = ({
           max="100"
           value={sliderPos}
           onChange={handleSliderChange}
+          aria-label="Before and after video comparison slider"
           style={{
             position: 'absolute',
             inset: 0,

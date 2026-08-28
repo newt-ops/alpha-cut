@@ -40,6 +40,7 @@ export const StarRating: React.FC<StarRatingProps> = ({
             key={star}
             type="button"
             disabled={readOnly}
+            aria-label={`${star} out of 5 stars`}
             onClick={() => !readOnly && onChange && onChange(star)}
             onMouseEnter={() => !readOnly && setHoverRating(star)}
             onMouseLeave={() => !readOnly && setHoverRating(0)}

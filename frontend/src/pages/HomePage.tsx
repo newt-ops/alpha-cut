@@ -591,7 +591,7 @@ export const HomePage: React.FC = () => {
                   _id: 'sample-1',
                   clientName: 'Alex Rivers',
                   clientTitle: 'Founder @ AI Studio',
-                  clientAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+                  clientAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=96&q=75',
                   review: 'Alpha Cut completely transformed our YouTube Shorts strategy. Watch time retention jumped by +84% on our very first edited video clip!',
                   stars: 5,
                   editingStyle: 'Viral Animation Breakdown',
@@ -600,7 +600,7 @@ export const HomePage: React.FC = () => {
                   _id: 'sample-2',
                   clientName: 'Marcus Vance',
                   clientTitle: 'Tech Content Creator (850K Subs)',
-                  clientAvatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+                  clientAvatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=96&q=75',
                   review: 'The turn-around time and kinetic typography quality are unmatched. The retention hooks keep viewers watching past 30 seconds consistently.',
                   stars: 5,
                   editingStyle: 'Cinematic Short-Film',
@@ -609,7 +609,7 @@ export const HomePage: React.FC = () => {
                   _id: 'sample-3',
                   clientName: 'Elena Rostova',
                   clientTitle: 'Head of Growth @ SaaSify',
-                  clientAvatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+                  clientAvatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=96&q=75',
                   review: 'Managing deliverables through the client portal is seamless. They deliver studio-grade edits that convert viewers into paying subscribers.',
                   stars: 5,
                   editingStyle: 'SaaS & App Animation',
@@ -696,7 +696,11 @@ export const HomePage: React.FC = () => {
                   {rev.clientAvatarUrl ? (
                     <img
                       src={rev.clientAvatarUrl}
-                      alt={rev.clientName || 'Client'}
+                      alt={rev.clientName || 'Client Avatar'}
+                      width="46"
+                      height="46"
+                      loading="lazy"
+                      decoding="async"
                       style={{
                         width: '46px',
                         height: '46px',

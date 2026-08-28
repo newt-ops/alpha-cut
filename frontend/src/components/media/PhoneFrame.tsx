@@ -179,6 +179,7 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
             loop
             muted
             playsInline
+            preload="none"
             onError={handleVideoError}
             style={{
               position: 'absolute',

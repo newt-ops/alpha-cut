@@ -1,0 +1,18 @@
+# Alpha Cut Video Editing Agency
+
+> Boutique video editing agency specializing in high-retention short-form content, viral animation breakdowns, cinematic edits, and monthly video retainers for tech founders, creators, and growth brands.
+
+## Core Navigation & Pages
+
+- [Homepage](https://alpha-cut.com/): Agency overview, before/after video slider, client testimonials, and feature highlights.
+- [Editing Styles](https://alpha-cut.com/editing-styles): Signature editing styles including Educational Animations, Cinematic Shorts, and SaaS Demos.
+- [Portfolio](https://alpha-cut.com/portfolio): Filterable video portfolio showcasing high-retention client edits.
+- [Packages & Pricing](https://alpha-cut.com/packages): Transparent edit pricing tiers and monthly retainer packages.
+- [About Us](https://alpha-cut.com/about): Meet the founders (Amir & Aymen) and agency workflow.
+- [Client Ratings](https://alpha-cut.com/ratings): Verified client reviews, aggregate 5.0 rating breakdown, and feedback.
+
+## Agency Contact
+
+- Website: https://alpha-cut.com
+- Primary API: https://api.alpha-cut.com
+- Official Email: alphacutagency@gmail.com

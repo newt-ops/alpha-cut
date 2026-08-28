@@ -34,8 +34,10 @@ export const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, cl
     >
       <img
         src={logoSrc}
-        alt="Alpha Cut"
+        alt="Alpha Cut Logo"
         className="app-logo-img"
+        width={imgSize}
+        height={imgSize}
         style={{
           height: `${imgSize}px`,
           width: 'auto',

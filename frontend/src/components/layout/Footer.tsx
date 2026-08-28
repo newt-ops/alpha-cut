@@ -42,7 +42,7 @@ export const Footer: React.FC = () => {
 
         {/* Sitemap Navigation */}
         <div>
-          <h4
+          <h3
             className="font-mono"
             style={{
               fontSize: '12px',
@@ -51,7 +51,7 @@ export const Footer: React.FC = () => {
             }}
           >
             Navigation
-          </h4>
+          </h3>
           <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <li>
               <Link to="/" style={{ fontSize: '14px', color: 'var(--ink-soft)' }}>
@@ -88,7 +88,7 @@ export const Footer: React.FC = () => {
 
         {/* Agency Info & Contact */}
         <div>
-          <h4
+          <h3
             className="font-mono"
             style={{
               fontSize: '12px',
@@ -97,7 +97,7 @@ export const Footer: React.FC = () => {
             }}
           >
             Contact & Agency
-          </h4>
+          </h3>
           <p style={{ fontSize: '14px', color: 'var(--ink-soft)', marginBottom: '8px' }}>
             Official Email:
           </p>
@@ -114,7 +114,7 @@ export const Footer: React.FC = () => {
 
         {/* Social Media Links Column */}
         <div>
-          <h4
+          <h3
             className="font-mono"
             style={{
               fontSize: '12px',
@@ -123,7 +123,7 @@ export const Footer: React.FC = () => {
             }}
           >
             Follow & Connect
-          </h4>
+          </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <a
               href="https://www.youtube.com/@alpha-cut-co"

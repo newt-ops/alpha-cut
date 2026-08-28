@@ -117,6 +117,7 @@ export const VideoFrame: React.FC<VideoFrameProps> = ({
               loop
               playsInline
               muted={isMuted}
+              preload="none"
               onError={handleVideoError}
               style={{
                 width: '100%',
