@@ -5,9 +5,8 @@ import { Contract } from '../../models/Contract.js';
 import { getAdminMenuKeyboard } from '../keyboards/adminKeyboards.js';
 import { getClientMenuKeyboard, getClientPackageKeyboard, getClientStylesPaginationKeyboard } from '../keyboards/clientKeyboards.js';
 import { getUnlinkedMenuKeyboard, getSupportKeyboard } from '../keyboards/commonKeyboards.js';
-import { handleUnlinkCommand } from '../commands/link.js';
-import { buildPackagesMessage } from '../commands/packages.js';
-import { buildStylesMessage } from '../commands/styles.js';
+import { handleUnlinkCommand } from '../features/onboarding/onboarding.commands.js';
+import { buildPackagesMessage, buildStylesMessage } from '../features/packages/packages.commands.js';
 import { CLIENT_URL, MINI_APP_URL } from '../config/commands.js';
 const safeEditMessageText = async (ctx, text, extra) => {
     try {
@@ -151,19 +150,21 @@ export const handleCallbackQuery = async (ctx) => {
             const isShowingBrief = (cbQuery?.message?.text || '').includes('Reference Brief Notes:');
             let updatedText = '';
             if (!isShowingBrief) {
-                updatedText = `🎬 <b>PROJECT PROPOSAL SUMMARY</b>\n\n` +
-                    `Style: <b>${project.editingStyle}</b>\n` +
-                    `Tier: <b>${project.packageTier?.toUpperCase()} (${project.contentLength?.toUpperCase()})</b>\n` +
-                    `Rate: <b>${project.price} ${project.currency}</b>\n` +
-                    `Deadline: <b>${new Date(project.deadline).toLocaleDateString()}</b>\n\n` +
-                    `<b>Reference Brief Notes:</b>\n<i>${project.referenceBrief || 'No specific notes attached.'}</i>`;
+                updatedText =
+                    `🎬 <b>PROJECT PROPOSAL SUMMARY</b>\n\n` +
+                        `Style: <b>${project.editingStyle}</b>\n` +
+                        `Tier: <b>${project.packageTier?.toUpperCase()} (${project.contentLength?.toUpperCase()})</b>\n` +
+                        `Rate: <b>${project.price} ${project.currency}</b>\n` +
+                        `Deadline: <b>${new Date(project.deadline).toLocaleDateString()}</b>\n\n` +
+                        `<b>Reference Brief Notes:</b>\n<i>${project.referenceBrief || 'No specific notes attached.'}</i>`;
             }
             else {
-                updatedText = `🎬 <b>NEW PROJECT PROPOSAL RECEIVED</b>\n\n` +
-                    `Style: <b>${project.editingStyle}</b>\n` +
-                    `Tier: <b>${project.packageTier?.toUpperCase()} (${project.contentLength?.toUpperCase()})</b>\n` +
-                    `Rate: <b>${project.price} ${project.currency}</b>\n` +
-                    `Deadline: <b>${new Date(project.deadline).toLocaleDateString()}</b>`;
+                updatedText =
+                    `🎬 <b>NEW PROJECT PROPOSAL RECEIVED</b>\n\n` +
+                        `Style: <b>${project.editingStyle}</b>\n` +
+                        `Tier: <b>${project.packageTier?.toUpperCase()} (${project.contentLength?.toUpperCase()})</b>\n` +
+                        `Rate: <b>${project.price} ${project.currency}</b>\n` +
+                        `Deadline: <b>${new Date(project.deadline).toLocaleDateString()}</b>`;
             }
             const keyboard = Markup.inlineKeyboard([
                 [

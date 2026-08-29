@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TelegramAppLayout } from '@components/layout/TelegramAppLayout';
-import { Badge } from '@components/ui/Badge';
-import { Button } from '@components/ui/Button';
-import { Modal } from '@components/ui/Modal';
 import { Skeleton } from '@components/ui/Skeleton';
-import { StarRating } from '@components/ui/StarRating';
 import { useToast } from '@components/ui/Toast';
 import { useTelegramAuth } from '../hooks/useTelegramAuth';
 import { useProjectsQuery } from '../hooks/useProjects';
@@ -13,20 +9,12 @@ import { TelegramLinkScreen } from '../components/telegram/TelegramLinkScreen';
 import { TelegramProjectCard } from '../components/telegram/TelegramProjectCard';
 import { TelegramContractCard } from '../components/telegram/TelegramContractCard';
 import { TelegramProfileView } from '../components/telegram/TelegramProfileView';
-import { Project, Contract } from '../types';
-import {
-  triggerHaptic,
-  triggerHapticNotification,
-} from '../utils/telegramSdk';
-import {
-  IconRefreshCw,
-  IconFilm,
-  IconZap,
-  IconStar,
-  IconCheck,
-} from '@icons/icons';
-
 import { TelegramRedirectNotice } from '../components/telegram/TelegramRedirectNotice';
+import { RevisionModal } from '../telegram/features/projects/RevisionModal';
+import { RatingModal } from '../telegram/features/profile/RatingModal';
+import { Project } from '../types';
+import { triggerHaptic, triggerHapticNotification } from '../utils/telegramSdk';
+import { IconRefreshCw, IconFilm, IconZap } from '@icons/icons';
 
 const checkIsTelegramEnvironment = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -54,11 +42,9 @@ export const TelegramMiniAppPage: React.FC = () => {
   const {
     user,
     telegramUser,
-    isAuthenticated,
     isUnlinked,
     isLoading: authLoading,
     linkAccount,
-    linkAccountWithCredentials,
     unlinkAccount,
     tgFetch,
   } = useTelegramAuth();
@@ -69,7 +55,14 @@ export const TelegramMiniAppPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [activeNavTab, setActiveNavTab] = useState<'projects' | 'contracts' | 'profile'>('projects');
 
-  // Deep link routing based on Telegram start_param (e.g. proposal_id or contract_id)
+  // Modal States
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [revisionProject, setRevisionProject] = useState<Project | null>(null);
+
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingProject, setRatingProject] = useState<Project | null>(null);
+
+  // Deep link routing based on Telegram start_param
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const tg = (window as any).Telegram?.WebApp;
@@ -81,24 +74,15 @@ export const TelegramMiniAppPage: React.FC = () => {
     if (startParam) {
       if (startParam.startsWith('contract_')) {
         setActiveNavTab('contracts');
-      } else if (startParam.startsWith('proposal_') || startParam.startsWith('delivery_') || startParam.startsWith('project_')) {
+      } else if (
+        startParam.startsWith('proposal_') ||
+        startParam.startsWith('delivery_') ||
+        startParam.startsWith('project_')
+      ) {
         setActiveNavTab('projects');
       }
     }
   }, []);
-
-  // Revision Modal State
-  const [showRevisionModal, setShowRevisionModal] = useState(false);
-  const [revisionProject, setRevisionProject] = useState<Project | null>(null);
-  const [revisionNotes, setRevisionNotes] = useState('');
-  const [submittingRevision, setSubmittingRevision] = useState(false);
-
-  // Rating Modal State
-  const [showRatingModal, setShowRatingModal] = useState(false);
-  const [ratingProject, setRatingProject] = useState<Project | null>(null);
-  const [ratingStars, setRatingStars] = useState(5);
-  const [ratingReview, setRatingReview] = useState('');
-  const [submittingRating, setSubmittingRating] = useState(false);
 
   const handleManualRefresh = async () => {
     try {
@@ -122,43 +106,11 @@ export const TelegramMiniAppPage: React.FC = () => {
         body: JSON.stringify({ status: 'in_progress' }),
       });
       triggerHapticNotification('success');
-      toast({ message: 'Proposal accepted! Project is now in production.', type: 'success' });
+      toast({ message: 'Proposal accepted! Project is in production.', type: 'success' });
       refetchProjects();
     } catch (err: any) {
       triggerHapticNotification('error');
       toast({ message: err.message || 'Failed to accept proposal', type: 'error' });
-    }
-  };
-
-  const handleOpenRevisionModal = (project: Project) => {
-    setRevisionProject(project);
-    setRevisionNotes('');
-    setShowRevisionModal(true);
-  };
-
-  const handleSubmitRevision = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!revisionProject || !revisionNotes.trim()) {
-      toast({ message: 'Please provide revision notes for the editor', type: 'error' });
-      return;
-    }
-
-    try {
-      setSubmittingRevision(true);
-      triggerHaptic('medium');
-      await tgFetch(`/api/projects/${revisionProject._id}/revision`, {
-        method: 'POST',
-        body: JSON.stringify({ notes: revisionNotes.trim() }),
-      });
-      triggerHapticNotification('success');
-      toast({ message: 'Revision request sent to editing team!', type: 'success' });
-      setShowRevisionModal(false);
-      refetchProjects();
-    } catch (err: any) {
-      triggerHapticNotification('error');
-      toast({ message: err.message || 'Failed to submit revision', type: 'error' });
-    } finally {
-      setSubmittingRevision(false);
     }
   };
 
@@ -170,7 +122,7 @@ export const TelegramMiniAppPage: React.FC = () => {
         body: JSON.stringify({ status: 'completed' }),
       });
       triggerHapticNotification('success');
-      toast({ message: 'Delivery confirmed! Project marked completed.', type: 'success' });
+      toast({ message: 'Delivery confirmed! Project completed.', type: 'success' });
       refetchProjects();
     } catch (err: any) {
       triggerHapticNotification('error');
@@ -178,40 +130,41 @@ export const TelegramMiniAppPage: React.FC = () => {
     }
   };
 
-  const handleOpenRatingModal = (project: Project) => {
-    setRatingProject(project);
-    setRatingStars(5);
-    setRatingReview('');
-    setShowRatingModal(true);
+  const handleSubmitRevisionNotes = async (notes: string) => {
+    if (!revisionProject) return;
+    try {
+      await tgFetch(`/api/projects/${revisionProject._id}/revision`, {
+        method: 'POST',
+        body: JSON.stringify({ notes }),
+      });
+      triggerHapticNotification('success');
+      toast({ message: 'Revision request sent to editor!', type: 'success' });
+      refetchProjects();
+    } catch (err: any) {
+      triggerHapticNotification('error');
+      toast({ message: err.message || 'Failed to submit revision', type: 'error' });
+      throw err;
+    }
   };
 
-  const handleSubmitRating = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ratingProject || !ratingReview.trim()) {
-      toast({ message: 'Please enter a short review comment', type: 'error' });
-      return;
-    }
-
+  const handleSubmitRatingReview = async (stars: number, review: string) => {
+    if (!ratingProject) return;
     try {
-      setSubmittingRating(true);
-      triggerHaptic('medium');
       await tgFetch('/api/ratings', {
         method: 'POST',
         body: JSON.stringify({
           projectId: ratingProject._id,
-          stars: ratingStars,
-          review: ratingReview.trim(),
+          stars,
+          review,
         }),
       });
       triggerHapticNotification('success');
-      toast({ message: 'Thank you for rating your video edit!', type: 'success' });
-      setShowRatingModal(false);
+      toast({ message: 'Rating submitted! Thank you.', type: 'success' });
       refetchProjects();
     } catch (err: any) {
       triggerHapticNotification('error');
       toast({ message: err.message || 'Failed to submit rating', type: 'error' });
-    } finally {
-      setSubmittingRating(false);
+      throw err;
     }
   };
 
@@ -220,8 +173,8 @@ export const TelegramMiniAppPage: React.FC = () => {
       <TelegramAppLayout>
         <div style={{ padding: '24px 0', display: 'grid', gap: '16px' }}>
           <Skeleton height="36px" width="60%" />
-          <Skeleton height="140px" style={{ borderRadius: '16px' }} />
-          <Skeleton height="140px" style={{ borderRadius: '16px' }} />
+          <Skeleton height="140px" style={{ borderRadius: '12px' }} />
+          <Skeleton height="140px" style={{ borderRadius: '12px' }} />
         </div>
       </TelegramAppLayout>
     );
@@ -230,10 +183,7 @@ export const TelegramMiniAppPage: React.FC = () => {
   if (isUnlinked || !user) {
     return (
       <TelegramAppLayout>
-        <TelegramLinkScreen
-          onLinkSubmit={linkAccount}
-          telegramUser={telegramUser}
-        />
+        <TelegramLinkScreen onLinkSubmit={linkAccount} telegramUser={telegramUser} />
       </TelegramAppLayout>
     );
   }
@@ -243,10 +193,10 @@ export const TelegramMiniAppPage: React.FC = () => {
       {/* Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: 'var(--tg-theme-text-color, #ffffff)' }}>
             Alpha Cut
           </h1>
-          <span style={{ fontSize: '12px', color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))' }}>
+          <span style={{ fontSize: '12px', color: 'var(--tg-theme-hint-color, #708499)' }}>
             {user?.name || 'Client Workspace'}
           </span>
         </div>
@@ -257,7 +207,7 @@ export const TelegramMiniAppPage: React.FC = () => {
           style={{
             background: 'none',
             border: 'none',
-            color: 'var(--tg-theme-link-color, var(--tg-link, #64b5ef))',
+            color: 'var(--tg-theme-link-color, #64b5ef)',
             fontSize: '13px',
             fontWeight: 500,
             cursor: 'pointer',
@@ -271,7 +221,7 @@ export const TelegramMiniAppPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content: Projects */}
       {activeNavTab === 'projects' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div
@@ -279,7 +229,7 @@ export const TelegramMiniAppPage: React.FC = () => {
               fontSize: '12px',
               fontWeight: 600,
               textTransform: 'uppercase',
-              color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))',
+              color: 'var(--tg-theme-hint-color, #708499)',
               paddingLeft: '4px',
               letterSpacing: '0.4px',
             }}
@@ -295,17 +245,17 @@ export const TelegramMiniAppPage: React.FC = () => {
           ) : projects.length === 0 ? (
             <div
               style={{
-                backgroundColor: 'var(--tg-theme-secondary-bg-color, var(--tg-secondary-bg, #232e3c))',
+                backgroundColor: 'var(--tg-theme-secondary-bg-color, #232e3c)',
                 padding: '32px 20px',
                 borderRadius: '12px',
                 textAlign: 'center',
               }}
             >
-              <IconFilm size={32} color="var(--tg-theme-hint-color, var(--tg-hint, #708499))" style={{ margin: '0 auto 12px' }} />
-              <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
+              <IconFilm size={32} color="var(--tg-theme-hint-color, #708499)" style={{ margin: '0 auto 12px' }} />
+              <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: 'var(--tg-theme-text-color, #ffffff)' }}>
                 No Active Projects
               </h3>
-              <p style={{ color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', fontSize: '13px', margin: 0 }}>
+              <p style={{ color: 'var(--tg-theme-hint-color, #708499)', fontSize: '13px', margin: 0 }}>
                 When your proposal offers or video edits are sent, they will appear right here.
               </p>
             </div>
@@ -316,9 +266,15 @@ export const TelegramMiniAppPage: React.FC = () => {
                   key={project._id}
                   project={project}
                   onAcceptProposal={handleAcceptProposal}
-                  onRequestRevision={handleOpenRevisionModal}
+                  onRequestRevision={(p) => {
+                    setRevisionProject(p);
+                    setShowRevisionModal(true);
+                  }}
                   onConfirmDelivery={handleConfirmDelivery}
-                  onRateProject={handleOpenRatingModal}
+                  onRateProject={(p) => {
+                    setRatingProject(p);
+                    setShowRatingModal(true);
+                  }}
                 />
               ))}
             </div>
@@ -326,6 +282,7 @@ export const TelegramMiniAppPage: React.FC = () => {
         </div>
       )}
 
+      {/* Tab Content: Retainers */}
       {activeNavTab === 'contracts' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div
@@ -333,7 +290,7 @@ export const TelegramMiniAppPage: React.FC = () => {
               fontSize: '12px',
               fontWeight: 600,
               textTransform: 'uppercase',
-              color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))',
+              color: 'var(--tg-theme-hint-color, #708499)',
               paddingLeft: '4px',
               letterSpacing: '0.4px',
             }}
@@ -346,17 +303,17 @@ export const TelegramMiniAppPage: React.FC = () => {
           ) : contracts.length === 0 ? (
             <div
               style={{
-                backgroundColor: 'var(--tg-theme-secondary-bg-color, var(--tg-secondary-bg, #232e3c))',
+                backgroundColor: 'var(--tg-theme-secondary-bg-color, #232e3c)',
                 padding: '32px 20px',
                 borderRadius: '12px',
                 textAlign: 'center',
               }}
             >
-              <IconZap size={32} color="var(--tg-theme-hint-color, var(--tg-hint, #708499))" style={{ margin: '0 auto 12px' }} />
-              <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
+              <IconZap size={32} color="var(--tg-theme-hint-color, #708499)" style={{ margin: '0 auto 12px' }} />
+              <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: 'var(--tg-theme-text-color, #ffffff)' }}>
                 No Active Retainers
               </h3>
-              <p style={{ color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', fontSize: '13px', margin: 0 }}>
+              <p style={{ color: 'var(--tg-theme-hint-color, #708499)', fontSize: '13px', margin: 0 }}>
                 You currently have no monthly video editing retainer contracts running.
               </p>
             </div>
@@ -370,6 +327,7 @@ export const TelegramMiniAppPage: React.FC = () => {
         </div>
       )}
 
+      {/* Tab Content: Account & Profile */}
       {activeNavTab === 'profile' && (
         <TelegramProfileView
           user={user}
@@ -380,71 +338,20 @@ export const TelegramMiniAppPage: React.FC = () => {
         />
       )}
 
-      {/* Revision Modal */}
-      <Modal isOpen={showRevisionModal} onClose={() => setShowRevisionModal(false)} title="Request Edit Revision">
-        <form onSubmit={handleSubmitRevision} style={{ display: 'grid', gap: '14px' }}>
-          <p style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
-            Describe the exact timestamps and changes you want revised for <strong>{revisionProject?.editingStyle}</strong>.
-          </p>
-          <textarea
-            value={revisionNotes}
-            onChange={(e) => setRevisionNotes(e.target.value)}
-            placeholder="e.g. At 0:14 change caption highlight to gold, add sound effect at 0:28..."
-            rows={4}
-            required
-            style={{
-              width: '100%',
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              border: '1px solid var(--line)',
-              borderRadius: '10px',
-              padding: '12px',
-              color: 'var(--ink)',
-              fontSize: '13px',
-              outline: 'none',
-              resize: 'vertical',
-            }}
-          />
-          <Button variant="primary" type="submit" isLoading={submittingRevision} fullWidth>
-            Submit Revision Request
-          </Button>
-        </form>
-      </Modal>
+      {/* Modals */}
+      <RevisionModal
+        isOpen={showRevisionModal}
+        onClose={() => setShowRevisionModal(false)}
+        project={revisionProject}
+        onSubmit={handleSubmitRevisionNotes}
+      />
 
-      {/* Rating Modal */}
-      <Modal isOpen={showRatingModal} onClose={() => setShowRatingModal(false)} title="Rate Your Video Edit">
-        <form onSubmit={handleSubmitRating} style={{ display: 'grid', gap: '16px', textAlign: 'center' }}>
-          <p style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
-            How satisfied are you with the final render for <strong>{ratingProject?.editingStyle}</strong>?
-          </p>
-          
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <StarRating rating={ratingStars} onChange={(stars) => setRatingStars(stars)} size={28} />
-          </div>
-
-          <textarea
-            value={ratingReview}
-            onChange={(e) => setRatingReview(e.target.value)}
-            placeholder="Write a brief comment about the editing quality, pacing, or turnaround..."
-            rows={3}
-            required
-            style={{
-              width: '100%',
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              border: '1px solid var(--line)',
-              borderRadius: '10px',
-              padding: '12px',
-              color: 'var(--ink)',
-              fontSize: '13px',
-              outline: 'none',
-              resize: 'vertical',
-            }}
-          />
-
-          <Button variant="primary" type="submit" isLoading={submittingRating} fullWidth iconRight={IconCheck}>
-            Submit Review
-          </Button>
-        </form>
-      </Modal>
+      <RatingModal
+        isOpen={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        project={ratingProject}
+        onSubmit={handleSubmitRatingReview}
+      />
     </TelegramAppLayout>
   );
 };

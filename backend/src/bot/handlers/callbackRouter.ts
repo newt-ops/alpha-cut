@@ -5,9 +5,8 @@ import { Contract } from '../../models/Contract.js';
 import { getAdminMenuKeyboard } from '../keyboards/adminKeyboards.js';
 import { getClientMenuKeyboard, getClientPackageKeyboard, getClientStylesPaginationKeyboard } from '../keyboards/clientKeyboards.js';
 import { getUnlinkedMenuKeyboard, getSupportKeyboard } from '../keyboards/commonKeyboards.js';
-import { handleUnlinkCommand } from '../commands/link.js';
-import { buildPackagesMessage } from '../commands/packages.js';
-import { buildStylesMessage } from '../commands/styles.js';
+import { handleUnlinkCommand } from '../features/onboarding/onboarding.commands.js';
+import { buildPackagesMessage, buildStylesMessage } from '../features/packages/packages.commands.js';
 import { CLIENT_URL, MINI_APP_URL } from '../config/commands.js';
 
 const safeEditMessageText = async (ctx: Context, text: string, extra?: any): Promise<any> => {
@@ -116,7 +115,8 @@ export const handleCallbackQuery = async (ctx: Context): Promise<any> => {
         const deliveredCount = await Project.countDocuments({ status: 'delivered' });
         const completedCount = await Project.countDocuments({ status: 'completed' });
 
-        const msg = `📊 <b>AGENCY FINANCIAL & OPERATIONAL STATS</b>\n\n` +
+        const msg =
+          `📊 <b>AGENCY FINANCIAL & OPERATIONAL STATS</b>\n\n` +
           `• <b>Registered Clients:</b> ${totalClients}\n` +
           `• <b>Active In-Progress Edits:</b> ${inProgressCount}\n` +
           `• <b>Renders Delivered:</b> ${deliveredCount}\n` +
@@ -182,14 +182,16 @@ export const handleCallbackQuery = async (ctx: Context): Promise<any> => {
       let updatedText = '';
 
       if (!isShowingBrief) {
-        updatedText = `🎬 <b>PROJECT PROPOSAL SUMMARY</b>\n\n` +
+        updatedText =
+          `🎬 <b>PROJECT PROPOSAL SUMMARY</b>\n\n` +
           `Style: <b>${project.editingStyle}</b>\n` +
           `Tier: <b>${project.packageTier?.toUpperCase()} (${project.contentLength?.toUpperCase()})</b>\n` +
           `Rate: <b>${project.price} ${project.currency}</b>\n` +
           `Deadline: <b>${new Date(project.deadline).toLocaleDateString()}</b>\n\n` +
           `<b>Reference Brief Notes:</b>\n<i>${project.referenceBrief || 'No specific notes attached.'}</i>`;
       } else {
-        updatedText = `🎬 <b>NEW PROJECT PROPOSAL RECEIVED</b>\n\n` +
+        updatedText =
+          `🎬 <b>NEW PROJECT PROPOSAL RECEIVED</b>\n\n` +
           `Style: <b>${project.editingStyle}</b>\n` +
           `Tier: <b>${project.packageTier?.toUpperCase()} (${project.contentLength?.toUpperCase()})</b>\n` +
           `Rate: <b>${project.price} ${project.currency}</b>\n` +
@@ -226,7 +228,8 @@ export const handleCallbackQuery = async (ctx: Context): Promise<any> => {
     }
 
     if (data === 'menu:about') {
-      const msg = `⚡ <b>ALPHA CUT EXECUTIVE VIDEO AGENCY</b>\n\n` +
+      const msg =
+        `⚡ <b>ALPHA CUT EXECUTIVE VIDEO AGENCY</b>\n\n` +
         `We partner with tech creators, startup founders, and high-growth brands to deliver high-retention video edits.\n\n` +
         `• <b>Founders:</b> Amir & Aymen\n` +
         `• <b>Email:</b> <code>alphacutagency@gmail.com</code>\n` +

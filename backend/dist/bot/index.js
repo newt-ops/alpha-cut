@@ -1,15 +1,13 @@
 import { Telegraf } from 'telegraf';
 import { config } from '../config/env.js';
 import { registerBotCommands } from './config/commands.js';
-import { handleStartCommand } from './commands/start.js';
-import { handleMenuCommand } from './commands/menu.js';
-import { handleStatusCommand } from './commands/status.js';
-import { handleProjectsCommand } from './commands/projects.js';
-import { handlePackagesCommand } from './commands/packages.js';
-import { handleStylesCommand } from './commands/styles.js';
-import { handleHelpCommand, handleAboutCommand } from './commands/help.js';
-import { handleLinkCommand, handleUnlinkCommand } from './commands/link.js';
+// Feature Commands
+import { handleStartCommand, handleHelpCommand, handleLinkCommand, handleUnlinkCommand } from './features/onboarding/onboarding.commands.js';
+import { handleProjectsCommand, handleStatusCommand } from './features/projects/projects.commands.js';
+import { handlePackagesCommand, handleStylesCommand } from './features/packages/packages.commands.js';
+import { handleMenuCommand } from './features/profile/profile.commands.js';
 import { handleCallbackQuery } from './handlers/callbackRouter.js';
+// Notification Services
 import { getAdminChatIds, sendTelegramNotification as rawSendTelegramNotification, sendRevisionNotificationTelegram as rawSendRevisionNotificationTelegram, } from './notifications/adminAlerts.js';
 import { sendProposalNotificationTelegram as rawSendProposalNotificationTelegram, sendDeliveryNotificationTelegram as rawSendDeliveryNotificationTelegram, } from './notifications/clientAlerts.js';
 import { sendPaymentReceiptNotificationTelegram as rawSendPaymentReceiptNotificationTelegram } from './notifications/paymentAlerts.js';
@@ -17,14 +15,13 @@ import { getUnicodeProgressBar, updateTelegramStatusCard as rawUpdateTelegramSta
 export const bot = config.telegramBotToken ? new Telegraf(config.telegramBotToken) : null;
 if (bot) {
     registerBotCommands(bot);
-    // Bind Commands
+    // Bind Feature Commands
     bot.command('start', handleStartCommand);
     bot.command('menu', handleMenuCommand);
     bot.command('status', handleStatusCommand);
     bot.command('projects', handleProjectsCommand);
     bot.command('packages', handlePackagesCommand);
     bot.command('styles', handleStylesCommand);
-    bot.command('about', handleAboutCommand);
     bot.command('help', handleHelpCommand);
     bot.command('link', handleLinkCommand);
     bot.command('unlink', handleUnlinkCommand);
