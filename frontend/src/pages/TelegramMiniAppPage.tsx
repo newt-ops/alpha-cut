@@ -69,6 +69,24 @@ export const TelegramMiniAppPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [activeNavTab, setActiveNavTab] = useState<'projects' | 'contracts' | 'profile'>('projects');
 
+  // Deep link routing based on Telegram start_param (e.g. proposal_id or contract_id)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const tg = (window as any).Telegram?.WebApp;
+    const startParam =
+      tg?.initDataUnsafe?.start_param ||
+      new URLSearchParams(window.location.search).get('startapp') ||
+      new URLSearchParams(window.location.search).get('tgWebAppStartParam');
+
+    if (startParam) {
+      if (startParam.startsWith('contract_')) {
+        setActiveNavTab('contracts');
+      } else if (startParam.startsWith('proposal_') || startParam.startsWith('delivery_') || startParam.startsWith('project_')) {
+        setActiveNavTab('projects');
+      }
+    }
+  }, []);
+
   // Revision Modal State
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [revisionProject, setRevisionProject] = useState<Project | null>(null);
