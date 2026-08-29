@@ -1,5 +1,5 @@
 import React from 'react';
-import { Contract } from '../../types';
+import { Contract } from '../../../types';
 import { IconZap } from '@icons/icons';
 
 interface TelegramContractCardProps {

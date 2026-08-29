@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { User, Project, Contract } from '../../types';
-import { triggerHaptic, triggerHapticNotification } from '../../utils/telegramSdk';
-import { IconExternalLink, IconChevronRight } from '@icons/icons';
+import { User, Project, Contract } from '../../../types';
+import { triggerHaptic, triggerHapticNotification } from '../../../utils/telegramSdk';
+import { IconExternalLink } from '@icons/icons';
 
 interface TelegramProfileViewProps {
   user: User;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Project } from '../../types';
-import { triggerHaptic, triggerHapticSelection } from '../../utils/telegramSdk';
+import { Project } from '../../../types';
+import { triggerHaptic, triggerHapticSelection } from '../../../utils/telegramSdk';
 import { IconCheck, IconStar, IconFileText, IconFilm, IconChevronRight } from '@icons/icons';
 
 interface TelegramProjectCardProps {

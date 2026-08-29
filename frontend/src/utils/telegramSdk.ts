@@ -1,3 +1,5 @@
+export const MINI_APP_URL = 'https://t.me/alpha_cut_bot/app';
+
 export const getTelegramWebApp = (): any => {
   if (typeof window === 'undefined') return null;
   return (window as any).Telegram?.WebApp || null;

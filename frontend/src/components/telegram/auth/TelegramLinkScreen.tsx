@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useToast } from '@components/ui/Toast';
-import { triggerHaptic, triggerHapticNotification } from '../../utils/telegramSdk';
+import { triggerHaptic, triggerHapticNotification } from '../../../utils/telegramSdk';
 import { IconShield, IconCheck, IconExternalLink } from '@icons/icons';
 
 interface TelegramLinkScreenProps {

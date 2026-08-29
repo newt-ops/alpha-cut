@@ -5,11 +5,13 @@ import { useToast } from '@components/ui/Toast';
 import { useTelegramAuth } from '../hooks/useTelegramAuth';
 import { useProjectsQuery } from '../hooks/useProjects';
 import { useContractsQuery } from '../hooks/useContracts';
-import { TelegramLinkScreen } from '../components/telegram/TelegramLinkScreen';
-import { TelegramProjectCard } from '../components/telegram/TelegramProjectCard';
-import { TelegramContractCard } from '../components/telegram/TelegramContractCard';
-import { TelegramProfileView } from '../components/telegram/TelegramProfileView';
-import { TelegramRedirectNotice } from '../components/telegram/TelegramRedirectNotice';
+import {
+  TelegramLinkScreen,
+  TelegramProjectCard,
+  TelegramContractCard,
+  TelegramProfileView,
+  TelegramRedirectNotice,
+} from '@components/telegram';
 import { RevisionModal } from '../telegram/features/projects/RevisionModal';
 import { RatingModal } from '../telegram/features/profile/RatingModal';
 import { Project } from '../types';
