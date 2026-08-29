@@ -11,9 +11,9 @@ import {
   TelegramContractCard,
   TelegramProfileView,
   TelegramRedirectNotice,
+  RevisionModal,
+  RatingModal,
 } from '@components/telegram';
-import { RevisionModal } from '../telegram/features/projects/RevisionModal';
-import { RatingModal } from '../telegram/features/profile/RatingModal';
 import { Project } from '../types';
 import { triggerHaptic, triggerHapticNotification } from '../utils/telegramSdk';
 import { IconRefreshCw, IconFilm, IconZap } from '@icons/icons';
