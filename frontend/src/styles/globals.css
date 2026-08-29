@@ -63,12 +63,12 @@ a {
 /* Premium Metallic Gold Text Selection */
 ::selection {
   background-color: var(--accent-gold);
-  color: #170B06;
+  color: var(--signal-ink);
 }
 
 ::-moz-selection {
   background-color: var(--accent-gold);
-  color: #170B06;
+  color: var(--signal-ink);
 }
 
 /* Custom Scrollbar */

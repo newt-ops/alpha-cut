@@ -48,7 +48,7 @@ export const Switch: React.FC<SwitchProps> = ({
             width: '20px',
             height: '20px',
             borderRadius: '50%',
-            backgroundColor: checked ? '#170B06' : 'var(--surface)',
+            backgroundColor: checked ? 'var(--signal-ink)' : 'var(--surface)',
             boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
           }}
         />

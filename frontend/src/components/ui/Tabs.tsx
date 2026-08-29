@@ -43,7 +43,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs = [], activeTab, onChange, clas
               padding: '8px 18px',
               fontSize: '14px',
               fontWeight: 600,
-              color: isActive ? '#170B06' : 'var(--ink-soft)',
+              color: isActive ? 'var(--signal-ink)' : 'var(--ink-soft)',
               backgroundColor: 'transparent',
               border: 'none',
               borderRadius: 'calc(var(--radius-md) - 4px)',

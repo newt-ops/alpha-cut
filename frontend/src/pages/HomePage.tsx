@@ -365,7 +365,7 @@ export const HomePage: React.FC = () => {
                       left: '50%',
                       transform: 'translateX(-50%)',
                       backgroundColor: 'var(--accent-gold)',
-                      color: '#170B06',
+                      color: 'var(--signal-ink)',
                       padding: '5px 18px',
                       borderRadius: '100px',
                       fontSize: '11px',
@@ -382,7 +382,7 @@ export const HomePage: React.FC = () => {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    <IconSparkles size={13} color="#170B06" />
+                    <IconSparkles size={13} color="var(--signal-ink)" />
                     ★ MOST POPULAR TIER
                   </div>
                 )}
@@ -647,7 +647,7 @@ export const HomePage: React.FC = () => {
                         height: '46px',
                         borderRadius: '50%',
                         backgroundColor: 'var(--accent-gold)',
-                        color: '#170B06',
+                        color: 'var(--signal-ink)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

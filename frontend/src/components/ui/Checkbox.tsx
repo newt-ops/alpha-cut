@@ -66,7 +66,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
           >
             <path
               d="M2.5 6L5 8.5L9.5 3.5"
-              stroke="#170B06"
+              stroke="var(--signal-ink)"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"

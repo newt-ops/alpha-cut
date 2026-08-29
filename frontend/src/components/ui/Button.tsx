@@ -59,7 +59,7 @@ export const Button: React.FC<ButtonProps> = ({
   const variantStyles: Record<string, React.CSSProperties> = {
     primary: {
       backgroundColor: 'var(--accent-gold)',
-      color: '#170B06',
+      color: 'var(--signal-ink)',
       boxShadow: 'var(--shadow-sm)',
     },
     secondary: {

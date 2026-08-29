@@ -36,7 +36,7 @@ export const CurrencyToggle: React.FC<CurrencyToggleProps> = ({ currency = 'ETB'
               fontSize: '12px',
               fontWeight: 700,
               fontFamily: 'var(--font-mono)',
-              color: isActive ? '#170B06' : 'var(--ink-soft)',
+              color: isActive ? 'var(--signal-ink)' : 'var(--ink-soft)',
               backgroundColor: 'transparent',
               border: 'none',
               borderRadius: 'calc(var(--radius-md) - 3px)',
