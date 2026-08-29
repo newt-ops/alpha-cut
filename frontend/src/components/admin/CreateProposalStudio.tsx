@@ -14,7 +14,6 @@ import {
   IconUser,
   IconDollar,
   IconShield,
-  IconCheckCircle,
 } from '@icons/icons';
 
 export interface CreateProposalStudioProps {
