@@ -21,10 +21,10 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   onSuccess,
   exchangeRate = { usdToEtb: 128.5, etbToUsd: 0.00778 },
 }) => {
-  // Proposal Form Branching State ('project' | 'contract')
+  // Proposal Form Mode ('project' | 'contract')
   const [proposalType, setProposalType] = useState<'project' | 'contract'>('project');
 
-  // Client Search & Selection State
+  // Client Directory Lookup State
   const [clientSearchText, setClientSearchText] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<any>(null);
@@ -86,7 +86,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
     }
   }, [proposalType, packageTier, contentLength, contractFrequency, currency, exchangeRate]);
 
-  // Client Typeahead Search
+  // Client Search Debounce
   useEffect(() => {
     if (!clientSearchText || clientSearchText.trim().length === 0) {
       setSearchResults([]);
@@ -98,7 +98,6 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
         const res = await apiFetch(`/api/admin/users/search?email=${encodeURIComponent(clientSearchText)}`);
         if (res.success) setSearchResults(res.users);
       } catch (err) {
-        // Search error
       } finally {
         setSearchingClient(false);
       }
@@ -107,11 +106,11 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
     return () => clearTimeout(timer);
   }, [clientSearchText, apiFetch]);
 
-  // Form Submit Handler
+  // Submit Handler
   const handleSubmitProposal = async (e: FormEvent) => {
     e.preventDefault();
     if (!selectedClient) {
-      toast({ message: 'Please search and select a registered client first.', type: 'error' });
+      toast({ message: 'Please search and select a registered client partner first.', type: 'error' });
       return;
     }
 
@@ -120,7 +119,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
 
       if (proposalType === 'project') {
         if (!price || !deadline) {
-          toast({ message: 'Please specify the project rate and deadline date.', type: 'error' });
+          toast({ message: 'Please specify the project rate and target deadline date.', type: 'error' });
           return;
         }
 
@@ -141,12 +140,12 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
         });
 
         if (res.success) {
-          toast({ message: 'One-off Project Proposal dispatched to client!', type: 'success' });
+          toast({ message: 'Project Proposal offer dispatched to client!', type: 'success' });
           onSuccess();
         }
       } else {
         if (!contractStartDate || !contractMonthlyPrice) {
-          toast({ message: 'Please specify the contract start date and monthly price.', type: 'error' });
+          toast({ message: 'Please specify the start date and monthly retainer rate.', type: 'error' });
           return;
         }
 
@@ -179,23 +178,32 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   };
 
   return (
-    <div style={{ display: 'grid', gap: '32px' }} className="create-proposal-studio-container">
-      {/* Top Header & Navigation Bar */}
-      <div className="proposal-header">
+    <div style={{ display: 'grid', gap: '24px' }} className="create-proposal-studio-container">
+      {/* Executive Control Header */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
+          paddingBottom: '20px',
+          borderBottom: '1px solid var(--line)',
+        }}
+      >
         <div>
           <button
             type="button"
             onClick={onBack}
             style={{
-              backgroundColor: 'var(--surface)',
-              border: '1px solid var(--line)',
-              color: 'var(--ink-soft)',
-              padding: '6px 14px',
-              borderRadius: '100px',
-              fontSize: '12.5px',
-              fontWeight: 700,
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: 'var(--accent-gold)',
+              fontSize: '13px',
+              fontWeight: 600,
               cursor: 'pointer',
-              marginBottom: '12px',
+              marginBottom: '6px',
+              padding: 0,
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
@@ -203,196 +211,260 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           >
             ← Back to Operations Hub
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Badge variant="gold">PROPOSAL CREATION STUDIO</Badge>
-            <h1 className="font-display proposal-title" style={{ fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
-              Draft Official Client Proposal Offer
-            </h1>
-          </div>
-          <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', margin: '4px 0 0 0' }}>
-            Configure custom video editing deliverables, package tiers, pricing terms, and send live offers.
-          </p>
+          <h1 className="font-display" style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
+            Proposal & Deal Studio
+          </h1>
         </div>
 
-        {/* Currency & Type Quick Indicator */}
-        <div style={{ display: 'flex', gap: '8px', backgroundColor: 'var(--surface)', padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
-          <span className="font-mono" style={{ fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 800 }}>
-            STUDIO RATE: 1 USD = {exchangeRate.usdToEtb} ETB
-          </span>
+        {/* Top Control Segment & Ticker */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          {/* Segmented Switcher Pill */}
+          <div
+            style={{
+              display: 'flex',
+              backgroundColor: 'var(--surface)',
+              borderRadius: '12px',
+              padding: '4px',
+              border: '1px solid var(--line)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setProposalType('project')}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: proposalType === 'project' ? 'var(--accent-gold)' : 'transparent',
+                color: proposalType === 'project' ? 'var(--signal-ink)' : 'var(--ink-soft)',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              🎬 One-Off Project
+            </button>
+            <button
+              type="button"
+              onClick={() => setProposalType('contract')}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: proposalType === 'contract' ? 'var(--accent-gold)' : 'transparent',
+                color: proposalType === 'contract' ? 'var(--signal-ink)' : 'var(--ink-soft)',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              📦 Monthly Retainer
+            </button>
+          </div>
+
+          <div className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 700, backgroundColor: 'rgba(201,168,76,0.1)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(201,168,76,0.2)' }}>
+            1 USD = {exchangeRate.usdToEtb} ETB
+          </div>
         </div>
       </div>
 
-      {/* Proposal Type Selector Tabs */}
-      <div className="proposal-type-grid">
-        <div
-          onClick={() => setProposalType('project')}
+      {/* Main Studio Two-Column Grid */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)',
+          gap: '24px',
+          alignItems: 'start',
+        }}
+        className="proposal-main-grid"
+      >
+        {/* LEFT COLUMN: UNIFIED PROFESSIONAL DASHBOARD FORM SHEET */}
+        <form
+          onSubmit={handleSubmitProposal}
           style={{
-            backgroundColor: proposalType === 'project' ? 'var(--surface)' : 'var(--bg)',
-            border: `2px solid ${proposalType === 'project' ? 'var(--accent-gold)' : 'var(--line)'}`,
-            borderRadius: 'var(--radius-lg)',
-            padding: '20px',
-            cursor: 'pointer',
-            transition: 'all var(--transition-fast)',
-            boxShadow: proposalType === 'project' ? '0 10px 30px -10px rgba(201, 160, 107, 0.3)' : 'none',
+            backgroundColor: 'var(--surface)',
+            borderRadius: '16px',
+            border: '1px solid var(--line)',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
-              One-off Video Project Proposal
-            </h3>
-            {proposalType === 'project' && <Badge variant="gold">SELECTED</Badge>}
-          </div>
-          <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
-            Single video deliverable order with a target deadline date (e.g. Viral Animation Edit or YouTube Video).
-          </p>
-        </div>
-
-        <div
-          onClick={() => setProposalType('contract')}
-          style={{
-            backgroundColor: proposalType === 'contract' ? 'var(--surface)' : 'var(--bg)',
-            border: `2px solid ${proposalType === 'contract' ? 'var(--accent-gold)' : 'var(--line)'}`,
-            borderRadius: 'var(--radius-lg)',
-            padding: '20px',
-            cursor: 'pointer',
-            transition: 'all var(--transition-fast)',
-            boxShadow: proposalType === 'contract' ? '0 10px 30px -10px rgba(201, 160, 107, 0.3)' : 'none',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
-              Monthly Retainer Contract Proposal
-            </h3>
-            {proposalType === 'contract' && <Badge variant="gold">SELECTED</Badge>}
-          </div>
-          <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
-            Ongoing monthly content partner commitment with fixed video delivery frequencies and recurring billing.
-          </p>
-        </div>
-      </div>
-
-      {/* Main Studio Grid (Form Column + Live Preview Column) */}
-      <div className="proposal-main-grid">
-        
-        {/* LEFT COLUMN: INTERACTIVE FORM BUILDER */}
-        <form onSubmit={handleSubmitProposal} style={{ display: 'grid', gap: '28px' }}>
-          
-          {/* STEP 1: CLIENT CRM LOOKUP */}
-          <div className="proposal-step-card" style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', display: 'grid', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--accent-gold)', color: '#170B06', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px' }}>1</span>
-              <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Select Registered Client</h3>
+          {/* SECTION 1: CLIENT SELECTION */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800 }}>
+                01. CLIENT RECIPIENT
+              </span>
+              {selectedClient && <Badge variant="gold">PARTNER VERIFIED ✓</Badge>}
             </div>
 
-            <div>
-              <Input
-                label="Search Client Directory by Email or Name"
-                placeholder="Type client email (e.g. client@example.com)..."
-                value={clientSearchText}
-                onChange={(e) => setClientSearchText(e.target.value)}
-                icon={IconSearch}
-              />
+            {!selectedClient ? (
+              <div>
+                <Input
+                  placeholder="Search client directory by name or email (e.g. alex@creator.com)..."
+                  value={clientSearchText}
+                  onChange={(e) => setClientSearchText(e.target.value)}
+                  icon={IconSearch}
+                />
 
-              {searchingClient && <span style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginTop: '4px' }}>Searching client database...</span>}
+                {searchingClient && (
+                  <span style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginTop: '6px' }}>
+                    Searching database...
+                  </span>
+                )}
 
-              {searchResults.length > 0 && (
-                <div style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', marginTop: '8px', maxHeight: '160px', overflowY: 'auto' }}>
-                  {searchResults.map((u) => (
+                {searchResults.length > 0 && (
+                  <div
+                    style={{
+                      backgroundColor: 'var(--bg)',
+                      border: '1px solid var(--line)',
+                      borderRadius: '10px',
+                      marginTop: '8px',
+                      maxHeight: '180px',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {searchResults.map((u) => (
+                      <div
+                        key={u._id}
+                        onClick={() => {
+                          setSelectedClient(u);
+                          setClientSearchText(u.email);
+                          setSearchResults([]);
+                        }}
+                        style={{
+                          padding: '12px 14px',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid var(--line)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <div>
+                          <strong style={{ color: 'var(--ink)', display: 'block' }}>{u.name}</strong>
+                          <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>{u.email}</span>
+                        </div>
+                        <span style={{ fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 700 }}>
+                          Select →
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '14px 16px',
+                  backgroundColor: 'rgba(201, 168, 76, 0.08)',
+                  border: '1px solid var(--accent-gold)',
+                  borderRadius: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {selectedClient.avatarUrl ? (
+                    <img
+                      src={selectedClient.avatarUrl}
+                      alt={selectedClient.name}
+                      style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
                     <div
-                      key={u._id}
-                      onClick={() => {
-                        setSelectedClient(u);
-                        setClientSearchText(u.email);
-                        setSearchResults([]);
-                      }}
                       style={{
-                        padding: '10px 14px',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        borderBottom: '1px solid var(--line)',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--accent-gold)',
+                        color: 'var(--signal-ink)',
                         display: 'flex',
-                        justifyContent: 'space-between',
                         alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 800,
+                        fontSize: '16px',
                       }}
                     >
-                      <div>
-                        <strong style={{ color: 'var(--ink)', display: 'block' }}>{u.name}</strong>
-                        <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>{u.email}</span>
-                      </div>
-                      <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 700 }}>Select Client →</span>
+                      {selectedClient.name ? selectedClient.name.charAt(0).toUpperCase() : 'C'}
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {selectedClient && (
-                <div style={{ marginTop: '12px', padding: '16px', backgroundColor: 'rgba(201, 160, 107, 0.12)', border: '1px solid var(--accent-gold)', borderRadius: 'var(--radius-md)', display: 'grid', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      {selectedClient.avatarUrl ? (
-                        <img src={selectedClient.avatarUrl} alt={selectedClient.name} style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--accent-gold)' }} />
-                      ) : (
-                        <div style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: 'rgba(201, 160, 107, 0.2)', border: '1px solid var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-gold)', fontWeight: 800, fontSize: '16px' }}>
-                          {selectedClient.name ? selectedClient.name.charAt(0).toUpperCase() : 'C'}
-                        </div>
-                      )}
-                      <div>
-                        <span style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', textTransform: 'uppercase' }}>Selected Client Partner</span>
-                        <strong style={{ fontSize: '16px', color: 'var(--ink)', display: 'block' }}>{selectedClient.name}</strong>
-                        <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)' }}>{selectedClient.email}</span>
-                      </div>
-                    </div>
-                    <Badge variant="gold">PROFILE LOADED ✓</Badge>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--line)', fontSize: '11.5px' }}>
-                    <span style={{ color: selectedClient.telegramChatId ? '#24A1DE' : 'var(--ink-soft)', fontWeight: 700 }}>
-                      {selectedClient.telegramChatId ? '✈️ Telegram Channel Linked' : 'Telegram Not Linked'}
-                    </span>
-                    <span style={{ color: 'var(--accent-gold)', fontWeight: 700 }}>
-                      Account Status: Active Client
-                    </span>
+                  <div>
+                    <strong style={{ fontSize: '15px', color: 'var(--ink)', display: 'block' }}>
+                      {selectedClient.name}
+                    </strong>
+                    <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{selectedClient.email}</span>
                   </div>
                 </div>
-              )}
-            </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedClient(null);
+                    setClientSearchText('');
+                  }}
+                  style={{
+                    fontSize: '12px',
+                    color: 'var(--ink-soft)',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    padding: 0,
+                    border: 'none',
+                    background: 'none',
+                  }}
+                >
+                  Change Client
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* STEP 2: PACKAGE TIER & EDITING STYLE */}
-          <div className="proposal-step-card" style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', display: 'grid', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--accent-gold)', color: '#170B06', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px' }}>2</span>
-              <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Configure Package Tier & Style</h3>
-            </div>
+          <div style={{ height: '1px', backgroundColor: 'var(--line)' }} />
 
-            {/* 3 Tier Selector Cards */}
-            <div className="proposal-tier-grid">
+          {/* SECTION 2: DELIVERABLE SPECIFICATIONS */}
+          <div>
+            <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
+              02. DELIVERABLE SPECIFICATIONS
+            </span>
+
+            {/* Tier Pills */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}>
               {[
-                { id: 'basic' as const, name: 'Basic Edit Tier', desc: 'Clean, essential cutting & standard visual polish', color: '#3B82F6' },
-                { id: 'professional' as const, name: 'Professional Tier', desc: 'Advanced captions, sound design & SFX (Popular)', color: '#F59E0B' },
-                { id: 'premium' as const, name: 'Premium Edit Tier', desc: 'Custom animations, cinematic grading & viral hooks', color: '#10B981' },
+                { id: 'basic' as const, name: 'Basic Edit Tier', desc: 'Essential cuts & polish' },
+                { id: 'professional' as const, name: 'Professional Tier', desc: 'SFX & motion graphics' },
+                { id: 'premium' as const, name: 'Premium Tier', desc: 'Custom 2D/3D & hooks' },
               ].map((t) => (
                 <div
                   key={t.id}
                   onClick={() => setPackageTier(t.id)}
                   style={{
-                    backgroundColor: packageTier === t.id ? 'var(--bg)' : 'transparent',
-                    border: `1.5px solid ${packageTier === t.id ? t.color : 'var(--line)'}`,
-                    borderRadius: 'var(--radius-md)',
-                    padding: '14px',
+                    padding: '12px',
+                    borderRadius: '10px',
+                    border: `1.5px solid ${packageTier === t.id ? 'var(--accent-gold)' : 'var(--line)'}`,
+                    backgroundColor: packageTier === t.id ? 'rgba(201, 168, 76, 0.1)' : 'transparent',
                     cursor: 'pointer',
-                    transition: 'all var(--transition-fast)',
+                    transition: 'all 0.15s ease',
                   }}
                 >
-                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: t.color, display: 'inline-block', marginBottom: '6px' }} />
-                  <h4 style={{ fontSize: '13.5px', fontWeight: 800, margin: 0, color: 'var(--ink)' }}>{t.name}</h4>
-                  <p style={{ fontSize: '11px', color: 'var(--ink-soft)', margin: '4px 0 0 0' }}>{t.desc}</p>
+                  <strong style={{ fontSize: '13px', display: 'block', color: packageTier === t.id ? 'var(--accent-gold)' : 'var(--ink)' }}>
+                    {t.name}
+                  </strong>
+                  <span style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
+                    {t.desc}
+                  </span>
                 </div>
               ))}
             </div>
 
-            {/* Editing Style & Content Format Pickers */}
-            <div className="proposal-two-col">
+            {/* Inputs Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
               {proposalType === 'project' && (
                 <Select
                   label="Editing Style"
@@ -403,10 +475,10 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               )}
 
               <Select
-                label="Content Video Format"
+                label="Video Format"
                 options={[
-                  { label: '9:16 Vertical Short-Form (Reels, TikTok, Shorts)', value: 'short' },
-                  { label: '16:9 Widescreen Long-Form (YouTube, Courses)', value: 'long' },
+                  { label: '9:16 Vertical Short-Form (Reels, Shorts)', value: 'short' },
+                  { label: '16:9 Widescreen Long-Form (YouTube)', value: 'long' },
                 ]}
                 value={contentLength}
                 onChange={(v) => setContentLength(v as any)}
@@ -429,16 +501,17 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
             </div>
           </div>
 
-          {/* STEP 3: FINANCIAL TERMS & CURRENCY */}
-          <div className="proposal-step-card" style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', display: 'grid', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--accent-gold)', color: '#170B06', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px' }}>3</span>
-              <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Financial Terms & Currency</h3>
-            </div>
+          <div style={{ height: '1px', backgroundColor: 'var(--line)' }} />
 
-            <div className="proposal-two-col">
+          {/* SECTION 3: FINANCIAL TERMS & SCHEDULE */}
+          <div>
+            <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
+              03. FINANCIAL TERMS & TIMELINE
+            </span>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '14px' }}>
               <Select
-                label="Offer Currency"
+                label="Currency"
                 options={[
                   { label: 'Ethiopian Birr (ETB)', value: 'ETB' },
                   { label: 'United States Dollar (USD $)', value: 'USD' },
@@ -449,7 +522,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
 
               {proposalType === 'project' ? (
                 <Input
-                  label={`Agreed Rate (${currency})`}
+                  label={`Agreed Project Rate (${currency})`}
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
@@ -467,16 +540,8 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                 />
               )}
             </div>
-          </div>
 
-          {/* STEP 4: TIMELINE, BRIEF & NOTES */}
-          <div className="proposal-step-card" style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', display: 'grid', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--accent-gold)', color: '#170B06', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px' }}>4</span>
-              <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Timeline & Video Brief</h3>
-            </div>
-
-            <div className={proposalType === 'contract' ? 'proposal-two-col' : ''} style={proposalType === 'project' ? { display: 'grid', gridTemplateColumns: '1fr', gap: '16px' } : undefined}>
+            <div style={{ display: 'grid', gridTemplateColumns: proposalType === 'contract' ? 'repeat(2, 1fr)' : '1fr', gap: '14px' }}>
               {proposalType === 'project' ? (
                 <Input
                   label="Target Project Deadline Date"
@@ -495,7 +560,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                     required
                   />
                   <Select
-                    label="Contract Term Duration"
+                    label="Contract Duration Term"
                     options={[
                       { label: '1 Month Commitment', value: '1' },
                       { label: '3 Months Commitment (5% Discount)', value: '3' },
@@ -508,87 +573,125 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                 </>
               )}
             </div>
+          </div>
 
-            {proposalType === 'project' && (
+          <div style={{ height: '1px', backgroundColor: 'var(--line)' }} />
+
+          {/* SECTION 4: BRIEF & STUDIO NOTES */}
+          <div>
+            <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
+              04. VIDEO BRIEF & STUDIO NOTES
+            </span>
+
+            <div style={{ display: 'grid', gap: '14px' }}>
+              {proposalType === 'project' && (
+                <Textarea
+                  label="Reference Brief & Project Notes"
+                  rows={2}
+                  placeholder="Reference links, raw footage Drive folders, style guidelines..."
+                  value={referenceBrief}
+                  onChange={(e) => setReferenceBrief(e.target.value)}
+                />
+              )}
+
               <Textarea
-                label="Client Video Brief & References"
-                rows={3}
-                placeholder="Include reference links, raw footage Drive folders, style notes..."
-                value={referenceBrief}
-                onChange={(e) => setReferenceBrief(e.target.value)}
+                label="Private Studio Notes (Internal Only)"
+                rows={2}
+                placeholder="Internal notes visible only to agency admins..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
               />
-            )}
-
-            <Textarea
-              label="Private Studio Notes (Internal Only)"
-              rows={2}
-              placeholder="Internal notes visible only to admins..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
+            </div>
           </div>
 
           <Button type="submit" variant="primary" size="large" fullWidth isLoading={submitting}>
-            🚀 Dispatch Proposal Offer to Client
+            🚀 Dispatch Official Proposal Offer to Client
           </Button>
         </form>
 
-        {/* RIGHT COLUMN: LIVE PROPOSAL CLIENT PREVIEW CARD */}
-        <div className="proposal-preview-col">
-          <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1.5px solid var(--accent-gold)', boxShadow: '0 10px 40px -10px rgba(201, 160, 107, 0.3)', display: 'grid', gap: '16px' }}>
+        {/* RIGHT COLUMN: LIVE PROPOSAL DEAL TICKET PREVIEW */}
+        <div style={{ position: 'sticky', top: '90px' }}>
+          <div
+            style={{
+              backgroundColor: 'var(--surface)',
+              borderRadius: '16px',
+              border: '1.5px solid var(--accent-gold)',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxShadow: '0 12px 36px -8px rgba(201, 168, 76, 0.25)',
+            }}
+          >
+            {/* Header Badge */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '12px' }}>
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800, textTransform: 'uppercase' }}>
-                CLIENT PROPOSAL PREVIEW
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800 }}>
+                DEAL TICKET PREVIEW
               </span>
-              <Badge variant="gold">{proposalType === 'project' ? 'ONE-OFF PROJECT' : 'MONTHLY RETAINER'}</Badge>
+              <Badge variant="gold">{proposalType === 'project' ? 'ONE-OFF PROJECT' : 'RETAINER CONTRACT'}</Badge>
             </div>
 
+            {/* Recipient Details */}
             <div>
-              <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>CLIENT RECIPIENT</span>
-              <h3 className="font-display" style={{ fontSize: '20px', fontWeight: 800, margin: '2px 0 0 0', color: 'var(--ink)' }}>
-                {selectedClient ? selectedClient.name : 'Select a client...'}
+              <span style={{ fontSize: '11px', color: 'var(--ink-soft)', textTransform: 'uppercase', display: 'block' }}>RECIPIENT PARTNER</span>
+              <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 800, margin: '2px 0 0 0', color: 'var(--ink)' }}>
+                {selectedClient ? selectedClient.name : 'Select Client...'}
               </h3>
-              <span style={{ fontSize: '12.5px', color: 'var(--accent-gold)', fontWeight: 700 }}>
+              <span style={{ fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 600 }}>
                 {selectedClient ? selectedClient.email : 'No client selected'}
               </span>
             </div>
 
-            <div style={{ padding: '16px', backgroundColor: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', display: 'grid', gap: '10px' }}>
+            {/* Terms Summary Grid */}
+            <div
+              style={{
+                backgroundColor: 'var(--bg)',
+                borderRadius: '12px',
+                border: '1px solid var(--line)',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                fontSize: '13px',
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 700 }}>PACKAGE TIER</span>
+                <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>Tier</span>
                 <Badge variant="gold">{packageTier.toUpperCase()}</Badge>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 700 }}>SPECIFICATION</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)' }}>
-                  {proposalType === 'project' ? editingStyle : `${contractFrequency} Retainer`}
-                </span>
+                <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>Spec</span>
+                <strong style={{ color: 'var(--ink)' }}>
+                  {proposalType === 'project' ? editingStyle : `${contractFrequency}`}
+                </strong>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 700 }}>FORMAT</span>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)' }}>
-                  {contentLength === 'short' ? '9:16 Vertical Short-Form' : '16:9 Widescreen Long-Form'}
-                </span>
+                <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>Format</span>
+                <strong style={{ color: 'var(--ink)' }}>
+                  {contentLength === 'short' ? '9:16 Short-Form' : '16:9 Long-Form'}
+                </strong>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--line)' }}>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800 }}>OFFER RATE</span>
-                <span className="font-mono" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-gold)' }}>
+              <div style={{ height: '1px', backgroundColor: 'var(--line)', margin: '4px 0' }} />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="font-mono" style={{ color: 'var(--accent-gold)', fontWeight: 800, fontSize: '11px' }}>OFFER RATE</span>
+                <strong className="font-mono" style={{ fontSize: '18px', color: 'var(--accent-gold)' }}>
                   {proposalType === 'project' ? `${price} ${currency}` : `${contractMonthlyPrice} ${currency} / mo`}
-                </span>
+                </strong>
               </div>
             </div>
 
+            {/* Notification Rails */}
             <div style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'grid', gap: '6px' }}>
-              <span>• Telegram Notification: <strong style={{ color: 'var(--accent-gold)' }}>Active ✓</strong></span>
-              <span>• Transactional Email: <strong style={{ color: 'var(--accent-gold)' }}>Active ✓</strong></span>
-              <span>• Client Portal Acceptance: <strong style={{ color: 'var(--accent-gold)' }}>Active ✓</strong></span>
+              <span>• Telegram Bot Notification: <strong style={{ color: 'var(--accent-gold)' }}>Active ✓</strong></span>
+              <span>• Transactional Email Offer: <strong style={{ color: 'var(--accent-gold)' }}>Active ✓</strong></span>
+              <span>• Client Portal Response: <strong style={{ color: 'var(--accent-gold)' }}>Active ✓</strong></span>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
