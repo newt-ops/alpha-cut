@@ -25,11 +25,13 @@ export const RequireAuth: React.FC<{ children: ReactNode }> = ({ children }) => 
   }
 
   const isDashboardAccess =
+    location.pathname === '/' ||
+    location.pathname === '' ||
     location.pathname.startsWith('/dashboard') ||
     (typeof window !== 'undefined' &&
       (window.location.hostname.startsWith('dashboard.') || window.location.hostname === 'dashboard.alpha-cut.com'));
 
-  if (!user.telegramChatId && user.role !== 'admin' && isDashboardAccess) {
+  if (!user.telegramChatId && user.role !== 'admin' && location.pathname !== '/telegram-link' && isDashboardAccess) {
     return <Navigate to="/telegram-link" replace />;
   }
 

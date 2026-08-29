@@ -123,6 +123,15 @@ const AppRoutes: React.FC = () => {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route
+              path="/telegram-link"
+              element={
+                <RequireAuth>
+                  <TelegramLinkPage />
+                </RequireAuth>
+              }
+            />
+            <Route path="/login" element={<LoginPage />} />
+            <Route
               path="*"
               element={
                 <RequireAuth>
