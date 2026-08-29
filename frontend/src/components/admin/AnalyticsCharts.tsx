@@ -242,7 +242,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({ stats, loading
       />
 
       {/* Primary Financial Stat Cards (Equalized Height & Flex Layout) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+      <div className="responsive-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
         {/* Stat Card 1: Total Revenue */}
         <div
           style={{

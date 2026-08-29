@@ -458,7 +458,7 @@ export const DashboardPage: React.FC = () => {
         <div style={{ display: 'grid', gap: '28px' }}>
 
           {/* Quick Metrics & Telegram Status Bar */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          <div className="responsive-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
             <div
               style={{
                 backgroundColor: 'var(--surface)',

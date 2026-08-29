@@ -150,90 +150,69 @@ a {
   animation: gentleFloat 4s ease-in-out infinite;
 }
 
-/* ===== Proposal Studio Responsive Layout ===== */
-.proposal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
+/* ===== Responsive Layout & Mobile UX Utilities ===== */
+.responsive-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.proposal-type-grid {
+.responsive-stats-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 
 .proposal-main-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 32px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 24px;
   align-items: start;
 }
 
-.proposal-tier-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+.desktop-preview-col {
+  display: block;
 }
 
-.proposal-two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.proposal-preview-col {
-  position: sticky;
-  top: 90px;
-  display: grid;
-  gap: 20px;
-}
-
-.proposal-title {
-  font-size: 28px;
-}
-
-.proposal-step-card {
-  padding: 24px;
+.mobile-preview-trigger-bar {
+  display: none;
 }
 
 @media (max-width: 900px) {
   .proposal-main-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
+    grid-template-columns: 1fr !important;
   }
 
-  .proposal-preview-col {
-    position: static;
-    order: -1;
+  .desktop-preview-col {
+    display: none !important;
   }
 
-  .proposal-tier-grid {
-    grid-template-columns: 1fr;
+  .mobile-preview-trigger-bar {
+    display: flex !important;
   }
 
-  .proposal-two-col {
-    grid-template-columns: 1fr;
+  .responsive-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
   }
 }
 
 @media (max-width: 640px) {
+  .responsive-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
   .proposal-type-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 
   .proposal-title {
-    font-size: 22px !important;
-  }
-
-  .proposal-step-card {
-    padding: 16px !important;
+    font-size: 20px !important;
   }
 
   .create-proposal-studio-container {
-    gap: 20px !important;
+    gap: 16px !important;
   }
 
   .proposal-header {
@@ -241,4 +220,5 @@ a {
     align-items: flex-start;
   }
 }
+
 

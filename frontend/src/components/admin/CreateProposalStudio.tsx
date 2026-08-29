@@ -4,6 +4,7 @@ import { Button } from '@components/ui/Button';
 import { Input, Textarea } from '@components/ui/Input';
 import { Select } from '@components/ui/Select';
 import { EDITING_STYLES, EditingStyleItem } from '../../data/editingStyles';
+import { Modal } from '@components/ui/Modal';
 import {
   IconSearch,
   IconCheck,
@@ -14,6 +15,7 @@ import {
   IconUser,
   IconDollar,
   IconShield,
+  IconEye,
 } from '@icons/icons';
 
 export interface CreateProposalStudioProps {
@@ -49,6 +51,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
 }) => {
   // Proposal Form Mode ('project' | 'contract')
   const [proposalType, setProposalType] = useState<'project' | 'contract'>('project');
+  const [showMobilePreviewModal, setShowMobilePreviewModal] = useState(false);
 
   // Client Directory Lookup State
   const [clientSearchText, setClientSearchText] = useState('');
@@ -925,8 +928,8 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           </Button>
         </form>
 
-        {/* RIGHT COLUMN: REALISTIC CLIENT PROPOSAL AGREEMENT PREVIEW */}
-        <div style={{ position: 'sticky', top: '90px' }}>
+        {/* RIGHT COLUMN: REALISTIC CLIENT PROPOSAL AGREEMENT PREVIEW (DESKTOP) */}
+        <div className="desktop-preview-col" style={{ position: 'sticky', top: '90px' }}>
           <div
             style={{
               backgroundColor: 'var(--surface)',
@@ -1067,6 +1070,101 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           </div>
         </div>
       </div>
+
+      {/* MOBILE FLOATING PREVIEW TRIGGER BAR */}
+      <div className="mobile-preview-trigger-bar" style={{ position: 'fixed', bottom: '20px', left: '16px', right: '16px', zIndex: 90, justifyContent: 'center' }}>
+        <button
+          type="button"
+          onClick={() => setShowMobilePreviewModal(true)}
+          style={{
+            backgroundColor: 'var(--accent-gold)',
+            color: 'var(--signal-ink)',
+            border: 'none',
+            borderRadius: '100px',
+            padding: '12px 24px',
+            fontWeight: 800,
+            fontSize: '13.5px',
+            boxShadow: '0 8px 24px rgba(201, 168, 76, 0.4)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <IconEye size={18} />
+          <span>Preview Live Proposal Offer</span>
+        </button>
+      </div>
+
+      {/* MOBILE FULL PROPOSAL PREVIEW MODAL */}
+      <Modal isOpen={showMobilePreviewModal} onClose={() => setShowMobilePreviewModal(false)} title="Live Proposal Agreement Preview">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px 0' }}>
+          <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: '12px', textAlign: 'center' }}>
+            <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 800, letterSpacing: '1px' }}>
+              ALPHA CUT • OFFICIAL PROPOSAL AGREEMENT
+            </span>
+            <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 800, margin: '6px 0 2px 0', color: 'var(--ink)' }}>
+              {proposalTitle || 'Video Production Proposal'}
+            </h3>
+            <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
+              Prepared for: <strong style={{ color: 'var(--accent-gold)' }}>{selectedClient ? selectedClient.name : 'Client Partner'}</strong>
+            </span>
+          </div>
+
+          {activeStyleSample && (
+            <div style={{ backgroundColor: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--accent-gold-soft)', padding: '12px 14px' }}>
+              <strong style={{ fontSize: '13.5px', color: 'var(--ink)', display: 'block' }}>{activeStyleSample.name}</strong>
+              <p style={{ fontSize: '11.5px', color: 'var(--ink-soft)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+                {activeStyleSample.description}
+              </p>
+            </div>
+          )}
+
+          <div style={{ backgroundColor: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--line)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: 'var(--ink-soft)' }}>Deliverables</span>
+              <strong style={{ color: 'var(--ink)' }}>{proposalType === 'project' ? `${quantity}x ${editingStyle}` : `${contractFrequency} Retainer`}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: 'var(--ink-soft)' }}>Specs & Tier</span>
+              <strong style={{ color: 'var(--ink)' }}>{aspectRatio} • {resolution} • {packageTier.toUpperCase()}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: 'var(--ink-soft)' }}>Revisions Included</span>
+              <strong style={{ color: 'var(--ink)' }}>{includedRevisions} Round(s)</strong>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: 'rgba(201, 168, 76, 0.08)', padding: '14px', borderRadius: '12px', border: '1px solid var(--accent-gold)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 800 }}>COMMERCIAL INVESTMENT</span>
+              <span style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>{effectivePaymentTerms}</span>
+            </div>
+            <span className="font-mono" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-gold)' }}>
+              {proposalType === 'project' ? `${price} ${currency}` : `${contractMonthlyPrice} ${currency} / mo`}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowMobilePreviewModal(false)}
+            style={{
+              width: '100%',
+              height: '42px',
+              borderRadius: '10px',
+              border: 'none',
+              backgroundColor: 'var(--accent-gold)',
+              color: 'var(--signal-ink)',
+              fontWeight: 800,
+              fontSize: '14px',
+              cursor: 'pointer',
+              marginTop: '8px',
+            }}
+          >
+            Close Preview
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };
