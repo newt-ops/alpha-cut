@@ -6,8 +6,8 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
     return next();
   }
 
-  // Exclude external Telegram bot webhook from browser CSRF header check
-  if (req.path.startsWith('/api/telegram/webhook')) {
+  // Exclude external webhooks (Telegram, Chapa) from browser CSRF header check
+  if (req.path.includes('/telegram/webhook') || req.path.includes('/payments/webhook')) {
     return next();
   }
 

@@ -19,6 +19,9 @@ router.post('/webhook/:secret', async (req: Request, res: Response): Promise<any
 
   if (bot) {
     try {
+      if (req.body) {
+        console.log(`[TELEGRAM WEBHOOK] Received update keys: ${Object.keys(req.body).join(', ')}`);
+      }
       await bot.handleUpdate(req.body);
       if (!res.headersSent) {
         res.status(200).send('OK');
