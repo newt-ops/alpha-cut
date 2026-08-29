@@ -50,7 +50,27 @@ const sendTransactionalEmail = async ({ toEmail, subject, htmlContent }: { toEma
 // --- ONE-OFF PROJECT LIFECYCLE ---
 
 export const createProposal = async (adminId: string | Types.ObjectId, data: any): Promise<IProject> => {
-  const { clientEmail, editingStyle, contentLength, packageTier, currency, price, referenceBrief, briefAttachmentUrl, deadline, notes } = data;
+  const {
+    clientEmail,
+    proposalTitle,
+    quantity,
+    aspectRatio,
+    includedServices,
+    excludedServices,
+    includedRevisions,
+    paymentStructure,
+    validUntil,
+    clientResponsibilities,
+    editingStyle,
+    contentLength,
+    packageTier,
+    currency,
+    price,
+    referenceBrief,
+    briefAttachmentUrl,
+    deadline,
+    notes,
+  } = data;
 
   const client = await User.findOne({ email: clientEmail.toLowerCase() });
   if (!client) {
@@ -63,6 +83,15 @@ export const createProposal = async (adminId: string | Types.ObjectId, data: any
     status: 'proposal_sent',
     clientName: client.name,
     clientEmail: client.email,
+    proposalTitle: proposalTitle || 'Short-Form Video Editing Package',
+    quantity: quantity ? Number(quantity) : 1,
+    aspectRatio: aspectRatio || '9:16',
+    includedServices: Array.isArray(includedServices) ? includedServices : ['Clean Cuts & Trimming', 'Animated Captions', 'Sound Design & SFX', 'Color Correction'],
+    excludedServices: Array.isArray(excludedServices) ? excludedServices : ['Original Filming', 'Voiceover Recording', 'Thumbnail Design'],
+    includedRevisions: includedRevisions ? Number(includedRevisions) : 2,
+    paymentStructure: paymentStructure || 'upfront_100',
+    validUntil: validUntil ? new Date(validUntil) : null,
+    clientResponsibilities: clientResponsibilities || 'Client provides raw footage, assets, brand guidelines, and timely feedback.',
     editingStyle,
     contentLength,
     packageTier,
@@ -335,7 +364,26 @@ const getPlannedVideosFromFrequency = (frequency: string, durationMonths = 1): n
 };
 
 export const createContractProposal = async (adminId: string | Types.ObjectId, data: any): Promise<IContract> => {
-  const { clientEmail, packageTier, contentLength, frequency, currency, monthlyPrice, startDate, durationMonths, notes } = data;
+  const {
+    clientEmail,
+    proposalTitle,
+    videosPerMonth,
+    aspectRatio,
+    includedServices,
+    excludedServices,
+    includedRevisions,
+    paymentStructure,
+    validUntil,
+    clientResponsibilities,
+    packageTier,
+    contentLength,
+    frequency,
+    currency,
+    monthlyPrice,
+    startDate,
+    durationMonths,
+    notes,
+  } = data;
 
   const client = await User.findOne({ email: clientEmail.toLowerCase() });
   if (!client) {
@@ -348,6 +396,15 @@ export const createContractProposal = async (adminId: string | Types.ObjectId, d
     clientId: client._id,
     createdByAdminId: adminId,
     status: 'proposed',
+    proposalTitle: proposalTitle || 'Monthly Content Partner Retainer',
+    videosPerMonth: videosPerMonth ? Number(videosPerMonth) : Math.round(totalVideosPlanned / (Number(durationMonths) || 1)),
+    aspectRatio: aspectRatio || '9:16',
+    includedServices: Array.isArray(includedServices) ? includedServices : ['Clean Cuts & Trimming', 'Animated Captions', 'Sound Design & SFX', 'Color Correction', 'Priority Turnaround'],
+    excludedServices: Array.isArray(excludedServices) ? excludedServices : ['Original Filming', 'Voiceover Recording', 'Thumbnail Design'],
+    includedRevisions: includedRevisions ? Number(includedRevisions) : 2,
+    paymentStructure: paymentStructure || 'monthly_upfront',
+    validUntil: validUntil ? new Date(validUntil) : null,
+    clientResponsibilities: clientResponsibilities || 'Client provides monthly footage batch, creative direction, and timely feedback.',
     packageTier,
     contentLength: contentLength || 'short',
     frequency: frequency || 'weekly-2',

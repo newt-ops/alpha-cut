@@ -15,6 +15,45 @@ const contractSchema = new Schema({
         enum: ['proposed', 'active', 'declined', 'completed', 'cancelled'],
         default: 'proposed',
     },
+    // Extended Proposal Agreement Schema
+    proposalTitle: {
+        type: String,
+        default: 'Monthly Content Partner Retainer',
+    },
+    videosPerMonth: {
+        type: Number,
+        default: 8,
+    },
+    aspectRatio: {
+        type: String,
+        enum: ['9:16', '16:9', '1:1', '4:5'],
+        default: '9:16',
+    },
+    includedServices: {
+        type: [String],
+        default: ['Clean Cuts & Trimming', 'Animated Captions', 'Sound Design & SFX', 'Color Correction', 'Priority Turnaround'],
+    },
+    excludedServices: {
+        type: [String],
+        default: ['Original Filming', 'Voiceover Recording', 'Thumbnail Design'],
+    },
+    includedRevisions: {
+        type: Number,
+        default: 2,
+    },
+    paymentStructure: {
+        type: String,
+        enum: ['upfront_100', 'deposit_50_50', 'monthly_upfront'],
+        default: 'monthly_upfront',
+    },
+    validUntil: {
+        type: Date,
+        default: null,
+    },
+    clientResponsibilities: {
+        type: String,
+        default: 'Client provides monthly footage batch, creative direction, and timely feedback.',
+    },
     packageTier: {
         type: String,
         enum: ['basic', 'professional', 'premium'],

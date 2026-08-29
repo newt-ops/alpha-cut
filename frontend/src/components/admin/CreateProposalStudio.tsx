@@ -4,7 +4,7 @@ import { Button } from '@components/ui/Button';
 import { Input, Textarea } from '@components/ui/Input';
 import { Select } from '@components/ui/Select';
 import { EDITING_STYLES } from '../../data/editingStyles';
-import { IconSearch, IconCheck, IconSparkles, IconFileText, IconCalendar, IconUser, IconDollar } from '@icons/icons';
+import { IconSearch, IconCheck, IconFileText, IconCalendar, IconUser, IconDollar, IconShield } from '@icons/icons';
 
 export interface CreateProposalStudioProps {
   apiFetch: (url: string, options?: any) => Promise<any>;
@@ -13,6 +13,24 @@ export interface CreateProposalStudioProps {
   onSuccess: () => void;
   exchangeRate?: { usdToEtb: number; etbToUsd: number };
 }
+
+const AVAILABLE_SERVICES = [
+  'Clean Cuts & Trimming',
+  'Animated Captions & Kinetic Typography',
+  'Sound Design & Audio SFX',
+  'Color Correction & Grading',
+  'Motion Graphics & B-Roll Overlays',
+  'Viral Hook Visual FX',
+  'Thumbnail Design',
+  'Priority 24-48h Turnaround',
+];
+
+const AVAILABLE_EXCLUSIONS = [
+  'Original Filming & Camera Capture',
+  'Voiceover Voice Acting',
+  'Scriptwriting & Content Research',
+  'Account Channel Management',
+];
 
 export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   apiFetch,
@@ -30,6 +48,34 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [searchingClient, setSearchingClient] = useState(false);
 
+  // Proposal Agreement Extended Metadata
+  const [proposalTitle, setProposalTitle] = useState('Short-Form Video Content Package');
+  const [quantity, setQuantity] = useState('10');
+  const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9' | '1:1' | '4:5'>('9:16');
+  const [includedServices, setIncludedServices] = useState<string[]>([
+    'Clean Cuts & Trimming',
+    'Animated Captions & Kinetic Typography',
+    'Sound Design & Audio SFX',
+    'Color Correction & Grading',
+  ]);
+  const [excludedServices, setExcludedServices] = useState<string[]>([
+    'Original Filming & Camera Capture',
+    'Voiceover Voice Acting',
+  ]);
+  const [includedRevisions, setIncludedRevisions] = useState('2');
+  const [paymentStructure, setPaymentStructure] = useState<'upfront_100' | 'deposit_50_50' | 'monthly_upfront'>('upfront_100');
+  
+  // Expiration Date (default +7 days)
+  const [validUntil, setValidUntil] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().split('T')[0];
+  });
+
+  const [clientResponsibilities, setClientResponsibilities] = useState(
+    'Client provides raw footage, assets, brand guidelines, and timely feedback within 48h of preview.'
+  );
+
   // Common Fields
   const [packageTier, setPackageTier] = useState<'basic' | 'professional' | 'premium'>('professional');
   const [contentLength, setContentLength] = useState<'short' | 'long'>('short');
@@ -39,28 +85,44 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
 
   // One-Off Project Fields
   const [editingStyle, setEditingStyle] = useState(EDITING_STYLES[0].name);
-  const [price, setPrice] = useState('900');
+  const [price, setPrice] = useState('9000');
   const [referenceBrief, setReferenceBrief] = useState('');
-  const [deadline, setDeadline] = useState('');
+  const [deadline, setDeadline] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 10);
+    return d.toISOString().split('T')[0];
+  });
 
   // Retainer Contract Fields
   const [contractFrequency, setContractFrequency] = useState('weekly-2');
-  const [contractStartDate, setContractStartDate] = useState('');
+  const [contractStartDate, setContractStartDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [contractDurationMonths, setContractDurationMonths] = useState('1');
   const [contractMonthlyPrice, setContractMonthlyPrice] = useState('7200');
 
-  // Auto-suggest pricing calculation based on Tier & Frequency
+  // Auto-update proposal title when switching mode or editing style
   useEffect(() => {
     if (proposalType === 'project') {
-      let baseRate = 900;
-      if (packageTier === 'basic') baseRate = 500;
-      if (packageTier === 'premium') baseRate = 1600;
-      if (contentLength === 'long') baseRate *= 4;
+      setProposalTitle(`${quantity}x ${editingStyle} Package`);
+    } else {
+      setProposalTitle(`Monthly Retainer — ${packageTier.toUpperCase()} (${contractFrequency})`);
+    }
+  }, [proposalType, editingStyle, quantity, packageTier, contractFrequency]);
+
+  // Auto-suggest pricing calculation based on Tier & Quantity
+  useEffect(() => {
+    if (proposalType === 'project') {
+      let baseRatePerVideo = 900;
+      if (packageTier === 'basic') baseRatePerVideo = 500;
+      if (packageTier === 'premium') baseRatePerVideo = 1600;
+      if (contentLength === 'long') baseRatePerVideo *= 4;
+
+      const qty = Number(quantity) || 1;
+      const totalETB = baseRatePerVideo * qty;
 
       if (currency === 'USD') {
-        setPrice((Math.round(baseRate * exchangeRate.etbToUsd)).toString());
+        setPrice((Math.round(totalETB * exchangeRate.etbToUsd)).toString());
       } else {
-        setPrice(baseRate.toString());
+        setPrice(totalETB.toString());
       }
     } else {
       let videosPerMonth = 8;
@@ -84,7 +146,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
         setContractMonthlyPrice(computedETB.toString());
       }
     }
-  }, [proposalType, packageTier, contentLength, contractFrequency, currency, exchangeRate]);
+  }, [proposalType, packageTier, contentLength, contractFrequency, currency, quantity, exchangeRate]);
 
   // Client Search Debounce
   useEffect(() => {
@@ -106,6 +168,22 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
     return () => clearTimeout(timer);
   }, [clientSearchText, apiFetch]);
 
+  const toggleService = (service: string) => {
+    if (includedServices.includes(service)) {
+      setIncludedServices(includedServices.filter((s) => s !== service));
+    } else {
+      setIncludedServices([...includedServices, service]);
+    }
+  };
+
+  const toggleExclusion = (exclusion: string) => {
+    if (excludedServices.includes(exclusion)) {
+      setExcludedServices(excludedServices.filter((s) => s !== exclusion));
+    } else {
+      setExcludedServices([...excludedServices, exclusion]);
+    }
+  };
+
   // Submit Handler
   const handleSubmitProposal = async (e: FormEvent) => {
     e.preventDefault();
@@ -117,6 +195,23 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
     try {
       setSubmitting(true);
 
+      const commonProposalData = {
+        clientId: selectedClient._id,
+        clientEmail: selectedClient.email.toLowerCase().trim(),
+        proposalTitle,
+        aspectRatio,
+        includedServices,
+        excludedServices,
+        includedRevisions: Number(includedRevisions),
+        paymentStructure,
+        validUntil,
+        clientResponsibilities,
+        packageTier,
+        contentLength,
+        currency,
+        notes,
+      };
+
       if (proposalType === 'project') {
         if (!price || !deadline) {
           toast({ message: 'Please specify the project rate and target deadline date.', type: 'error' });
@@ -126,16 +221,12 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
         const res = await apiFetch('/api/admin/proposals', {
           method: 'POST',
           body: JSON.stringify({
-            clientId: selectedClient._id,
-            clientEmail: selectedClient.email.toLowerCase().trim(),
+            ...commonProposalData,
             editingStyle,
-            contentLength,
-            packageTier,
-            currency,
+            quantity: Number(quantity),
             price: Number(price),
             referenceBrief,
             deadline,
-            notes,
           }),
         });
 
@@ -152,16 +243,11 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
         const res = await apiFetch('/api/admin/contracts', {
           method: 'POST',
           body: JSON.stringify({
-            clientId: selectedClient._id,
-            clientEmail: selectedClient.email.toLowerCase().trim(),
-            packageTier,
-            contentLength,
+            ...commonProposalData,
             frequency: contractFrequency,
             monthlyPrice: Number(contractMonthlyPrice),
-            currency,
             startDate: contractStartDate,
             durationMonths: Number(contractDurationMonths),
-            notes,
           }),
         });
 
@@ -212,13 +298,12 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
             ← Back to Operations Hub
           </button>
           <h1 className="font-display" style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
-            Proposal & Deal Studio
+            Agency Proposal Agreement Studio
           </h1>
         </div>
 
         {/* Top Control Segment & Ticker */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          {/* Segmented Switcher Pill */}
           <div
             style={{
               display: 'flex',
@@ -243,7 +328,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                 transition: 'all 0.2s ease',
               }}
             >
-              🎬 One-Off Project
+              🎬 One-Off Project Proposal
             </button>
             <button
               type="button"
@@ -260,7 +345,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                 transition: 'all 0.2s ease',
               }}
             >
-              📦 Monthly Retainer
+              📦 Retainer Agreement Proposal
             </button>
           </div>
 
@@ -280,7 +365,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
         }}
         className="proposal-main-grid"
       >
-        {/* LEFT COLUMN: UNIFIED PROFESSIONAL DASHBOARD FORM SHEET */}
+        {/* LEFT COLUMN: UNIFIED FORM SHEET */}
         <form
           onSubmit={handleSubmitProposal}
           style={{
@@ -293,148 +378,159 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
             gap: '24px',
           }}
         >
-          {/* SECTION 1: CLIENT SELECTION */}
+          {/* SECTION 1: PROPOSAL TITLE & RECIPIENT */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800 }}>
-                01. CLIENT RECIPIENT
+                01. PROPOSAL TITLE & RECIPIENT
               </span>
-              {selectedClient && <Badge variant="gold">PARTNER VERIFIED ✓</Badge>}
+              {selectedClient && <Badge variant="gold">CLIENT VERIFIED ✓</Badge>}
             </div>
 
-            {!selectedClient ? (
-              <div>
-                <Input
-                  placeholder="Search client directory by name or email (e.g. alex@creator.com)..."
-                  value={clientSearchText}
-                  onChange={(e) => setClientSearchText(e.target.value)}
-                  icon={IconSearch}
-                />
+            <div style={{ display: 'grid', gap: '14px', marginBottom: '16px' }}>
+              <Input
+                label="Official Proposal Document Title"
+                placeholder="e.g. Short-Form Video Editing Package"
+                value={proposalTitle}
+                onChange={(e) => setProposalTitle(e.target.value)}
+                required
+              />
 
-                {searchingClient && (
-                  <span style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginTop: '6px' }}>
-                    Searching database...
-                  </span>
-                )}
+              {!selectedClient ? (
+                <div>
+                  <Input
+                    label="Select Registered Client Partner"
+                    placeholder="Search client directory by name or email (e.g. alex@creator.com)..."
+                    value={clientSearchText}
+                    onChange={(e) => setClientSearchText(e.target.value)}
+                    icon={IconSearch}
+                  />
 
-                {searchResults.length > 0 && (
-                  <div
-                    style={{
-                      backgroundColor: 'var(--bg)',
-                      border: '1px solid var(--line)',
-                      borderRadius: '10px',
-                      marginTop: '8px',
-                      maxHeight: '180px',
-                      overflowY: 'auto',
-                    }}
-                  >
-                    {searchResults.map((u) => (
-                      <div
-                        key={u._id}
-                        onClick={() => {
-                          setSelectedClient(u);
-                          setClientSearchText(u.email);
-                          setSearchResults([]);
-                        }}
-                        style={{
-                          padding: '12px 14px',
-                          fontSize: '13px',
-                          cursor: 'pointer',
-                          borderBottom: '1px solid var(--line)',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <div>
-                          <strong style={{ color: 'var(--ink)', display: 'block' }}>{u.name}</strong>
-                          <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>{u.email}</span>
-                        </div>
-                        <span style={{ fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 700 }}>
-                          Select →
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '14px 16px',
-                  backgroundColor: 'rgba(201, 168, 76, 0.08)',
-                  border: '1px solid var(--accent-gold)',
-                  borderRadius: '12px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {selectedClient.avatarUrl ? (
-                    <img
-                      src={selectedClient.avatarUrl}
-                      alt={selectedClient.name}
-                      style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        backgroundColor: 'var(--accent-gold)',
-                        color: 'var(--signal-ink)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 800,
-                        fontSize: '16px',
-                      }}
-                    >
-                      {selectedClient.name ? selectedClient.name.charAt(0).toUpperCase() : 'C'}
-                    </div>
+                  {searchingClient && (
+                    <span style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginTop: '6px' }}>
+                      Searching client directory...
+                    </span>
                   )}
 
-                  <div>
-                    <strong style={{ fontSize: '15px', color: 'var(--ink)', display: 'block' }}>
-                      {selectedClient.name}
-                    </strong>
-                    <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{selectedClient.email}</span>
-                  </div>
+                  {searchResults.length > 0 && (
+                    <div
+                      style={{
+                        backgroundColor: 'var(--bg)',
+                        border: '1px solid var(--line)',
+                        borderRadius: '10px',
+                        marginTop: '8px',
+                        maxHeight: '180px',
+                        overflowY: 'auto',
+                      }}
+                    >
+                      {searchResults.map((u) => (
+                        <div
+                          key={u._id}
+                          onClick={() => {
+                            setSelectedClient(u);
+                            setClientSearchText(u.email);
+                            setSearchResults([]);
+                          }}
+                          style={{
+                            padding: '12px 14px',
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid var(--line)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <div>
+                            <strong style={{ color: 'var(--ink)', display: 'block' }}>{u.name}</strong>
+                            <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>{u.email}</span>
+                          </div>
+                          <span style={{ fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 700 }}>
+                            Select Client →
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedClient(null);
-                    setClientSearchText('');
-                  }}
+              ) : (
+                <div
                   style={{
-                    fontSize: '12px',
-                    color: 'var(--ink-soft)',
-                    textDecoration: 'underline',
-                    cursor: 'pointer',
-                    padding: 0,
-                    border: 'none',
-                    background: 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '14px 16px',
+                    backgroundColor: 'rgba(201, 168, 76, 0.08)',
+                    border: '1px solid var(--accent-gold)',
+                    borderRadius: '12px',
                   }}
                 >
-                  Change Client
-                </button>
-              </div>
-            )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {selectedClient.avatarUrl ? (
+                      <img
+                        src={selectedClient.avatarUrl}
+                        alt={selectedClient.name}
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--accent-gold)',
+                          color: 'var(--signal-ink)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 800,
+                          fontSize: '16px',
+                        }}
+                      >
+                        {selectedClient.name ? selectedClient.name.charAt(0).toUpperCase() : 'C'}
+                      </div>
+                    )}
+
+                    <div>
+                      <strong style={{ fontSize: '15px', color: 'var(--ink)', display: 'block' }}>
+                        {selectedClient.name}
+                      </strong>
+                      <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>{selectedClient.email}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedClient(null);
+                      setClientSearchText('');
+                    }}
+                    style={{
+                      fontSize: '12px',
+                      color: 'var(--ink-soft)',
+                      textDecoration: 'underline',
+                      cursor: 'pointer',
+                      padding: 0,
+                      border: 'none',
+                      background: 'none',
+                    }}
+                  >
+                    Change Client
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div style={{ height: '1px', backgroundColor: 'var(--line)' }} />
 
-          {/* SECTION 2: DELIVERABLE SPECIFICATIONS */}
+          {/* SECTION 2: DELIVERABLE SCOPE & QUANTITY */}
           <div>
             <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
-              02. DELIVERABLE SPECIFICATIONS
+              02. DELIVERABLE SCOPE & QUANTITY
             </span>
 
-            {/* Tier Pills */}
+            {/* Tier Selector Pills */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}>
               {[
                 { id: 'basic' as const, name: 'Basic Edit Tier', desc: 'Essential cuts & polish' },
@@ -464,27 +560,25 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
             </div>
 
             {/* Inputs Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
-              {proposalType === 'project' && (
-                <Select
-                  label="Editing Style"
-                  options={EDITING_STYLES.map((s) => ({ label: s.name, value: s.name }))}
-                  value={editingStyle}
-                  onChange={(v) => setEditingStyle(v)}
-                />
-              )}
-
-              <Select
-                label="Video Format"
-                options={[
-                  { label: '9:16 Vertical Short-Form (Reels, Shorts)', value: 'short' },
-                  { label: '16:9 Widescreen Long-Form (YouTube)', value: 'long' },
-                ]}
-                value={contentLength}
-                onChange={(v) => setContentLength(v as any)}
-              />
-
-              {proposalType === 'contract' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '16px' }}>
+              {proposalType === 'project' ? (
+                <>
+                  <Input
+                    label="Number of Video Deliverables"
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="e.g. 10"
+                    required
+                  />
+                  <Select
+                    label="Editing Style"
+                    options={EDITING_STYLES.map((s) => ({ label: s.name, value: s.name }))}
+                    value={editingStyle}
+                    onChange={(v) => setEditingStyle(v)}
+                  />
+                </>
+              ) : (
                 <Select
                   label="Monthly Delivery Frequency"
                   options={[
@@ -498,20 +592,109 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                   onChange={(v) => setContractFrequency(v)}
                 />
               )}
+
+              <Select
+                label="Aspect Ratio Framing"
+                options={[
+                  { label: '9:16 Vertical (Reels, TikTok, Shorts)', value: '9:16' },
+                  { label: '16:9 Widescreen (YouTube, Courses)', value: '16:9' },
+                  { label: '1:1 Square (Instagram Post)', value: '1:1' },
+                  { label: '4:5 Portrait (Social Feed)', value: '4:5' },
+                ]}
+                value={aspectRatio}
+                onChange={(v) => setAspectRatio(v as any)}
+              />
+
+              <Select
+                label="Included Revision Rounds"
+                options={[
+                  { label: '1 Round of Revisions Included', value: '1' },
+                  { label: '2 Rounds of Revisions Included (Standard)', value: '2' },
+                  { label: '3 Rounds of Revisions Included', value: '3' },
+                ]}
+                value={includedRevisions}
+                onChange={(v) => setIncludedRevisions(v)}
+              />
+            </div>
+
+            {/* Included Services Checklist */}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ink)', marginBottom: '8px' }}>
+                Included Services Checklist
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                {AVAILABLE_SERVICES.map((srv) => {
+                  const isChecked = includedServices.includes(srv);
+                  return (
+                    <div
+                      key={srv}
+                      onClick={() => toggleService(srv)}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: `1px solid ${isChecked ? 'var(--accent-gold)' : 'var(--line)'}`,
+                        backgroundColor: isChecked ? 'rgba(201, 168, 76, 0.08)' : 'var(--bg)',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        color: isChecked ? 'var(--ink)' : 'var(--ink-soft)',
+                      }}
+                    >
+                      <input type="checkbox" checked={isChecked} readOnly style={{ accentColor: 'var(--accent-gold)' }} />
+                      <span>{srv}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Excluded Services Checklist */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '8px' }}>
+                What's NOT Included (Exclusions Boundary)
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                {AVAILABLE_EXCLUSIONS.map((ex) => {
+                  const isChecked = excludedServices.includes(ex);
+                  return (
+                    <div
+                      key={ex}
+                      onClick={() => toggleExclusion(ex)}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--line)',
+                        backgroundColor: isChecked ? 'rgba(120, 120, 128, 0.1)' : 'transparent',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        color: 'var(--ink-soft)',
+                      }}
+                    >
+                      <input type="checkbox" checked={isChecked} readOnly />
+                      <span>{ex}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
           <div style={{ height: '1px', backgroundColor: 'var(--line)' }} />
 
-          {/* SECTION 3: FINANCIAL TERMS & SCHEDULE */}
+          {/* SECTION 3: FINANCIAL TERMS & TIMELINE */}
           <div>
             <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
-              03. FINANCIAL TERMS & TIMELINE
+              03. FINANCIAL TERMS & EXPIRATION
             </span>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '14px' }}>
               <Select
-                label="Currency"
+                label="Offer Currency"
                 options={[
                   { label: 'Ethiopian Birr (ETB)', value: 'ETB' },
                   { label: 'United States Dollar (USD $)', value: 'USD' },
@@ -520,18 +703,29 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                 onChange={(v) => setCurrency(v as any)}
               />
 
+              <Select
+                label="Payment Terms Structure"
+                options={[
+                  { label: '100% Upfront Payment', value: 'upfront_100' },
+                  { label: '50% Deposit / 50% Completion', value: 'deposit_50_50' },
+                  { label: 'Monthly Upfront (Retainers)', value: 'monthly_upfront' },
+                ]}
+                value={paymentStructure}
+                onChange={(v) => setPaymentStructure(v as any)}
+              />
+
               {proposalType === 'project' ? (
                 <Input
-                  label={`Agreed Project Rate (${currency})`}
+                  label={`Total Project Rate (${currency})`}
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="e.g. 900"
+                  placeholder="e.g. 9000"
                   required
                 />
               ) : (
                 <Input
-                  label={`Monthly Retainer Price (${currency})`}
+                  label={`Monthly Retainer Rate (${currency})`}
                   type="number"
                   value={contractMonthlyPrice}
                   onChange={(e) => setContractMonthlyPrice(e.target.value)}
@@ -541,66 +735,72 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: proposalType === 'contract' ? 'repeat(2, 1fr)' : '1fr', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
               {proposalType === 'project' ? (
                 <Input
-                  label="Target Project Deadline Date"
+                  label="Target Delivery Deadline Date"
                   type="date"
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
                   required
                 />
               ) : (
-                <>
-                  <Input
-                    label="Contract Commitment Start Date"
-                    type="date"
-                    value={contractStartDate}
-                    onChange={(e) => setContractStartDate(e.target.value)}
-                    required
-                  />
-                  <Select
-                    label="Contract Duration Term"
-                    options={[
-                      { label: '1 Month Commitment', value: '1' },
-                      { label: '3 Months Commitment (5% Discount)', value: '3' },
-                      { label: '6 Months Commitment (10% Discount)', value: '6' },
-                      { label: '12 Months Commitment (15% Discount)', value: '12' },
-                    ]}
-                    value={contractDurationMonths}
-                    onChange={(v) => setContractDurationMonths(v)}
-                  />
-                </>
+                <Input
+                  label="Contract Commitment Start Date"
+                  type="date"
+                  value={contractStartDate}
+                  onChange={(e) => setContractStartDate(e.target.value)}
+                  required
+                />
               )}
+
+              <Input
+                label="Proposal Valid Until (Expiration)"
+                type="date"
+                value={validUntil}
+                onChange={(e) => setValidUntil(e.target.value)}
+                required
+              />
             </div>
           </div>
 
           <div style={{ height: '1px', backgroundColor: 'var(--line)' }} />
 
-          {/* SECTION 4: BRIEF & STUDIO NOTES */}
+          {/* SECTION 4: CLIENT RESPONSIBILITIES & INTERNAL NOTES */}
           <div>
             <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
-              04. VIDEO BRIEF & STUDIO NOTES
+              04. CLIENT RESPONSIBILITIES & PRIVATE NOTES
             </span>
 
             <div style={{ display: 'grid', gap: '14px' }}>
+              <Textarea
+                label="Client Responsibilities Statement"
+                rows={2}
+                value={clientResponsibilities}
+                onChange={(e) => setClientResponsibilities(e.target.value)}
+              />
+
               {proposalType === 'project' && (
                 <Textarea
-                  label="Reference Brief & Project Notes"
+                  label="Creative Brief & Reference Links"
                   rows={2}
-                  placeholder="Reference links, raw footage Drive folders, style guidelines..."
+                  placeholder="Reference links, Drive folders, style notes..."
                   value={referenceBrief}
                   onChange={(e) => setReferenceBrief(e.target.value)}
                 />
               )}
 
-              <Textarea
-                label="Private Studio Notes (Internal Only)"
-                rows={2}
-                placeholder="Internal notes visible only to agency admins..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
+              <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)', padding: '14px', borderRadius: '10px', border: '1px solid var(--line)' }}>
+                <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--ink-soft)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
+                  🔒 INTERNAL ONLY (SANITIZED FROM CLIENT API RESPONSES)
+                </span>
+                <Textarea
+                  placeholder="Private agency notes visible only to admins..."
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
@@ -609,7 +809,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           </Button>
         </form>
 
-        {/* RIGHT COLUMN: LIVE PROPOSAL DEAL TICKET PREVIEW */}
+        {/* RIGHT COLUMN: REALISTIC CLIENT PROPOSAL AGREEMENT PREVIEW */}
         <div style={{ position: 'sticky', top: '90px' }}>
           <div
             style={{
@@ -623,72 +823,86 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               boxShadow: '0 12px 36px -8px rgba(201, 168, 76, 0.25)',
             }}
           >
-            {/* Header Badge */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '12px' }}>
-              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800 }}>
-                DEAL TICKET PREVIEW
+            {/* Header Document Ticket */}
+            <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: '12px', textAlign: 'center' }}>
+              <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 800, letterSpacing: '1px' }}>
+                ALPHA CUT • OFFICIAL PROPOSAL AGREEMENT
               </span>
-              <Badge variant="gold">{proposalType === 'project' ? 'ONE-OFF PROJECT' : 'RETAINER CONTRACT'}</Badge>
-            </div>
-
-            {/* Recipient Details */}
-            <div>
-              <span style={{ fontSize: '11px', color: 'var(--ink-soft)', textTransform: 'uppercase', display: 'block' }}>RECIPIENT PARTNER</span>
-              <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 800, margin: '2px 0 0 0', color: 'var(--ink)' }}>
-                {selectedClient ? selectedClient.name : 'Select Client...'}
+              <h3 className="font-display" style={{ fontSize: '18px', fontWeight: 800, margin: '6px 0 2px 0', color: 'var(--ink)' }}>
+                {proposalTitle || 'Video Production Proposal'}
               </h3>
-              <span style={{ fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 600 }}>
-                {selectedClient ? selectedClient.email : 'No client selected'}
+              <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
+                Prepared for: <strong style={{ color: 'var(--accent-gold)' }}>{selectedClient ? selectedClient.name : 'Client Partner'}</strong>
               </span>
             </div>
 
-            {/* Terms Summary Grid */}
+            {/* Scope Summary */}
             <div
               style={{
                 backgroundColor: 'var(--bg)',
                 borderRadius: '12px',
                 border: '1px solid var(--line)',
-                padding: '16px',
+                padding: '14px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '10px',
-                fontSize: '13px',
+                gap: '8px',
+                fontSize: '12.5px',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>Tier</span>
-                <Badge variant="gold">{packageTier.toUpperCase()}</Badge>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>Spec</span>
+                <span style={{ color: 'var(--ink-soft)' }}>Deliverables</span>
                 <strong style={{ color: 'var(--ink)' }}>
-                  {proposalType === 'project' ? editingStyle : `${contractFrequency}`}
+                  {proposalType === 'project' ? `${quantity}x ${editingStyle}` : `${contractFrequency} Retainer`}
                 </strong>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>Format</span>
+                <span style={{ color: 'var(--ink-soft)' }}>Framing & Tier</span>
                 <strong style={{ color: 'var(--ink)' }}>
-                  {contentLength === 'short' ? '9:16 Short-Form' : '16:9 Long-Form'}
+                  {aspectRatio} • {packageTier.toUpperCase()}
                 </strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--ink-soft)' }}>Revisions Included</span>
+                <strong style={{ color: 'var(--ink)' }}>{includedRevisions} Round(s)</strong>
               </div>
 
               <div style={{ height: '1px', backgroundColor: 'var(--line)', margin: '4px 0' }} />
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="font-mono" style={{ color: 'var(--accent-gold)', fontWeight: 800, fontSize: '11px' }}>OFFER RATE</span>
-                <strong className="font-mono" style={{ fontSize: '18px', color: 'var(--accent-gold)' }}>
-                  {proposalType === 'project' ? `${price} ${currency}` : `${contractMonthlyPrice} ${currency} / mo`}
-                </strong>
+              <div>
+                <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
+                  INCLUDED SERVICES ({includedServices.length})
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  {includedServices.slice(0, 4).map((s) => (
+                    <span key={s} style={{ fontSize: '11.5px', color: 'var(--ink-soft)' }}>✓ {s}</span>
+                  ))}
+                  {includedServices.length > 4 && (
+                    <span style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>+ {includedServices.length - 4} more services</span>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Notification Rails */}
-            <div style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'grid', gap: '6px' }}>
-              <span>• Telegram Bot Notification: <strong style={{ color: 'var(--accent-gold)' }}>Active ✓</strong></span>
-              <span>• Transactional Email Offer: <strong style={{ color: 'var(--accent-gold)' }}>Active ✓</strong></span>
-              <span>• Client Portal Response: <strong style={{ color: 'var(--accent-gold)' }}>Active ✓</strong></span>
+            {/* Financial Investment */}
+            <div style={{ backgroundColor: 'rgba(201, 168, 76, 0.08)', padding: '14px', borderRadius: '12px', border: '1px solid var(--accent-gold)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 800 }}>COMMERCIAL INVESTMENT</span>
+                <span style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block' }}>
+                  Terms: {paymentStructure === 'upfront_100' ? '100% Upfront' : paymentStructure === 'deposit_50_50' ? '50% Deposit / 50% Delivery' : 'Monthly Upfront'}
+                </span>
+              </div>
+
+              <span className="font-mono" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                {proposalType === 'project' ? `${price} ${currency}` : `${contractMonthlyPrice} ${currency} / mo`}
+              </span>
+            </div>
+
+            {/* Expiration Note */}
+            <div style={{ fontSize: '11.5px', color: 'var(--ink-soft)', textAlign: 'center', lineHeight: 1.5 }}>
+              Proposal valid until <strong>{new Date(validUntil).toLocaleDateString()}</strong>.<br />
+              Dispatched via Telegram Bot & Transactional Email.
             </div>
           </div>
         </div>

@@ -23,6 +23,45 @@ const projectSchema = new Schema({
         type: String,
         required: true,
     },
+    // Extended Proposal Agreement Schema
+    proposalTitle: {
+        type: String,
+        default: 'Short-Form Video Editing Package',
+    },
+    quantity: {
+        type: Number,
+        default: 1,
+    },
+    aspectRatio: {
+        type: String,
+        enum: ['9:16', '16:9', '1:1', '4:5'],
+        default: '9:16',
+    },
+    includedServices: {
+        type: [String],
+        default: ['Clean Cuts & Trimming', 'Animated Captions', 'Sound Design & SFX', 'Color Correction'],
+    },
+    excludedServices: {
+        type: [String],
+        default: ['Original Filming', 'Voiceover Recording', 'Thumbnail Design'],
+    },
+    includedRevisions: {
+        type: Number,
+        default: 2,
+    },
+    paymentStructure: {
+        type: String,
+        enum: ['upfront_100', 'deposit_50_50', 'monthly_upfront'],
+        default: 'upfront_100',
+    },
+    validUntil: {
+        type: Date,
+        default: null,
+    },
+    clientResponsibilities: {
+        type: String,
+        default: 'Client provides raw footage, assets, brand guidelines, and timely feedback.',
+    },
     editingStyle: {
         type: String,
         required: true,

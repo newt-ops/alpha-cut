@@ -4,6 +4,8 @@ export type ProjectStatus = 'proposal_sent' | 'in_progress' | 'declined' | 'deli
 export type ContentLength = 'short' | 'long';
 export type PackageTier = 'basic' | 'professional' | 'premium';
 export type Currency = 'USD' | 'ETB';
+export type AspectRatio = '9:16' | '16:9' | '1:1' | '4:5';
+export type PaymentStructure = 'upfront_100' | 'deposit_50_50' | 'monthly_upfront';
 
 export interface IProject extends Document {
   clientId: Types.ObjectId;
@@ -11,6 +13,19 @@ export interface IProject extends Document {
   status: ProjectStatus;
   clientName: string;
   clientEmail: string;
+
+  // Proposal Agreement Metadata
+  proposalTitle?: string;
+  quantity: number;
+  aspectRatio: AspectRatio;
+  includedServices: string[];
+  excludedServices: string[];
+  includedRevisions: number;
+  paymentStructure: PaymentStructure;
+  validUntil?: Date | null;
+  clientResponsibilities?: string;
+
+  // Standard Deliverable Fields
   editingStyle: string;
   contentLength: ContentLength;
   packageTier: PackageTier;
@@ -61,6 +76,47 @@ const projectSchema = new Schema<IProject>(
       type: String,
       required: true,
     },
+
+    // Extended Proposal Agreement Schema
+    proposalTitle: {
+      type: String,
+      default: 'Short-Form Video Editing Package',
+    },
+    quantity: {
+      type: Number,
+      default: 1,
+    },
+    aspectRatio: {
+      type: String,
+      enum: ['9:16', '16:9', '1:1', '4:5'],
+      default: '9:16',
+    },
+    includedServices: {
+      type: [String],
+      default: ['Clean Cuts & Trimming', 'Animated Captions', 'Sound Design & SFX', 'Color Correction'],
+    },
+    excludedServices: {
+      type: [String],
+      default: ['Original Filming', 'Voiceover Recording', 'Thumbnail Design'],
+    },
+    includedRevisions: {
+      type: Number,
+      default: 2,
+    },
+    paymentStructure: {
+      type: String,
+      enum: ['upfront_100', 'deposit_50_50', 'monthly_upfront'],
+      default: 'upfront_100',
+    },
+    validUntil: {
+      type: Date,
+      default: null,
+    },
+    clientResponsibilities: {
+      type: String,
+      default: 'Client provides raw footage, assets, brand guidelines, and timely feedback.',
+    },
+
     editingStyle: {
       type: String,
       required: true,

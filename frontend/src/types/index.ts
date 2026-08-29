@@ -2,6 +2,8 @@ export type ProjectStatus = 'proposal_sent' | 'in_progress' | 'revision_requeste
 export type ContractStatus = 'proposed' | 'active' | 'completed' | 'declined' | 'cancelled';
 export type PackageTier = 'basic' | 'professional' | 'premium';
 export type Currency = 'USD' | 'ETB';
+export type AspectRatio = '9:16' | '16:9' | '1:1' | '4:5';
+export type PaymentStructure = 'upfront_100' | 'deposit_50_50' | 'monthly_upfront';
 
 export interface User {
   _id: string;
@@ -20,6 +22,18 @@ export interface Project {
   clientId: string | { _id: string; name: string; email: string; avatarUrl?: string; telegramChatId?: string };
   createdByAdminId: string;
   status: ProjectStatus;
+
+  // Proposal Agreement Extended Metadata
+  proposalTitle?: string;
+  quantity?: number;
+  aspectRatio?: AspectRatio;
+  includedServices?: string[];
+  excludedServices?: string[];
+  includedRevisions?: number;
+  paymentStructure?: PaymentStructure;
+  validUntil?: string;
+  clientResponsibilities?: string;
+
   editingStyle: string;
   contentLength: 'short' | 'long';
   packageTier: PackageTier;
@@ -53,15 +67,28 @@ export interface Deliverable {
 export interface Contract {
   _id: string;
   clientId: string | { _id: string; name: string; email: string; avatarUrl?: string };
+
+  // Proposal Agreement Extended Metadata
+  proposalTitle?: string;
+  videosPerMonth?: number;
+  aspectRatio?: AspectRatio;
+  includedServices?: string[];
+  excludedServices?: string[];
+  includedRevisions?: number;
+  paymentStructure?: PaymentStructure;
+  validUntil?: string;
+  clientResponsibilities?: string;
+
   packageTier: PackageTier;
-  frequency: 'weekly-1' | 'weekly-2' | 'weekly-3' | 'custom';
+  frequency: 'weekly-1' | 'weekly-2' | 'weekly-3-4' | 'daily-1' | 'daily-2' | 'custom' | string;
   monthlyPrice: number;
   currency: Currency;
   totalVideosPlanned: number;
-  deliveredCount: number;
+  deliveredCount?: number;
   status: ContractStatus;
-  deliverables: Deliverable[];
+  deliverables?: Deliverable[];
   startDate: string;
+  durationMonths?: number;
   endDate?: string;
   notes?: string;
   rated?: boolean;

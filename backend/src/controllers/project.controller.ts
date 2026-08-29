@@ -11,7 +11,7 @@ export const getClientProjects = async (req: Request, res: Response, next: NextF
         ...(userEmail ? [{ clientEmail: userEmail }] : []),
       ],
     };
-    const projects = await Project.find(query).sort({ createdAt: -1 });
+    const projects = await Project.find(query).select('-adminNotes -notes').sort({ createdAt: -1 });
     res.status(200).json({ success: true, projects });
   } catch (err) {
     next(err);

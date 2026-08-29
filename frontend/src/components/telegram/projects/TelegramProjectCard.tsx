@@ -72,7 +72,7 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
                 lineHeight: 1.2,
               }}
             >
-              {project.editingStyle}
+              {project.proposalTitle || project.editingStyle}
             </h3>
             <span
               style={{
@@ -80,7 +80,10 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
                 color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))',
               }}
             >
-              {project.packageTier || 'Standard'} • {project.contentLength || 'Short-Form'}
+              {project.quantity ? `${project.quantity}x ` : ''}
+              {project.aspectRatio ? `${project.aspectRatio} ` : ''}
+              • {project.packageTier || 'Standard'}
+              {project.includedRevisions ? ` • ${project.includedRevisions} Revisions` : ''}
             </span>
           </div>
         </div>
