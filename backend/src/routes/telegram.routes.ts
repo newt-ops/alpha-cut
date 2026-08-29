@@ -109,7 +109,16 @@ router.post('/webapp/auth', async (req: Request, res: Response, next: NextFuncti
       return res.status(400).json({ success: false, message: 'Invalid Telegram User ID' });
     }
 
-    // 1. FAST PATH: Look up user ALREADY linked by telegramChatId in MongoDB
+    // 1. ALWAYS validate Telegram WebApp initData HMAC SHA-256 signature server-side
+    if (config.telegramBotToken) {
+      const isValid = validateInitData(initData, config.telegramBotToken);
+      if (!isValid && process.env.NODE_ENV === 'production') {
+        console.warn(`[TELEGRAM AUTH WARN] initData HMAC signature verification failed for chatId ${chatId}`);
+        return res.status(403).json({ success: false, message: 'Telegram authentication signature check failed.' });
+      }
+    }
+
+    // 2. Look up user ALREADY linked by telegramChatId in MongoDB
     let user = await User.findOne({
       $or: [
         { telegramChatId: chatId },
@@ -117,15 +126,6 @@ router.post('/webapp/auth', async (req: Request, res: Response, next: NextFuncti
         { telegramChatId: String(chatId) },
       ],
     });
-
-    // 2. If not bound by chatId yet, validate Telegram initData HMAC signature before allowing binding
-    if (!user && config.telegramBotToken) {
-      const isValid = validateInitData(initData, config.telegramBotToken);
-      if (!isValid) {
-        console.warn(`[TELEGRAM AUTH WARN] initData HMAC signature verification failed for unlinked chatId ${chatId}`);
-        return res.status(403).json({ success: false, message: 'Telegram authentication signature check failed.' });
-      }
-    }
 
     // 3. Fallback: Match via Web JWT Authorization header if present
     if (!user && req.headers.authorization) {
