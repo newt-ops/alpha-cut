@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema, Model, Types } from 'mongoose';
 
-export type ContractStatus = 'proposed' | 'active' | 'declined' | 'completed' | 'cancelled';
+export type ContractStatus = 'proposed' | 'active' | 'completed' | 'declined' | 'cancelled';
 export type ContractFrequency = 'weekly-1' | 'weekly-2' | 'weekly-3-4' | 'daily-1' | 'daily-2';
 
 export interface IContract extends Document {
@@ -8,14 +8,19 @@ export interface IContract extends Document {
   createdByAdminId: Types.ObjectId;
   status: ContractStatus;
 
-  // Proposal Agreement Metadata
+  // Proposal Agreement Extended Metadata
   proposalTitle?: string;
   videosPerMonth?: number;
+  editingStyle?: string;
   aspectRatio: '9:16' | '16:9' | '1:1' | '4:5';
+  resolution?: string;
+  targetPlatform?: string;
   includedServices: string[];
   excludedServices: string[];
   includedRevisions: number;
   paymentStructure: 'upfront_100' | 'deposit_50_50' | 'monthly_upfront';
+  paymentTerms?: string;
+  customPaymentTerms?: string;
   validUntil?: Date | null;
   clientResponsibilities?: string;
 
@@ -68,10 +73,22 @@ const contractSchema = new Schema<IContract>(
       type: Number,
       default: 8,
     },
+    editingStyle: {
+      type: String,
+      default: 'Flexible / Multiple Styles',
+    },
     aspectRatio: {
       type: String,
       enum: ['9:16', '16:9', '1:1', '4:5'],
       default: '9:16',
+    },
+    resolution: {
+      type: String,
+      default: '1080p Full HD',
+    },
+    targetPlatform: {
+      type: String,
+      default: 'Multi-Platform',
     },
     includedServices: {
       type: [String],
@@ -89,6 +106,14 @@ const contractSchema = new Schema<IContract>(
       type: String,
       enum: ['upfront_100', 'deposit_50_50', 'monthly_upfront'],
       default: 'monthly_upfront',
+    },
+    paymentTerms: {
+      type: String,
+      default: 'Monthly upfront billing',
+    },
+    customPaymentTerms: {
+      type: String,
+      default: '',
     },
     validUntil: {
       type: Date,

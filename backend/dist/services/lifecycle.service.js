@@ -40,7 +40,7 @@ const sendTransactionalEmail = async ({ toEmail, subject, htmlContent }) => {
 };
 // --- ONE-OFF PROJECT LIFECYCLE ---
 export const createProposal = async (adminId, data) => {
-    const { clientEmail, proposalTitle, quantity, aspectRatio, includedServices, excludedServices, includedRevisions, paymentStructure, validUntil, clientResponsibilities, editingStyle, contentLength, packageTier, currency, price, referenceBrief, briefAttachmentUrl, deadline, notes, } = data;
+    const { clientEmail, proposalTitle, quantity, aspectRatio, resolution, targetPlatform, includedServices, excludedServices, includedRevisions, paymentStructure, paymentTerms, customPaymentTerms, validUntil, clientResponsibilities, editingStyle, contentLength, packageTier, currency, price, referenceBrief, briefAttachmentUrl, deadline, notes, } = data;
     const client = await User.findOne({ email: clientEmail.toLowerCase() });
     if (!client) {
         throw new Error(`Client email ${clientEmail} is not registered in the system.`);
@@ -54,10 +54,14 @@ export const createProposal = async (adminId, data) => {
         proposalTitle: proposalTitle || 'Short-Form Video Editing Package',
         quantity: quantity ? Number(quantity) : 1,
         aspectRatio: aspectRatio || '9:16',
+        resolution: resolution || '1080p Full HD',
+        targetPlatform: targetPlatform || 'Multi-Platform',
         includedServices: Array.isArray(includedServices) ? includedServices : ['Clean Cuts & Trimming', 'Animated Captions', 'Sound Design & SFX', 'Color Correction'],
         excludedServices: Array.isArray(excludedServices) ? excludedServices : ['Original Filming', 'Voiceover Recording', 'Thumbnail Design'],
         includedRevisions: includedRevisions ? Number(includedRevisions) : 2,
         paymentStructure: paymentStructure || 'upfront_100',
+        paymentTerms: paymentTerms || '50% upfront, 50% on delivery',
+        customPaymentTerms: customPaymentTerms || '',
         validUntil: validUntil ? new Date(validUntil) : null,
         clientResponsibilities: clientResponsibilities || 'Client provides raw footage, assets, brand guidelines, and timely feedback.',
         editingStyle,
@@ -312,7 +316,7 @@ const getPlannedVideosFromFrequency = (frequency, durationMonths = 1) => {
     return perMonth * (durationMonths || 1);
 };
 export const createContractProposal = async (adminId, data) => {
-    const { clientEmail, proposalTitle, videosPerMonth, aspectRatio, includedServices, excludedServices, includedRevisions, paymentStructure, validUntil, clientResponsibilities, packageTier, contentLength, frequency, currency, monthlyPrice, startDate, durationMonths, notes, } = data;
+    const { clientEmail, proposalTitle, videosPerMonth, editingStyle, aspectRatio, resolution, targetPlatform, includedServices, excludedServices, includedRevisions, paymentStructure, paymentTerms, customPaymentTerms, validUntil, clientResponsibilities, packageTier, contentLength, frequency, currency, monthlyPrice, startDate, durationMonths, notes, } = data;
     const client = await User.findOne({ email: clientEmail.toLowerCase() });
     if (!client) {
         throw new Error(`Client email ${clientEmail} is not registered in the system.`);
@@ -324,11 +328,16 @@ export const createContractProposal = async (adminId, data) => {
         status: 'proposed',
         proposalTitle: proposalTitle || 'Monthly Content Partner Retainer',
         videosPerMonth: videosPerMonth ? Number(videosPerMonth) : Math.round(totalVideosPlanned / (Number(durationMonths) || 1)),
+        editingStyle: editingStyle || 'Flexible / Multiple Styles',
         aspectRatio: aspectRatio || '9:16',
+        resolution: resolution || '1080p Full HD',
+        targetPlatform: targetPlatform || 'Multi-Platform',
         includedServices: Array.isArray(includedServices) ? includedServices : ['Clean Cuts & Trimming', 'Animated Captions', 'Sound Design & SFX', 'Color Correction', 'Priority Turnaround'],
         excludedServices: Array.isArray(excludedServices) ? excludedServices : ['Original Filming', 'Voiceover Recording', 'Thumbnail Design'],
         includedRevisions: includedRevisions ? Number(includedRevisions) : 2,
         paymentStructure: paymentStructure || 'monthly_upfront',
+        paymentTerms: paymentTerms || 'Monthly upfront billing',
+        customPaymentTerms: customPaymentTerms || '',
         validUntil: validUntil ? new Date(validUntil) : null,
         clientResponsibilities: clientResponsibilities || 'Client provides monthly footage batch, creative direction, and timely feedback.',
         packageTier,

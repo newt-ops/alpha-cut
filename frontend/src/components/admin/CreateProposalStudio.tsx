@@ -3,15 +3,25 @@ import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { Input, Textarea } from '@components/ui/Input';
 import { Select } from '@components/ui/Select';
-import { EDITING_STYLES } from '../../data/editingStyles';
-import { IconSearch, IconCheck, IconFileText, IconCalendar, IconUser, IconDollar, IconShield } from '@icons/icons';
+import { EDITING_STYLES, EditingStyleItem } from '../../data/editingStyles';
+import {
+  IconSearch,
+  IconCheck,
+  IconFilm,
+  IconZap,
+  IconFileText,
+  IconCalendar,
+  IconUser,
+  IconDollar,
+  IconShield,
+  IconCheckCircle,
+} from '@icons/icons';
 
 export interface CreateProposalStudioProps {
   apiFetch: (url: string, options?: any) => Promise<any>;
   toast: (opts: { message: string; type?: 'success' | 'error' | 'info' }) => void;
   onBack: () => void;
   onSuccess: () => void;
-  exchangeRate?: { usdToEtb: number; etbToUsd: number };
 }
 
 const AVAILABLE_SERVICES = [
@@ -37,7 +47,6 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   toast,
   onBack,
   onSuccess,
-  exchangeRate = { usdToEtb: 128.5, etbToUsd: 0.00778 },
 }) => {
   // Proposal Form Mode ('project' | 'contract')
   const [proposalType, setProposalType] = useState<'project' | 'contract'>('project');
@@ -48,10 +57,21 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [searchingClient, setSearchingClient] = useState(false);
 
+  // Package Configs Fetched from Server Settings (`GET /api/packages`)
+  const [packageConfigs, setPackageConfigs] = useState<any[]>([]);
+
   // Proposal Agreement Extended Metadata
   const [proposalTitle, setProposalTitle] = useState('Short-Form Video Content Package');
   const [quantity, setQuantity] = useState('10');
   const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9' | '1:1' | '4:5'>('9:16');
+  const [resolution, setResolution] = useState('1080p Full HD');
+  const [targetPlatform, setTargetPlatform] = useState('Multi-Platform');
+
+  // Payment Terms
+  const [paymentTermsOption, setPaymentTermsOption] = useState('50% upfront, 50% on delivery');
+  const [customPaymentTerms, setCustomPaymentTerms] = useState('');
+
+  // Included & Excluded Services
   const [includedServices, setIncludedServices] = useState<string[]>([
     'Clean Cuts & Trimming',
     'Animated Captions & Kinetic Typography',
@@ -64,7 +84,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   ]);
   const [includedRevisions, setIncludedRevisions] = useState('2');
   const [paymentStructure, setPaymentStructure] = useState<'upfront_100' | 'deposit_50_50' | 'monthly_upfront'>('upfront_100');
-  
+
   // Expiration Date (default +7 days)
   const [validUntil, setValidUntil] = useState(() => {
     const d = new Date();
@@ -94,36 +114,54 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   });
 
   // Retainer Contract Fields
+  const [contractEditingStyle, setContractEditingStyle] = useState('Flexible / Multiple Styles');
   const [contractFrequency, setContractFrequency] = useState('weekly-2');
   const [contractStartDate, setContractStartDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [contractDurationMonths, setContractDurationMonths] = useState('1');
   const [contractMonthlyPrice, setContractMonthlyPrice] = useState('7200');
 
-  // Auto-update proposal title when switching mode or editing style
+  // Fetch PackageConfigs from Server (`GET /api/packages`)
+  useEffect(() => {
+    let isMounted = true;
+    const fetchConfigs = async () => {
+      try {
+        const res = await apiFetch('/api/packages');
+        if (res.success && Array.isArray(res.configs) && isMounted) {
+          setPackageConfigs(res.configs);
+        }
+      } catch (err) {
+        // Fallback to local suggestions
+      }
+    };
+    fetchConfigs();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiFetch]);
+
+  // Auto-update proposal document title when switching mode or editing style
   useEffect(() => {
     if (proposalType === 'project') {
       setProposalTitle(`${quantity}x ${editingStyle} Package`);
     } else {
-      setProposalTitle(`Monthly Retainer — ${packageTier.toUpperCase()} (${contractFrequency})`);
+      const styleName = contractEditingStyle !== 'Flexible / Multiple Styles' ? ` (${contractEditingStyle})` : '';
+      setProposalTitle(`Monthly Retainer — ${packageTier.toUpperCase()}${styleName}`);
     }
-  }, [proposalType, editingStyle, quantity, packageTier, contractFrequency]);
+  }, [proposalType, editingStyle, quantity, packageTier, contractFrequency, contractEditingStyle]);
 
-  // Auto-suggest pricing calculation based on Tier & Quantity
+  // Dynamic Pricing Engine derived from PackageConfig settings & Contract Duration Discount
   useEffect(() => {
+    // 1. Find matching PackageConfig from server settings
+    const matchConfig = packageConfigs.find(
+      (c) => c.tier === packageTier && c.length === contentLength && c.currency === currency
+    );
+
+    let baseSuggestedRate = matchConfig?.priceMin || matchConfig?.priceMax || 900;
+
     if (proposalType === 'project') {
-      let baseRatePerVideo = 900;
-      if (packageTier === 'basic') baseRatePerVideo = 500;
-      if (packageTier === 'premium') baseRatePerVideo = 1600;
-      if (contentLength === 'long') baseRatePerVideo *= 4;
-
       const qty = Number(quantity) || 1;
-      const totalETB = baseRatePerVideo * qty;
-
-      if (currency === 'USD') {
-        setPrice((Math.round(totalETB * exchangeRate.etbToUsd)).toString());
-      } else {
-        setPrice(totalETB.toString());
-      }
+      const computedTotal = baseSuggestedRate * qty;
+      setPrice(computedTotal.toString());
     } else {
       let videosPerMonth = 8;
       switch (contractFrequency) {
@@ -135,18 +173,17 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
         default: videosPerMonth = 8;
       }
 
-      let minRate = 900;
-      if (packageTier === 'basic') minRate = 500;
-      if (packageTier === 'premium') minRate = 1600;
+      // Compute Contract Duration Discount (3mo -> 5%, 6mo -> 10%, 12mo -> 15%)
+      let discountFactor = 1.0;
+      if (contractDurationMonths === '3') discountFactor = 0.95;
+      if (contractDurationMonths === '6') discountFactor = 0.90;
+      if (contractDurationMonths === '12') discountFactor = 0.85;
 
-      let computedETB = videosPerMonth * minRate;
-      if (currency === 'USD') {
-        setContractMonthlyPrice((Math.round(computedETB * exchangeRate.etbToUsd)).toString());
-      } else {
-        setContractMonthlyPrice(computedETB.toString());
-      }
+      const baseMonthly = baseSuggestedRate * videosPerMonth;
+      const discountedMonthly = Math.round(baseMonthly * discountFactor);
+      setContractMonthlyPrice(discountedMonthly.toString());
     }
-  }, [proposalType, packageTier, contentLength, contractFrequency, currency, quantity, exchangeRate]);
+  }, [proposalType, packageTier, contentLength, contractFrequency, currency, quantity, contractDurationMonths, packageConfigs]);
 
   // Client Search Debounce
   useEffect(() => {
@@ -184,6 +221,15 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
     }
   };
 
+  // Find active editing style sample for live preview
+  const activeStyleName = proposalType === 'project' ? editingStyle : contractEditingStyle;
+  const activeStyleSample: EditingStyleItem | undefined = EDITING_STYLES.find(
+    (s) => s.name.toLowerCase() === activeStyleName.toLowerCase()
+  );
+
+  const effectivePaymentTerms =
+    paymentTermsOption === 'Custom' ? customPaymentTerms || 'Custom Payment Terms' : paymentTermsOption;
+
   // Submit Handler
   const handleSubmitProposal = async (e: FormEvent) => {
     e.preventDefault();
@@ -200,10 +246,14 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
         clientEmail: selectedClient.email.toLowerCase().trim(),
         proposalTitle,
         aspectRatio,
+        resolution,
+        targetPlatform,
         includedServices,
         excludedServices,
         includedRevisions: Number(includedRevisions),
         paymentStructure,
+        paymentTerms: effectivePaymentTerms,
+        customPaymentTerms: paymentTermsOption === 'Custom' ? customPaymentTerms : '',
         validUntil,
         clientResponsibilities,
         packageTier,
@@ -244,6 +294,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           method: 'POST',
           body: JSON.stringify({
             ...commonProposalData,
+            editingStyle: contractEditingStyle,
             frequency: contractFrequency,
             monthlyPrice: Number(contractMonthlyPrice),
             startDate: contractStartDate,
@@ -302,8 +353,8 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           </h1>
         </div>
 
-        {/* Top Control Segment & Ticker */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+        {/* Top Control Mode Segment */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
               display: 'flex',
@@ -326,9 +377,13 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                 fontSize: '13px',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
               }}
             >
-              🎬 One-Off Project Proposal
+              <IconFilm size={16} />
+              <span>One-Off Project Proposal</span>
             </button>
             <button
               type="button"
@@ -343,14 +398,14 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                 fontSize: '13px',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
               }}
             >
-              📦 Retainer Agreement Proposal
+              <IconZap size={16} />
+              <span>Retainer Agreement Proposal</span>
             </button>
-          </div>
-
-          <div className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 700, backgroundColor: 'rgba(201,168,76,0.1)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(201,168,76,0.2)' }}>
-            1 USD = {exchangeRate.usdToEtb} ETB
           </div>
         </div>
       </div>
@@ -524,10 +579,10 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
 
           <div style={{ height: '1px', backgroundColor: 'var(--line)' }} />
 
-          {/* SECTION 2: DELIVERABLE SCOPE & QUANTITY */}
+          {/* SECTION 2: DELIVERABLE SCOPE & SPECS */}
           <div>
             <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
-              02. DELIVERABLE SCOPE & QUANTITY
+              02. DELIVERABLE SCOPE & SPECS
             </span>
 
             {/* Tier Selector Pills */}
@@ -579,18 +634,29 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                   />
                 </>
               ) : (
-                <Select
-                  label="Monthly Delivery Frequency"
-                  options={[
-                    { label: '1 Video / Week (4 Videos / Mo)', value: 'weekly-1' },
-                    { label: '2 Videos / Week (8 Videos / Mo — Recommended)', value: 'weekly-2' },
-                    { label: '3-4 Videos / Week (14 Videos / Mo)', value: 'weekly-3-4' },
-                    { label: '1 Daily Video (30 Videos / Mo)', value: 'daily-1' },
-                    { label: '2 Daily Videos (60 Videos / Mo)', value: 'daily-2' },
-                  ]}
-                  value={contractFrequency}
-                  onChange={(v) => setContractFrequency(v)}
-                />
+                <>
+                  <Select
+                    label="Monthly Delivery Frequency"
+                    options={[
+                      { label: '1 Video / Week (4 Videos / Mo)', value: 'weekly-1' },
+                      { label: '2 Videos / Week (8 Videos / Mo — Recommended)', value: 'weekly-2' },
+                      { label: '3-4 Videos / Week (14 Videos / Mo)', value: 'weekly-3-4' },
+                      { label: '1 Daily Video (30 Videos / Mo)', value: 'daily-1' },
+                      { label: '2 Daily Videos (60 Videos / Mo)', value: 'daily-2' },
+                    ]}
+                    value={contractFrequency}
+                    onChange={(v) => setContractFrequency(v)}
+                  />
+                  <Select
+                    label="Editing Style (Optional)"
+                    options={[
+                      { label: 'Flexible / Multiple Styles', value: 'Flexible / Multiple Styles' },
+                      ...EDITING_STYLES.map((s) => ({ label: s.name, value: s.name })),
+                    ]}
+                    value={contractEditingStyle}
+                    onChange={(v) => setContractEditingStyle(v)}
+                  />
+                </>
               )}
 
               <Select
@@ -603,6 +669,30 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                 ]}
                 value={aspectRatio}
                 onChange={(v) => setAspectRatio(v as any)}
+              />
+
+              <Select
+                label="Master Video Resolution"
+                options={[
+                  { label: '1080p Full HD (Standard)', value: '1080p Full HD' },
+                  { label: '4K Ultra HD (High Detail)', value: '4K Ultra HD' },
+                  { label: '720p HD', value: '720p HD' },
+                ]}
+                value={resolution}
+                onChange={(v) => setResolution(v)}
+              />
+
+              <Select
+                label="Primary Target Platform"
+                options={[
+                  { label: 'Multi-Platform (TikTok, Reels, Shorts)', value: 'Multi-Platform' },
+                  { label: 'TikTok', value: 'TikTok' },
+                  { label: 'Instagram Reels', value: 'Instagram Reels' },
+                  { label: 'YouTube Shorts', value: 'YouTube Shorts' },
+                  { label: 'YouTube Main Channel', value: 'YouTube Main Channel' },
+                ]}
+                value={targetPlatform}
+                onChange={(v) => setTargetPlatform(v)}
               />
 
               <Select
@@ -666,7 +756,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                         padding: '8px 12px',
                         borderRadius: '8px',
                         border: '1px solid var(--line)',
-                        backgroundColor: isChecked ? 'rgba(120, 120, 128, 0.1)' : 'transparent',
+                        backgroundColor: 'transparent',
                         cursor: 'pointer',
                         fontSize: '12px',
                         display: 'flex',
@@ -689,10 +779,10 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           {/* SECTION 3: FINANCIAL TERMS & TIMELINE */}
           <div>
             <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
-              03. FINANCIAL TERMS & EXPIRATION
+              03. FINANCIAL TERMS & TIMELINE
             </span>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '14px' }}>
               <Select
                 label="Offer Currency"
                 options={[
@@ -704,16 +794,32 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               />
 
               <Select
-                label="Payment Terms Structure"
+                label="Payment Terms"
                 options={[
-                  { label: '100% Upfront Payment', value: 'upfront_100' },
-                  { label: '50% Deposit / 50% Completion', value: 'deposit_50_50' },
-                  { label: 'Monthly Upfront (Retainers)', value: 'monthly_upfront' },
+                  { label: '50% upfront, 50% on delivery', value: '50% upfront, 50% on delivery' },
+                  { label: 'Full payment on delivery', value: 'Full payment on delivery' },
+                  { label: '100% upfront payment', value: '100% upfront payment' },
+                  { label: 'Monthly upfront billing', value: 'Monthly upfront billing' },
+                  { label: 'Custom (specify in notes)', value: 'Custom' },
                 ]}
-                value={paymentStructure}
-                onChange={(v) => setPaymentStructure(v as any)}
+                value={paymentTermsOption}
+                onChange={(v) => setPaymentTermsOption(v)}
               />
+            </div>
 
+            {paymentTermsOption === 'Custom' && (
+              <div style={{ marginBottom: '14px' }}>
+                <Input
+                  label="Specify Custom Payment Terms"
+                  placeholder="e.g. 30% deposit, 40% milestone 1, 30% final..."
+                  value={customPaymentTerms}
+                  onChange={(e) => setCustomPaymentTerms(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: proposalType === 'contract' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '14px', marginBottom: '14px' }}>
               {proposalType === 'project' ? (
                 <Input
                   label={`Total Project Rate (${currency})`}
@@ -724,18 +830,29 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                   required
                 />
               ) : (
-                <Input
-                  label={`Monthly Retainer Rate (${currency})`}
-                  type="number"
-                  value={contractMonthlyPrice}
-                  onChange={(e) => setContractMonthlyPrice(e.target.value)}
-                  placeholder="e.g. 7200"
-                  required
-                />
+                <>
+                  <Input
+                    label={`Monthly Retainer Rate (${currency})`}
+                    type="number"
+                    value={contractMonthlyPrice}
+                    onChange={(e) => setContractMonthlyPrice(e.target.value)}
+                    placeholder="e.g. 7200"
+                    required
+                  />
+                  <Select
+                    label="Contract Commitment Term"
+                    options={[
+                      { label: '1 Month Commitment (Standard)', value: '1' },
+                      { label: '3 Months Commitment (5% Discount Applied)', value: '3' },
+                      { label: '6 Months Commitment (10% Discount Applied)', value: '6' },
+                      { label: '12 Months Commitment (15% Discount Applied)', value: '12' },
+                    ]}
+                    value={contractDurationMonths}
+                    onChange={(v) => setContractDurationMonths(v)}
+                  />
+                </>
               )}
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
               {proposalType === 'project' ? (
                 <Input
                   label="Target Delivery Deadline Date"
@@ -746,7 +863,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                 />
               ) : (
                 <Input
-                  label="Contract Commitment Start Date"
+                  label="Contract Start Date"
                   type="date"
                   value={contractStartDate}
                   onChange={(e) => setContractStartDate(e.target.value)}
@@ -766,7 +883,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
 
           <div style={{ height: '1px', backgroundColor: 'var(--line)' }} />
 
-          {/* SECTION 4: CLIENT RESPONSIBILITIES & INTERNAL NOTES */}
+          {/* SECTION 4: CLIENT RESPONSIBILITIES & PRIVATE NOTES */}
           <div>
             <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', marginBottom: '12px' }}>
               04. CLIENT RESPONSIBILITIES & PRIVATE NOTES
@@ -805,7 +922,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           </div>
 
           <Button type="submit" variant="primary" size="large" fullWidth isLoading={submitting}>
-            🚀 Dispatch Official Proposal Offer to Client
+            Dispatch Official Proposal Offer to Client
           </Button>
         </form>
 
@@ -836,6 +953,31 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               </span>
             </div>
 
+            {/* Editing Style Visual Preview Box */}
+            {activeStyleSample && (
+              <div
+                style={{
+                  backgroundColor: 'var(--bg)',
+                  borderRadius: '12px',
+                  border: '1px solid var(--accent-gold-soft)',
+                  padding: '12px 14px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 800 }}>
+                    STYLE PREVIEW
+                  </span>
+                  <Badge variant="gold">{activeStyleSample.category}</Badge>
+                </div>
+                <strong style={{ fontSize: '13.5px', color: 'var(--ink)', display: 'block' }}>
+                  {activeStyleSample.name}
+                </strong>
+                <p style={{ fontSize: '11.5px', color: 'var(--ink-soft)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+                  {activeStyleSample.description}
+                </p>
+              </div>
+            )}
+
             {/* Scope Summary */}
             <div
               style={{
@@ -857,10 +999,15 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--ink-soft)' }}>Framing & Tier</span>
+                <span style={{ color: 'var(--ink-soft)' }}>Specs & Tier</span>
                 <strong style={{ color: 'var(--ink)' }}>
-                  {aspectRatio} • {packageTier.toUpperCase()}
+                  {aspectRatio} • {resolution} • {packageTier.toUpperCase()}
                 </strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--ink-soft)' }}>Target Platform</span>
+                <strong style={{ color: 'var(--ink)' }}>{targetPlatform}</strong>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -876,7 +1023,9 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                   {includedServices.slice(0, 4).map((s) => (
-                    <span key={s} style={{ fontSize: '11.5px', color: 'var(--ink-soft)' }}>✓ {s}</span>
+                    <span key={s} style={{ fontSize: '11.5px', color: 'var(--ink-soft)' }}>
+                      ✓ {s}
+                    </span>
                   ))}
                   {includedServices.length > 4 && (
                     <span style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>+ {includedServices.length - 4} more services</span>
@@ -889,8 +1038,8 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
             <div style={{ backgroundColor: 'rgba(201, 168, 76, 0.08)', padding: '14px', borderRadius: '12px', border: '1px solid var(--accent-gold)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 800 }}>COMMERCIAL INVESTMENT</span>
-                <span style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block' }}>
-                  Terms: {paymentStructure === 'upfront_100' ? '100% Upfront' : paymentStructure === 'deposit_50_50' ? '50% Deposit / 50% Delivery' : 'Monthly Upfront'}
+                <span style={{ fontSize: '11px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
+                  {effectivePaymentTerms}
                 </span>
               </div>
 
@@ -899,10 +1048,22 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               </span>
             </div>
 
+            {/* Notification Rails */}
+            <div style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'grid', gap: '6px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <IconCheck size={14} color="var(--accent-gold)" /> Telegram Bot Notification Channel
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <IconCheck size={14} color="var(--accent-gold)" /> Transactional Email Offer Dispatch
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <IconCheck size={14} color="var(--accent-gold)" /> Client Web & Mini App Portal Response
+              </span>
+            </div>
+
             {/* Expiration Note */}
-            <div style={{ fontSize: '11.5px', color: 'var(--ink-soft)', textAlign: 'center', lineHeight: 1.5 }}>
-              Proposal valid until <strong>{new Date(validUntil).toLocaleDateString()}</strong>.<br />
-              Dispatched via Telegram Bot & Transactional Email.
+            <div style={{ fontSize: '11.5px', color: 'var(--ink-soft)', textAlign: 'center', lineHeight: 1.5, borderTop: '1px solid var(--line)', paddingTop: '10px' }}>
+              Proposal valid until <strong>{new Date(validUntil).toLocaleDateString()}</strong>.
             </div>
           </div>
         </div>

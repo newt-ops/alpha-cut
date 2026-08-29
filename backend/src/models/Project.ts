@@ -14,14 +14,18 @@ export interface IProject extends Document {
   clientName: string;
   clientEmail: string;
 
-  // Proposal Agreement Metadata
+  // Extended Proposal Agreement Metadata
   proposalTitle?: string;
   quantity: number;
   aspectRatio: AspectRatio;
+  resolution?: string;
+  targetPlatform?: string;
   includedServices: string[];
   excludedServices: string[];
   includedRevisions: number;
   paymentStructure: PaymentStructure;
+  paymentTerms?: string;
+  customPaymentTerms?: string;
   validUntil?: Date | null;
   clientResponsibilities?: string;
 
@@ -91,6 +95,14 @@ const projectSchema = new Schema<IProject>(
       enum: ['9:16', '16:9', '1:1', '4:5'],
       default: '9:16',
     },
+    resolution: {
+      type: String,
+      default: '1080p Full HD',
+    },
+    targetPlatform: {
+      type: String,
+      default: 'Multi-Platform',
+    },
     includedServices: {
       type: [String],
       default: ['Clean Cuts & Trimming', 'Animated Captions', 'Sound Design & SFX', 'Color Correction'],
@@ -107,6 +119,14 @@ const projectSchema = new Schema<IProject>(
       type: String,
       enum: ['upfront_100', 'deposit_50_50', 'monthly_upfront'],
       default: 'upfront_100',
+    },
+    paymentTerms: {
+      type: String,
+      default: '50% upfront, 50% on delivery',
+    },
+    customPaymentTerms: {
+      type: String,
+      default: '',
     },
     validUntil: {
       type: Date,

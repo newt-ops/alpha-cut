@@ -27,10 +27,14 @@ export interface Project {
   proposalTitle?: string;
   quantity?: number;
   aspectRatio?: AspectRatio;
+  resolution?: string;
+  targetPlatform?: string;
   includedServices?: string[];
   excludedServices?: string[];
   includedRevisions?: number;
   paymentStructure?: PaymentStructure;
+  paymentTerms?: string;
+  customPaymentTerms?: string;
   validUntil?: string;
   clientResponsibilities?: string;
 
@@ -71,11 +75,16 @@ export interface Contract {
   // Proposal Agreement Extended Metadata
   proposalTitle?: string;
   videosPerMonth?: number;
+  editingStyle?: string;
   aspectRatio?: AspectRatio;
+  resolution?: string;
+  targetPlatform?: string;
   includedServices?: string[];
   excludedServices?: string[];
   includedRevisions?: number;
   paymentStructure?: PaymentStructure;
+  paymentTerms?: string;
+  customPaymentTerms?: string;
   validUntil?: string;
   clientResponsibilities?: string;
 
