@@ -243,40 +243,74 @@ export const TelegramMiniAppPage: React.FC = () => {
       {/* Header Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
-          <Badge variant="gold" size="small">EXECUTIVE WORKSPACE</Badge>
-          <h1 className="font-display" style={{ fontSize: '20px', marginTop: '4px', color: 'var(--ink)' }}>
-            Alpha Cut Client
+          <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
+            Alpha Cut
           </h1>
+          <span style={{ fontSize: '12px', color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))' }}>
+            {user?.name || 'Client Workspace'}
+          </span>
         </div>
-        <Button variant="secondary" size="small" isLoading={refreshing} onClick={handleManualRefresh} iconRight={IconRefreshCw}>
-          Sync
-        </Button>
+        <button
+          type="button"
+          onClick={handleManualRefresh}
+          disabled={refreshing}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--tg-theme-link-color, var(--tg-link, #64b5ef))',
+            fontSize: '13px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          <IconRefreshCw size={14} />
+          <span>{refreshing ? 'Syncing...' : 'Sync'}</span>
+        </button>
       </div>
 
       {/* Tab Content */}
       {activeNavTab === 'projects' && (
-        <div style={{ display: 'grid', gap: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="font-display" style={{ fontSize: '16px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <IconFilm size={16} color="var(--accent-gold)" /> Video Projects ({projects.length})
-            </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div
+            style={{
+              fontSize: '12px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))',
+              paddingLeft: '4px',
+              letterSpacing: '0.4px',
+            }}
+          >
+            VIDEO PROJECTS ({projects.length})
           </div>
 
           {projectsLoading ? (
-            <div style={{ display: 'grid', gap: '12px' }}>
-              <Skeleton height="140px" style={{ borderRadius: '16px' }} />
-              <Skeleton height="140px" style={{ borderRadius: '16px' }} />
+            <div style={{ display: 'grid', gap: '10px' }}>
+              <Skeleton height="120px" style={{ borderRadius: '12px' }} />
+              <Skeleton height="120px" style={{ borderRadius: '12px' }} />
             </div>
           ) : projects.length === 0 ? (
-            <div style={{ backgroundColor: 'var(--surface)', padding: '32px 20px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--line)' }}>
-              <IconFilm size={32} color="var(--ink-soft)" style={{ margin: '0 auto 12px' }} />
-              <h3 className="font-display" style={{ fontSize: '16px', marginBottom: '6px' }}>No Active Projects</h3>
-              <p style={{ color: 'var(--ink-soft)', fontSize: '13px' }}>
+            <div
+              style={{
+                backgroundColor: 'var(--tg-theme-secondary-bg-color, var(--tg-secondary-bg, #232e3c))',
+                padding: '32px 20px',
+                borderRadius: '12px',
+                textAlign: 'center',
+              }}
+            >
+              <IconFilm size={32} color="var(--tg-theme-hint-color, var(--tg-hint, #708499))" style={{ margin: '0 auto 12px' }} />
+              <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
+                No Active Projects
+              </h3>
+              <p style={{ color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', fontSize: '13px', margin: 0 }}>
                 When your proposal offers or video edits are sent, they will appear right here.
               </p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {projects.map((project) => (
                 <TelegramProjectCard
                   key={project._id}
@@ -293,25 +327,41 @@ export const TelegramMiniAppPage: React.FC = () => {
       )}
 
       {activeNavTab === 'contracts' && (
-        <div style={{ display: 'grid', gap: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="font-display" style={{ fontSize: '16px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <IconZap size={16} color="#24A1DE" /> Retainer Contracts ({contracts.length})
-            </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div
+            style={{
+              fontSize: '12px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))',
+              paddingLeft: '4px',
+              letterSpacing: '0.4px',
+            }}
+          >
+            RETAINER CONTRACTS ({contracts.length})
           </div>
 
           {contractsLoading ? (
-            <Skeleton height="160px" style={{ borderRadius: '16px' }} />
+            <Skeleton height="120px" style={{ borderRadius: '12px' }} />
           ) : contracts.length === 0 ? (
-            <div style={{ backgroundColor: 'var(--surface)', padding: '32px 20px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--line)' }}>
-              <IconZap size={32} color="var(--ink-soft)" style={{ margin: '0 auto 12px' }} />
-              <h3 className="font-display" style={{ fontSize: '16px', marginBottom: '6px' }}>No Active Retainers</h3>
-              <p style={{ color: 'var(--ink-soft)', fontSize: '13px' }}>
+            <div
+              style={{
+                backgroundColor: 'var(--tg-theme-secondary-bg-color, var(--tg-secondary-bg, #232e3c))',
+                padding: '32px 20px',
+                borderRadius: '12px',
+                textAlign: 'center',
+              }}
+            >
+              <IconZap size={32} color="var(--tg-theme-hint-color, var(--tg-hint, #708499))" style={{ margin: '0 auto 12px' }} />
+              <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
+                No Active Retainers
+              </h3>
+              <p style={{ color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', fontSize: '13px', margin: 0 }}>
                 You currently have no monthly video editing retainer contracts running.
               </p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {contracts.map((contract) => (
                 <TelegramContractCard key={contract._id} contract={contract} />
               ))}

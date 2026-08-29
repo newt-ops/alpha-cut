@@ -1,13 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { Button } from '@components/ui/Button';
-import { Badge } from '@components/ui/Badge';
 import { useToast } from '@components/ui/Toast';
 import { triggerHaptic, triggerHapticNotification } from '../../utils/telegramSdk';
-import { IconShield, IconZap, IconCheck, IconExternalLink, IconRefreshCw } from '@icons/icons';
+import { IconShield, IconCheck, IconExternalLink } from '@icons/icons';
 
 interface TelegramLinkScreenProps {
   onLinkSubmit: (code: string) => Promise<boolean>;
-  onLinkWithCredentials?: (email: string, password: string) => Promise<boolean>;
   telegramUser?: any;
 }
 
@@ -17,7 +14,6 @@ export const TelegramLinkScreen: React.FC<TelegramLinkScreenProps> = ({
 }) => {
   const { toast } = useToast();
 
-  // 6-Digit Code state
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [submittingCode, setSubmittingCode] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -83,27 +79,24 @@ export const TelegramLinkScreen: React.FC<TelegramLinkScreenProps> = ({
   return (
     <div style={{ padding: '16px 0', maxWidth: '440px', margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <Badge variant="gold" size="small">LINKING REQUIRED</Badge>
-        <h1 className="font-display" style={{ fontSize: '22px', marginTop: '8px', color: 'var(--ink)' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, margin: 0, color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
           Account Not Linked
         </h1>
-        <p style={{ fontSize: '13px', color: 'var(--ink-soft)', marginTop: '6px', lineHeight: 1.5 }}>
-          Telegram profile detected: <strong style={{ color: 'var(--accent-gold)' }}>{displayName}</strong>
-          {telegramUser?.username && <> (@{telegramUser.username})</>}. Connect your web account to view your workspace.
+        <p style={{ fontSize: '13px', color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', marginTop: '6px', lineHeight: 1.5 }}>
+          Telegram profile detected: <strong style={{ color: 'var(--tg-theme-link-color, var(--tg-link, #64b5ef))' }}>{displayName}</strong>
+          {telegramUser?.username && <> (@{telegramUser.username})</>}. Connect your web workspace below.
         </p>
       </div>
 
       <div
         style={{
-          backgroundColor: 'var(--surface)',
-          borderRadius: '16px',
-          border: '1px solid var(--line)',
+          backgroundColor: 'var(--tg-theme-secondary-bg-color, var(--tg-secondary-bg, #232e3c))',
+          borderRadius: '12px',
           padding: '24px 20px',
-          boxShadow: 'var(--shadow)',
         }}
       >
         <form onSubmit={handleCodeSubmit}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ink-soft)', marginBottom: '12px', textAlign: 'center' }}>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', marginBottom: '12px', textAlign: 'center', letterSpacing: '0.4px' }}>
             ENTER 6-DIGIT CODE FROM WEB DASHBOARD
           </label>
 
@@ -119,16 +112,16 @@ export const TelegramLinkScreen: React.FC<TelegramLinkScreenProps> = ({
                 onKeyDown={(e) => handleKeyDown(idx, e)}
                 onPaste={handlePaste}
                 style={{
-                  width: '44px',
-                  height: '52px',
+                  width: '42px',
+                  height: '48px',
                   textAlign: 'center',
-                  fontSize: '22px',
+                  fontSize: '20px',
                   fontWeight: 700,
-                  fontFamily: 'var(--font-mono)',
-                  color: 'var(--accent-gold)',
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  border: digit ? '2px solid var(--accent-gold)' : '1px solid var(--line)',
-                  borderRadius: '12px',
+                  fontFamily: 'monospace',
+                  color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))',
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  border: digit ? '2px solid var(--tg-theme-link-color, var(--tg-link, #64b5ef))' : '1px solid rgba(120, 120, 128, 0.2)',
+                  borderRadius: '10px',
                   outline: 'none',
                   transition: 'all 0.15s ease',
                 }}
@@ -136,24 +129,61 @@ export const TelegramLinkScreen: React.FC<TelegramLinkScreenProps> = ({
             ))}
           </div>
 
-          <Button variant="telegram" type="submit" isLoading={submittingCode} fullWidth size="large" iconRight={IconCheck}>
-            Connect Account
-          </Button>
+          <button
+            type="submit"
+            disabled={submittingCode}
+            style={{
+              width: '100%',
+              height: '44px',
+              borderRadius: '10px',
+              border: 'none',
+              backgroundColor: 'var(--tg-theme-button-color, var(--tg-button, #5288c1))',
+              color: 'var(--tg-theme-button-text-color, var(--tg-button-text, #ffffff))',
+              fontSize: '15px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+            }}
+          >
+            <IconCheck size={18} />
+            <span>{submittingCode ? 'Connecting...' : 'Connect Account'}</span>
+          </button>
 
-          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--line)', fontSize: '12px', color: 'var(--ink-soft)', lineHeight: 1.6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: 'var(--ink)', marginBottom: '8px' }}>
-              <IconShield size={14} color="var(--accent-gold)" /> How to link your account:
+          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(120, 120, 128, 0.15)', fontSize: '12px', color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', lineHeight: 1.6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))', marginBottom: '8px' }}>
+              <IconShield size={14} color="var(--tg-theme-link-color, var(--tg-link, #64b5ef))" /> How to link your account:
             </div>
-            1. Open <strong>alpha-cut.com</strong> or your Web Dashboard<br />
-            2. Click <strong>Connect Telegram</strong> to generate your 6-digit code<br />
-            3. Enter code above or click the direct connection link
+            1. Log into your <strong>Alpha Cut Web Dashboard</strong><br />
+            2. Click <strong>Connect Telegram</strong> to generate your code<br />
+            3. Enter the 6-digit code above
           </div>
 
           <div style={{ marginTop: '16px' }}>
             <a href="https://alpha-cut.com/dashboard" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-              <Button variant="secondary" fullWidth size="medium" iconRight={IconExternalLink}>
-                Open Web Dashboard
-              </Button>
+              <button
+                type="button"
+                style={{
+                  width: '100%',
+                  height: '42px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(120, 120, 128, 0.2)',
+                  backgroundColor: 'transparent',
+                  color: 'var(--tg-theme-link-color, var(--tg-link, #64b5ef))',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span>Open Web Dashboard</span>
+                <IconExternalLink size={16} />
+              </button>
             </a>
           </div>
         </form>

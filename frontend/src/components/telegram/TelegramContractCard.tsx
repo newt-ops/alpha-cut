@@ -1,79 +1,72 @@
 import React from 'react';
 import { Contract } from '../../types';
-import { Badge } from '@components/ui/Badge';
-import { IconZap, IconClock } from '@icons/icons';
+import { IconZap } from '@icons/icons';
 
 interface TelegramContractCardProps {
   contract: Contract;
 }
 
 export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ contract }) => {
-  const isMonthly = (contract.frequency || 'monthly').toLowerCase().includes('month');
+  const isActive = (contract?.status || 'active') === 'active';
 
   return (
     <div
       style={{
-        backgroundColor: 'var(--surface)',
-        borderRadius: '16px',
-        border: '1px solid var(--line)',
-        padding: '16px',
+        backgroundColor: 'var(--tg-theme-secondary-bg-color, var(--tg-secondary-bg, #232e3c))',
+        borderRadius: '12px',
+        padding: '14px 16px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px',
+        gap: '10px',
+        boxSizing: 'border-box',
       }}
     >
       {/* Header: Tier & Status */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(201,168,76,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent-gold)',
-            }}
-          >
-            <IconZap size={16} />
-          </div>
+          <IconZap size={18} color="var(--tg-theme-link-color, var(--tg-link, #64b5ef))" />
           <div>
-            <h3 className="font-display" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))', margin: 0 }}>
               {contract.packageTier ? contract.packageTier.toUpperCase() : 'RETAINER'} CONTRACT
             </h3>
-            <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>
+            <span style={{ fontSize: '11px', color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))' }}>
               Billing: {contract.frequency || 'Monthly'}
             </span>
           </div>
         </div>
-        <Badge variant={contract?.status === 'active' ? 'success' : 'surface'} size="small">
-          {(contract?.status || 'active').toUpperCase()}
-        </Badge>
+
+        <span
+          style={{
+            fontSize: '12px',
+            fontWeight: 600,
+            color: isActive ? '#34c759' : 'var(--tg-theme-hint-color, var(--tg-hint, #708499))',
+            backgroundColor: 'rgba(120, 120, 128, 0.12)',
+            padding: '3px 8px',
+            borderRadius: '6px',
+          }}
+        >
+          {isActive ? 'Active' : 'Inactive'}
+        </span>
       </div>
 
+      <div style={{ height: '1px', backgroundColor: 'rgba(120, 120, 128, 0.15)' }} />
+
       {/* Pricing & Dates */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '8px',
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
-          padding: '10px 12px',
-          borderRadius: '10px',
-          border: '1px solid rgba(255, 255, 255, 0.04)',
-        }}
-      >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
         <div>
-          <span style={{ fontSize: '10px', color: 'var(--ink-soft)', display: 'block', textTransform: 'uppercase' }}>MONTHLY RETAINER</span>
-          <strong style={{ fontSize: '14px', color: 'var(--accent-gold)' }}>
+          <span style={{ color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', fontSize: '11px', display: 'block' }}>
+            Monthly Retainer
+          </span>
+          <strong style={{ color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
             {contract?.monthlyPrice ?? 0} {contract?.currency || 'USD'}
           </strong>
         </div>
-        <div>
-          <span style={{ fontSize: '10px', color: 'var(--ink-soft)', display: 'block', textTransform: 'uppercase' }}>START DATE</span>
-          <span style={{ fontSize: '13px', color: 'var(--ink)' }}>
+
+        <div style={{ textAlign: 'right' }}>
+          <span style={{ color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', fontSize: '11px', display: 'block' }}>
+            Start Date
+          </span>
+          <span style={{ color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
             {contract?.startDate ? new Date(contract.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Active'}
           </span>
         </div>
@@ -81,7 +74,7 @@ export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ cont
 
       {/* Retainer Notes if any */}
       {contract.notes && (
-        <p style={{ fontSize: '12px', color: 'var(--ink-soft)', lineHeight: 1.4, margin: 0 }}>
+        <p style={{ fontSize: '12px', color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', lineHeight: 1.4, margin: '4px 0 0 0' }}>
           {contract.notes}
         </p>
       )}

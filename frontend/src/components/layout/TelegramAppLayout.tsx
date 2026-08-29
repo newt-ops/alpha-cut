@@ -2,8 +2,6 @@ import React, { useEffect, ReactNode } from 'react';
 import { triggerHapticSelection } from '../../utils/telegramSdk';
 import { IconFilm, IconZap, IconUser } from '@icons/icons';
 
-export const TELEGRAM_BLUE = '#24A1DE';
-
 interface TelegramAppLayoutProps {
   children: ReactNode;
   activeTab?: 'projects' | 'contracts' | 'profile' | string;
@@ -29,10 +27,27 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
 
         if (tg.themeParams) {
           const root = document.documentElement;
-          if (tg.themeParams.bg_color) root.style.setProperty('--bg', tg.themeParams.bg_color);
-          if (tg.themeParams.secondary_bg_color) root.style.setProperty('--surface', tg.themeParams.secondary_bg_color);
-          if (tg.themeParams.text_color) root.style.setProperty('--ink', tg.themeParams.text_color);
-          if (tg.themeParams.hint_color) root.style.setProperty('--ink-soft', tg.themeParams.hint_color);
+          if (tg.themeParams.bg_color) {
+            root.style.setProperty('--tg-bg', tg.themeParams.bg_color);
+          }
+          if (tg.themeParams.secondary_bg_color) {
+            root.style.setProperty('--tg-secondary-bg', tg.themeParams.secondary_bg_color);
+          }
+          if (tg.themeParams.text_color) {
+            root.style.setProperty('--tg-text', tg.themeParams.text_color);
+          }
+          if (tg.themeParams.hint_color) {
+            root.style.setProperty('--tg-hint', tg.themeParams.hint_color);
+          }
+          if (tg.themeParams.link_color) {
+            root.style.setProperty('--tg-link', tg.themeParams.link_color);
+          }
+          if (tg.themeParams.button_color) {
+            root.style.setProperty('--tg-button', tg.themeParams.button_color);
+          }
+          if (tg.themeParams.button_text_color) {
+            root.style.setProperty('--tg-button-text', tg.themeParams.button_text_color);
+          }
         }
       };
 
@@ -65,45 +80,45 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: 'var(--bg)',
-        color: 'var(--ink)',
-        paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))',
-        paddingBottom: onTabChange ? 'calc(96px + env(safe-area-inset-bottom, 0px))' : 'calc(24px + env(safe-area-inset-bottom, 0px))',
+        backgroundColor: 'var(--tg-theme-bg-color, var(--tg-bg, #17212b))',
+        color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))',
+        paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
+        paddingBottom: onTabChange
+          ? 'calc(84px + env(safe-area-inset-bottom, 0px))'
+          : 'calc(24px + env(safe-area-inset-bottom, 0px))',
         boxSizing: 'border-box',
         WebkitTapHighlightColor: 'transparent',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       }}
     >
-      <div style={{ maxWidth: '560px', margin: '0 auto', padding: '0 16px' }}>
+      <div style={{ maxWidth: '540px', margin: '0 auto', padding: '0 16px' }}>
         {children}
       </div>
 
-      {/* Floating Glassmorphic 3-Tab Navigation Bar */}
+      {/* Telegram Native Bottom Tab Bar */}
       {onTabChange && (
         <div
           style={{
             position: 'fixed',
-            bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'calc(100% - 32px)',
-            maxWidth: '480px',
-            backgroundColor: 'var(--surface)',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            borderRadius: '24px',
-            border: '1px solid var(--line)',
+            bottom: '0',
+            left: '0',
+            right: '0',
+            backgroundColor: 'var(--tg-theme-secondary-bg-color, var(--tg-secondary-bg, #232e3c))',
+            borderTop: '1px solid rgba(120, 120, 128, 0.15)',
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            height: '60px',
+            height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             zIndex: 100,
-            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.45)',
-            padding: '4px',
             boxSizing: 'border-box',
           }}
         >
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            const activeColor = 'var(--tg-theme-button-color, var(--tg-button, var(--tg-theme-link-color, #64b5ef)))';
+            const inactiveColor = 'var(--tg-theme-hint-color, var(--tg-hint, #708499))';
+
             return (
               <button
                 key={item.id}
@@ -111,20 +126,20 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
                 onClick={() => handleTabClick(item.id)}
                 style={{
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   border: 'none',
-                  borderRadius: '20px',
-                  backgroundColor: isActive ? 'rgba(36, 161, 222, 0.18)' : 'transparent',
-                  color: isActive ? TELEGRAM_BLUE : 'var(--ink-soft)',
+                  backgroundColor: 'transparent',
+                  color: isActive ? activeColor : inactiveColor,
                   fontWeight: isActive ? 600 : 400,
-                  fontSize: '12px',
+                  fontSize: '11px',
                   cursor: 'pointer',
-                  gap: '6px',
-                  transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                  gap: '4px',
+                  padding: '6px 0',
                 }}
               >
-                <Icon size={17} color={isActive ? TELEGRAM_BLUE : 'var(--ink-soft)'} />
+                <Icon size={20} color={isActive ? activeColor : inactiveColor} />
                 <span>{item.label}</span>
               </button>
             );
