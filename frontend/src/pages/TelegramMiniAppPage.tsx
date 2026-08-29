@@ -26,7 +26,30 @@ import {
   IconCheck,
 } from '@icons/icons';
 
+import { TelegramRedirectNotice } from '../components/telegram/TelegramRedirectNotice';
+
+const checkIsTelegramEnvironment = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('dev') === 'true' || urlParams.get('test') === 'true') return true;
+
+  const tg = (window as any).Telegram?.WebApp;
+  return Boolean(
+    tg &&
+      (tg.initData ||
+        tg.initDataUnsafe?.user ||
+        (window as any).TelegramWebviewProxy ||
+        (tg.platform && tg.platform !== 'unknown'))
+  );
+};
+
 export const TelegramMiniAppPage: React.FC = () => {
+  const isTelegramEnv = checkIsTelegramEnvironment();
+
+  if (!isTelegramEnv) {
+    return <TelegramRedirectNotice />;
+  }
+
   const { toast } = useToast();
   const {
     user,

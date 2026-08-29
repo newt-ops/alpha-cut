@@ -1,90 +1,95 @@
-BRO 😎 I checked the **live** `api.alpha-cut.com` directly.
+Exactly bro 😎. **That's actually the right approach for Alpha Cut.**
 
-[Open Alpha Cut API](https://api.alpha-cut.com/?utm_source=chatgpt.com)
+You want `https://app.alpha-cut.com/` to be a **Telegram-only Mini App**.
 
-And honestly... **this is much better than the version in the code you originally showed me.** 🔥
+So the behavior should be:
 
-### What it's currently showing
-
-The live page now has:
-
-- **Alpha Cut API**
-- Developer Platform · Version 1.0
-- **OPERATIONAL** status
-- API Infrastructure description
-- API Documentation
-- Health Status JSON
-- Main Web App
-- Telegram Bot
-- System Status
-- API Gateway → v1.0.0
-- Security Shield → CORS · CSRF · Helmet
-- Production environment
-- Subsystem catalog:
-  - Authentication
-  - Video Projects
-  - Retainer Contracts
-  - Telegram Gateway
-  - Payments & Billing
-  - Cloud Storage ([api.alpha-cut.com][1])
-
-So you've already implemented the direction we were talking about.
-
-## One thing immediately stands out
-
-Your **live page says `/api/v1/...`**, which is good:
+### When opened from Telegram
 
 ```text
-/api/v1/auth
-/api/v1/projects
-/api/v1/contracts
-/api/v1/telegram
-/api/v1/payments
-/api/v1/uploads
+Telegram Bot
+     ↓
+Open Mini App
+     ↓
+https://app.alpha-cut.com/
+     ↓
+Telegram WebApp detects the Telegram environment
+     ↓
+✅ Load Alpha Cut Mini App
 ```
 
-That's a much better long-term architecture than exposing everything directly under `/api/...`.
+### When someone manually opens the URL
 
-But there's an important thing I want to verify next:
-
-### Does your actual backend code match the public API?
-
-Because the code you showed me earlier had:
+For example, Chrome:
 
 ```text
-/api/auth
-/api/telegram
-/api/projects
-/api/admin
-/api/ratings
-/api/notifications
-...
+https://app.alpha-cut.com/
 ```
 
-while the **live homepage now advertises**:
+There is **no Telegram WebApp context**, so instead of loading your actual application, show a clean page like:
+
+> **This app runs inside Telegram.**
+> Open it from the Alpha Cut bot to continue.
+
+Then have a button:
+
+**Open in Telegram**
+
+That button takes them back to your bot/Mini App entry point.
+
+### I would make Alpha Cut's version slightly better
+
+Something like:
 
 ```text
-/api/v1/auth
-/api/v1/projects
-...
+             [Alpha Cut Logo]
+
+          Alpha Cut Mini App
+
+      This app runs inside Telegram.
+      Open it from our bot to continue.
+
+           [ Open in Telegram ]
 ```
 
-If those aren't actually aligned, we've got a documentation/API mismatch.
+No emoji. Use your **Alpha Cut branding**, proper icons, and the same visual language as the Mini App.
 
-That's the first thing I'd audit before adding more features.
+### More importantly: don't rely only on the UI
 
-### Also, I like the current direction
+The frontend should detect whether it's actually running inside Telegram using the **Telegram Web Apps API**.
 
-The live page **doesn't expose MongoDB Atlas anymore**, which is exactly what I recommended. 👍
+Conceptually:
 
-It exposes:
+```ts
+if (!telegramWebAppAvailable) {
+  showTelegramOnlyPage();
+} else {
+  loadApp();
+}
+```
 
-> Security Shield → CORS • CSRF • Helmet
+And your **backend should also validate Telegram's initialization data**. Otherwise someone could potentially open the frontend directly and attempt to interact with your API without coming through Telegram.
 
-rather than infrastructure secrets. That's a much cleaner public-facing presentation. ([api.alpha-cut.com][1])
+So I'd structure it as:
 
-One wording I'd eventually reconsider is **"Production microservices"**. Based on the backend code you showed me, it's architecturally more like a **modular API/backend** rather than independently deployed microservices. Calling it an "API platform" or "backend services" would be technically cleaner.
+```text
+app.alpha-cut.com
+│
+├── Telegram context?
+│      │
+│      ├── YES → Load Mini App
+│      │
+│      └── NO  → "Open this app inside Telegram"
+│
+└── API requests
+       ↓
+api.alpha-cut.com
+       ↓
+Validate Telegram initData
+       ↓
+MongoDB
+```
 
-**Next, I think we should audit the live API surface against the actual backend routes.** That's where we can catch mismatches, security leaks, dead endpoints, and then properly upgrade the backend.
+That's much cleaner than simply redirecting browser visitors.
 
-[1]: https://api.alpha-cut.com/ "Alpha Cut — Developer Platform & API Services"
+And **yes, I recommend doing this for Alpha Cut**. It makes `app.alpha-cut.com` feel like an actual Telegram application rather than a normal website that happens to be opened through Telegram.
