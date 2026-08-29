@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { StarRating } from '@components/ui/StarRating';
-import { PhoneFrame } from '@components/media/PhoneFrame';
+
 import { BeforeAfterComparison } from '@components/home/BeforeAfterComparison';
 import { EDITING_STYLES } from '../data/editingStyles';
 import { PORTFOLIO_ITEMS } from '../data/portfolioItems';
@@ -73,8 +73,7 @@ export const HomePage: React.FC = () => {
     fetchLiveData();
   }, []);
 
-  const heroItem1 = portfolioList.find((p) => p.heroSlot === 1 || p.isHeroFeatured) || portfolioList[0];
-  const heroItem2 = portfolioList.find((p) => p.heroSlot === 2) || portfolioList[1] || portfolioList[0];
+
   const beforeAfterItem = portfolioList.find((p) => p.isBeforeAfterFeatured) || portfolioList[0];
 
   return (
@@ -143,76 +142,6 @@ export const HomePage: React.FC = () => {
           </motion.div>
         </div>
 
-        {/* Dual Phone 3D Floating Feature Reels in Hero */}
-        <div
-          style={{
-            position: 'relative',
-            maxWidth: '680px',
-            margin: '60px auto 0 auto',
-            perspective: '1200px',
-          }}
-        >
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-              gap: '40px',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            {heroItem1 && (
-              <motion.div
-                animate={{
-                  y: [-12, 12, -12],
-                  rotateY: [-6, -2, -6],
-                  rotateX: [4, 8, 4],
-                }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 6,
-                  ease: 'easeInOut',
-                }}
-                style={{ transformStyle: 'preserve-3d' }}
-              >
-                <PhoneFrame
-                  title={heroItem1.title}
-                  styleName={heroItem1.styleName}
-                  duration={heroItem1.duration}
-                  videoUrl={heroItem1.videoUrl}
-                  thumbnailUrl={heroItem1.thumbnailUrl}
-                  formatLabel="HERO REEL #1"
-                />
-              </motion.div>
-            )}
-
-            {heroItem2 && (
-              <motion.div
-                animate={{
-                  y: [12, -12, 12],
-                  rotateY: [6, 2, 6],
-                  rotateX: [-4, -8, -4],
-                }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 6.5,
-                  ease: 'easeInOut',
-                  delay: 0.5,
-                }}
-                style={{ transformStyle: 'preserve-3d' }}
-              >
-                <PhoneFrame
-                  title={heroItem2.title}
-                  styleName={heroItem2.styleName}
-                  duration={heroItem2.duration}
-                  videoUrl={heroItem2.videoUrl}
-                  thumbnailUrl={heroItem2.thumbnailUrl}
-                  formatLabel="HERO REEL #2"
-                />
-              </motion.div>
-            )}
-          </div>
-        </div>
       </section>
 
       {/* 2. VISUAL PROOF COMPARISON SLIDER SECTION */}
