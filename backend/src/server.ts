@@ -330,6 +330,19 @@ app.get('/docs', (req, res) => {
             <div id="t-rate" class="term"></div>
           </div>
 
+          <div class="doc-card" data-search="/api/v1/uploads/signature post cloudinary upload">
+            <div class="doc-header">
+              <div class="endpoint-tag">
+                <span class="method method-post">POST</span>
+                <span>/api/v1/uploads/signature</span>
+              </div>
+              <button class="btn-test" onclick="runTest('/api/v1/uploads/signature', 't-up')">Run Request</button>
+            </div>
+            <div class="desc">Generates authenticated Cloudinary upload signature for client video footage upload.</div>
+            <div class="code-block">curl -X POST "https://api.alpha-cut.com/api/v1/uploads/signature" -H "Cookie: token=YOUR_JWT"</div>
+            <div id="t-up" class="term"></div>
+          </div>
+
         </div>
       </div>
 
