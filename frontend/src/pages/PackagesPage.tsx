@@ -109,7 +109,7 @@ export const PackagesPage: React.FC = () => {
       </div>
 
       {/* 3-TIER PRICING CARDS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: '32px', marginBottom: '64px', alignItems: 'stretch' }}>
+      <div className="responsive-grid-3" style={{ gap: '24px', marginBottom: '64px', alignItems: 'stretch' }}>
         {tiers.map((tier, idx) => {
           const isSelected = selectedTierId === tier.id;
           const isPopular = tier.isPopular;

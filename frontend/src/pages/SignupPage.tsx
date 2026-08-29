@@ -64,7 +64,7 @@ export const SignupPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '60px 0', maxWidth: '440px', margin: '0 auto' }} className="signup-page">
+    <div style={{ padding: '40px 16px', maxWidth: '440px', margin: '0 auto' }} className="signup-page auth-card-responsive">
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <Badge variant="gold">Client Registration</Badge>
         <h1 className="font-display" style={{ fontSize: '32px', marginTop: '12px' }}>

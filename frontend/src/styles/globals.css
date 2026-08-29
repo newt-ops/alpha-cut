@@ -197,7 +197,70 @@ a {
   }
 }
 
+/* ===== Full-Site Responsive UX Utilities ===== */
+.hero-title-responsive {
+  font-size: 52px;
+  line-height: 1.1;
+}
+
+.responsive-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.responsive-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.responsive-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.responsive-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.auth-card-responsive {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .hero-title-responsive {
+    font-size: 38px !important;
+  }
+
+  .responsive-grid-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+
 @media (max-width: 640px) {
+  .hero-title-responsive {
+    font-size: 28px !important;
+  }
+
+  .responsive-grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .responsive-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
   .responsive-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
@@ -220,5 +283,12 @@ a {
     align-items: flex-start;
   }
 }
+
+@media (max-width: 380px) {
+  .hero-title-responsive {
+    font-size: 24px !important;
+  }
+}
+
 
 

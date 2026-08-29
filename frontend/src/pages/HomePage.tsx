@@ -86,15 +86,13 @@ export const HomePage: React.FC = () => {
           </motion.div>
 
           <motion.h1
-            className="font-display"
+            className="font-display hero-title-responsive"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             style={{
-              fontSize: 'clamp(38px, 6.5vw, 68px)',
               fontWeight: 800,
               letterSpacing: '-0.03em',
-              lineHeight: 1.08,
               color: 'var(--ink)',
               marginTop: '16px',
               marginBottom: '20px',
@@ -167,7 +165,7 @@ export const HomePage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '28px' }}>
+        <div className="responsive-grid-3" style={{ gap: '24px' }}>
           {featuredStyles.map((style) => (
             <motion.div
               key={style.id}

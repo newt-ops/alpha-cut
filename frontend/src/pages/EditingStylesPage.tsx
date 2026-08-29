@@ -66,8 +66,8 @@ export const EditingStylesPage: React.FC = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
 
-        {/* Category Chips */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        {/* Category Chips (Touch Scrollable on Mobile) */}
+        <div className="responsive-filter-bar" style={{ justifyContent: 'center' }}>
           {categories.map((cat) => {
             const isActive = selectedCategory === cat;
             return (

@@ -62,8 +62,8 @@ export const PortfolioPage: React.FC = () => {
       >
         <Tabs tabs={formatTabs} activeTab={activeFormat} onChange={setActiveFormat} />
 
-        {/* Style Category Filter Pills */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+        {/* Style Category Filter Pills (Touch Scrollable on Mobile) */}
+        <div className="responsive-filter-bar" style={{ justifyContent: 'center', maxWidth: '100%' }}>
           <button
             type="button"
             onClick={() => setSelectedStyle('all')}

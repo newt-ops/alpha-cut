@@ -73,7 +73,7 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '60px 0', maxWidth: '440px', margin: '0 auto' }} className="login-page">
+    <div style={{ padding: '40px 16px', maxWidth: '440px', margin: '0 auto' }} className="login-page auth-card-responsive">
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <div style={{ marginBottom: '16px' }}>
           <Logo size="large" />
