@@ -232,7 +232,6 @@ export const TelegramMiniAppPage: React.FC = () => {
       <TelegramAppLayout>
         <TelegramLinkScreen
           onLinkSubmit={linkAccount}
-          onLinkWithCredentials={linkAccountWithCredentials}
           telegramUser={telegramUser}
         />
       </TelegramAppLayout>
