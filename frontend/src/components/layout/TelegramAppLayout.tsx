@@ -21,19 +21,32 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
       tg.ready();
       tg.expand();
 
-      try {
-        if (tg.setHeaderColor) tg.setHeaderColor('secondary_bg_color');
-        if (tg.setBottomBarColor) tg.setBottomBarColor('secondary_bg_color');
-      } catch (e) {}
+      const applyTheme = () => {
+        try {
+          if (tg.setHeaderColor) tg.setHeaderColor('secondary_bg_color');
+          if (tg.setBottomBarColor) tg.setBottomBarColor('secondary_bg_color');
+        } catch (e) {}
 
-      // Map Telegram theme params onto design tokens
-      if (tg.themeParams) {
-        const root = document.documentElement;
-        if (tg.themeParams.bg_color) root.style.setProperty('--bg', tg.themeParams.bg_color);
-        if (tg.themeParams.secondary_bg_color) root.style.setProperty('--surface', tg.themeParams.secondary_bg_color);
-        if (tg.themeParams.text_color) root.style.setProperty('--ink', tg.themeParams.text_color);
-        if (tg.themeParams.hint_color) root.style.setProperty('--ink-soft', tg.themeParams.hint_color);
+        if (tg.themeParams) {
+          const root = document.documentElement;
+          if (tg.themeParams.bg_color) root.style.setProperty('--bg', tg.themeParams.bg_color);
+          if (tg.themeParams.secondary_bg_color) root.style.setProperty('--surface', tg.themeParams.secondary_bg_color);
+          if (tg.themeParams.text_color) root.style.setProperty('--ink', tg.themeParams.text_color);
+          if (tg.themeParams.hint_color) root.style.setProperty('--ink-soft', tg.themeParams.hint_color);
+        }
+      };
+
+      applyTheme();
+
+      if (tg.onEvent) {
+        tg.onEvent('themeChanged', applyTheme);
       }
+
+      return () => {
+        if (tg.offEvent) {
+          tg.offEvent('themeChanged', applyTheme);
+        }
+      };
     }
   }, []);
 
@@ -74,11 +87,11 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
             transform: 'translateX(-50%)',
             width: 'calc(100% - 32px)',
             maxWidth: '480px',
-            backgroundColor: 'rgba(18, 22, 28, 0.88)',
+            backgroundColor: 'var(--surface)',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
             borderRadius: '24px',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
+            border: '1px solid var(--line)',
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
             height: '60px',
