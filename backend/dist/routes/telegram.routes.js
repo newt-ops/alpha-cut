@@ -15,7 +15,10 @@ router.post('/webhook/:secret', async (req, res) => {
     }
     if (bot) {
         try {
-            await bot.handleUpdate(req.body, res);
+            await bot.handleUpdate(req.body);
+            if (!res.headersSent) {
+                res.status(200).send('OK');
+            }
         }
         catch (err) {
             console.error('Telegram handleUpdate error:', err.message);
