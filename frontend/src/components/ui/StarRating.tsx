@@ -5,7 +5,8 @@ export interface StarRatingProps {
   rating?: number;
   onChange?: (rating: number) => void;
   readOnly?: boolean;
-  size?: number;
+  interactive?: boolean;
+  size?: number | 'small' | 'medium' | 'large';
   className?: string;
 }
 
@@ -13,10 +14,21 @@ export const StarRating: React.FC<StarRatingProps> = ({
   rating = 5,
   onChange,
   readOnly = true,
+  interactive,
   size = 20,
   className = '',
 }) => {
   const [hoverRating, setHoverRating] = useState(0);
+  const isReadOnly = interactive !== undefined ? !interactive : readOnly;
+
+  const numericSize =
+    typeof size === 'number'
+      ? size
+      : size === 'small'
+      ? 16
+      : size === 'large'
+      ? 28
+      : 20;
 
   const stars = [1, 2, 3, 4, 5];
 
@@ -27,11 +39,11 @@ export const StarRating: React.FC<StarRatingProps> = ({
         display: 'inline-flex',
         alignItems: 'center',
         gap: '4px',
-        cursor: readOnly ? 'default' : 'pointer',
+        cursor: isReadOnly ? 'default' : 'pointer',
       }}
     >
       {stars.map((star) => {
-        const isFilled = readOnly
+        const isFilled = isReadOnly
           ? star <= Math.round(rating)
           : star <= (hoverRating || rating);
 
@@ -39,22 +51,22 @@ export const StarRating: React.FC<StarRatingProps> = ({
           <button
             key={star}
             type="button"
-            disabled={readOnly}
+            disabled={isReadOnly}
             aria-label={`${star} out of 5 stars`}
-            onClick={() => !readOnly && onChange && onChange(star)}
-            onMouseEnter={() => !readOnly && setHoverRating(star)}
-            onMouseLeave={() => !readOnly && setHoverRating(0)}
+            onClick={() => !isReadOnly && onChange && onChange(star)}
+            onMouseEnter={() => !isReadOnly && setHoverRating(star)}
+            onMouseLeave={() => !isReadOnly && setHoverRating(0)}
             style={{
               background: 'none',
               border: 'none',
               padding: '2px',
-              cursor: readOnly ? 'default' : 'pointer',
+              cursor: isReadOnly ? 'default' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               outline: 'none',
             }}
           >
-            <IconStar size={size} filled={isFilled} color="var(--accent-gold)" />
+            <IconStar size={numericSize} filled={isFilled} color="var(--accent-gold)" />
           </button>
         );
       })}
