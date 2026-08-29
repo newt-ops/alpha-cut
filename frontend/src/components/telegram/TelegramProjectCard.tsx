@@ -179,7 +179,7 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
       <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
         {project.status === 'proposal_sent' && onAcceptProposal && (
           <Button
-            variant="primary"
+            variant="telegram"
             size="small"
             fullWidth
             onClick={() => {
@@ -208,7 +208,7 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
             )}
             {onConfirmDelivery && (
               <Button
-                variant="primary"
+                variant="telegram"
                 size="small"
                 style={{ flex: 1 }}
                 iconRight={IconCheck}

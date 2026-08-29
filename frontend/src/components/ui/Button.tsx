@@ -3,7 +3,7 @@ import { motion, HTMLMotionProps } from 'framer-motion';
 
 export interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children' | 'size'> {
   children?: ReactNode;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'google';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'google' | 'telegram';
   size?: 'small' | 'medium' | 'large';
   isLoading?: boolean;
   isDisabled?: boolean;
@@ -77,6 +77,13 @@ export const Button: React.FC<ButtonProps> = ({
       border: '1px solid var(--line)',
       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
       fontWeight: 600,
+    },
+    telegram: {
+      backgroundColor: 'var(--tg-button-color, #24A1DE)',
+      color: 'var(--tg-button-text-color, #ffffff)',
+      boxShadow: '0 2px 8px rgba(36, 161, 222, 0.25)',
+      fontWeight: 600,
+      borderRadius: '12px',
     },
   };
 

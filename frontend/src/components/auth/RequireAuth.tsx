@@ -24,7 +24,12 @@ export const RequireAuth: React.FC<{ children: ReactNode }> = ({ children }) => 
     return <Navigate to="/verify-email" replace />;
   }
 
-  if (!user.telegramChatId && location.pathname === '/dashboard') {
+  const isDashboardAccess =
+    location.pathname.startsWith('/dashboard') ||
+    (typeof window !== 'undefined' &&
+      (window.location.hostname.startsWith('dashboard.') || window.location.hostname === 'dashboard.alpha-cut.com'));
+
+  if (!user.telegramChatId && user.role !== 'admin' && isDashboardAccess) {
     return <Navigate to="/telegram-link" replace />;
   }
 
