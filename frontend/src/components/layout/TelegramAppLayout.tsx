@@ -1,4 +1,5 @@
 import React, { useEffect, ReactNode } from 'react';
+import { motion } from 'framer-motion';
 import { triggerHapticSelection } from '../../utils/telegramSdk';
 import { IconFilm, IconZap, IconUser } from '@icons/icons';
 
@@ -84,33 +85,41 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
         color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))',
         paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
         paddingBottom: onTabChange
-          ? 'calc(84px + env(safe-area-inset-bottom, 0px))'
+          ? 'calc(92px + env(safe-area-inset-bottom, 0px))'
           : 'calc(24px + env(safe-area-inset-bottom, 0px))',
         boxSizing: 'border-box',
         WebkitTapHighlightColor: 'transparent',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       }}
     >
       <div style={{ maxWidth: '540px', margin: '0 auto', padding: '0 16px' }}>
         {children}
       </div>
 
-      {/* Telegram Native Bottom Tab Bar */}
+      {/* Apple iOS Style Floating Glassmorphic Footer Navigation */}
       {onTabChange && (
-        <div
+        <nav
+          aria-label="Bottom Navigation"
           style={{
             position: 'fixed',
-            bottom: '0',
-            left: '0',
-            right: '0',
-            backgroundColor: 'var(--tg-theme-secondary-bg-color, var(--tg-secondary-bg, #232e3c))',
-            borderTop: '1px solid rgba(120, 120, 128, 0.15)',
+            bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'calc(100% - 24px)',
+            maxWidth: '420px',
+            height: '60px',
+            backgroundColor: 'var(--tg-theme-secondary-bg-color, var(--tg-secondary-bg, rgba(35, 46, 60, 0.85)))',
+            backdropFilter: 'blur(30px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(30px) saturate(190%)',
+            borderRadius: '30px',
+            border: '0.5px solid rgba(255, 255, 255, 0.12)',
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            alignItems: 'center',
+            padding: '4px',
             zIndex: 100,
             boxSizing: 'border-box',
+            boxShadow: '0 12px 36px -4px rgba(0, 0, 0, 0.35), 0 0 1px rgba(255, 255, 255, 0.15)',
           }}
         >
           {navItems.map((item) => {
@@ -120,11 +129,13 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
             const inactiveColor = 'var(--tg-theme-hint-color, var(--tg-hint, #708499))';
 
             return (
-              <button
+              <motion.button
                 key={item.id}
                 type="button"
+                whileTap={{ scale: 0.92 }}
                 onClick={() => handleTabClick(item.id)}
                 style={{
+                  position: 'relative',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -135,16 +146,37 @@ export const TelegramAppLayout: React.FC<TelegramAppLayoutProps> = ({
                   fontWeight: isActive ? 600 : 400,
                   fontSize: '11px',
                   cursor: 'pointer',
-                  gap: '4px',
-                  padding: '6px 0',
+                  gap: '3px',
+                  height: '52px',
+                  borderRadius: '24px',
+                  outline: 'none',
+                  WebkitTapHighlightColor: 'transparent',
                 }}
               >
-                <Icon size={20} color={isActive ? activeColor : inactiveColor} />
-                <span>{item.label}</span>
-              </button>
+                {/* iOS Active Floating Backdrop Pill */}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabPill"
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    style={{
+                      position: 'absolute',
+                      inset: '2px 4px',
+                      backgroundColor: 'rgba(36, 161, 222, 0.16)',
+                      borderRadius: '22px',
+                      border: '1px solid rgba(36, 161, 222, 0.25)',
+                      zIndex: 0,
+                    }}
+                  />
+                )}
+
+                <div style={{ zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                  <Icon size={20} color={isActive ? activeColor : inactiveColor} />
+                  <span style={{ letterSpacing: '-0.1px' }}>{item.label}</span>
+                </div>
+              </motion.button>
             );
           })}
-        </div>
+        </nav>
       )}
     </div>
   );
