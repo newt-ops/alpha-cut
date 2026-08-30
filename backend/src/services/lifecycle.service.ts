@@ -207,7 +207,11 @@ export const declineProposal = async (projectId: string | Types.ObjectId, client
   return project;
 };
 
-export const markDelivered = async (projectId: string | Types.ObjectId, adminId?: string | Types.ObjectId): Promise<IProject> => {
+export const markDelivered = async (
+  projectId: string | Types.ObjectId,
+  deliverableUrl?: string,
+  adminId?: string | Types.ObjectId
+): Promise<IProject> => {
   const project = await Project.findById(projectId);
   if (!project) throw new Error('Project not found.');
   if (project.status !== 'in_progress' && project.status !== 'revision_requested' && project.status !== 'delivered') {
@@ -216,6 +220,9 @@ export const markDelivered = async (projectId: string | Types.ObjectId, adminId?
 
   project.status = 'delivered';
   project.deliveredAt = new Date();
+  if (deliverableUrl && deliverableUrl.trim()) {
+    project.deliverableUrl = deliverableUrl.trim();
+  }
   await project.save();
 
   // Notify Client

@@ -136,10 +136,10 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
       </div>
 
       {/* Deliverable URL if present */}
-      {project.deliverableUrl && (
+      {(project.deliverableUrl || (project as any).deliveryLink) && (
         <div style={{ marginTop: '2px' }}>
           <a
-            href={project.deliverableUrl}
+            href={project.deliverableUrl || (project as any).deliveryLink}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => triggerHaptic('light')}

@@ -115,7 +115,8 @@ export const getAllProjects = async (req, res, next) => {
 export const markDelivered = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const project = await lifecycleService.markDelivered(id, req.user._id);
+        const deliverableUrl = req.body.deliverableUrl || req.body.deliveryLink || req.body.deliveryUrl || '';
+        const project = await lifecycleService.markDelivered(id, deliverableUrl, req.user._id);
         res.status(200).json({ success: true, project });
     }
     catch (err) {

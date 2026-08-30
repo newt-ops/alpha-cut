@@ -75,8 +75,10 @@ export const createContractSchema = z.object({
 });
 
 export const markDeliveredSchema = z.object({
-  deliverableUrl: z.string().min(5, 'Valid deliverable link is required'),
-});
+  deliverableUrl: z.string().optional(),
+  deliveryLink: z.string().optional(),
+  deliveryUrl: z.string().optional(),
+}).passthrough();
 
 export const submitRatingSchema = z.object({
   subjectType: z.enum(['project', 'contract']).optional(),

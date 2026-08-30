@@ -159,7 +159,7 @@ export const declineProposal = async (projectId, clientId) => {
     }
     return project;
 };
-export const markDelivered = async (projectId, adminId) => {
+export const markDelivered = async (projectId, deliverableUrl, adminId) => {
     const project = await Project.findById(projectId);
     if (!project)
         throw new Error('Project not found.');
@@ -168,6 +168,9 @@ export const markDelivered = async (projectId, adminId) => {
     }
     project.status = 'delivered';
     project.deliveredAt = new Date();
+    if (deliverableUrl && deliverableUrl.trim()) {
+        project.deliverableUrl = deliverableUrl.trim();
+    }
     await project.save();
     // Notify Client
     const client = await User.findById(project.clientId);
