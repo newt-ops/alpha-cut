@@ -140,7 +140,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       {/* Exit to Public Site Footer */}
       <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
         <a
-          href="/"
+          href="https://alpha-cut.com/"
           style={{
             display: 'flex',
             alignItems: 'center',

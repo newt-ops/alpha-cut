@@ -146,7 +146,7 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
       {/* Footer link to public site */}
       <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
         <a
-          href="/"
+          href="https://alpha-cut.com/"
           style={{
             display: 'flex',
             alignItems: 'center',
