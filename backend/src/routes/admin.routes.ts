@@ -24,6 +24,7 @@ router.get('/clients', getAllClients);
 router.post('/clients', createClient);
 router.put('/clients/:id/notes', updateClientAdminNotes);
 router.post('/projects', createProposal);
+router.post('/proposals', createProposal);
 router.get('/projects', getAllProjects);
 router.post('/projects/:id/deliver', markDelivered);
 router.put('/projects/:id/notes', updateProjectAdminNotes);
