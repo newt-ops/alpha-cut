@@ -31,7 +31,12 @@ export const Select: React.FC<SelectProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selectedOption = options.find((opt) => opt.value === value);
+  const actualValue =
+    typeof value === 'object' && value !== null
+      ? (value as any).value ?? (value as any).target?.value
+      : value;
+
+  const selectedOption = options.find((opt) => opt.value === actualValue);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -44,11 +49,7 @@ export const Select: React.FC<SelectProps> = ({
   }, []);
 
   const handleSelect = (optionValue: string | number) => {
-    const eventLike = {
-      target: { value: optionValue },
-      value: optionValue,
-    };
-    onChange(eventLike as any);
+    onChange(optionValue);
     setIsOpen(false);
   };
 

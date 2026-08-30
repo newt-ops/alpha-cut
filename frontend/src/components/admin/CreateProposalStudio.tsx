@@ -890,25 +890,25 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--ink-soft)' }}>Deliverables</span>
                 <strong style={{ color: 'var(--ink)' }}>
-                  {proposalType === 'project' ? `${quantity}x Video Deliverable(s)` : `${contractFrequency} Retainer`}
+                  {proposalType === 'project' ? `${typeof quantity === 'object' ? (quantity as any).value : quantity}x Video Deliverable(s)` : `${typeof contractFrequency === 'object' ? (contractFrequency as any).value : contractFrequency} Retainer`}
                 </strong>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--ink-soft)' }}>Specs & Tier</span>
                 <strong style={{ color: 'var(--ink)' }}>
-                  {aspectRatio} • {resolution} • {packageTier.toUpperCase()}
+                  {typeof aspectRatio === 'object' ? (aspectRatio as any).value : aspectRatio} • {typeof resolution === 'object' ? (resolution as any).value : resolution} • {String(typeof packageTier === 'object' ? (packageTier as any).value : packageTier).toUpperCase()}
                 </strong>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--ink-soft)' }}>Target Platform</span>
-                <strong style={{ color: 'var(--ink)' }}>{targetPlatform}</strong>
+                <strong style={{ color: 'var(--ink)' }}>{typeof targetPlatform === 'object' ? (targetPlatform as any).value : targetPlatform}</strong>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--ink-soft)' }}>Revisions Included</span>
-                <strong style={{ color: 'var(--ink)' }}>{includedRevisions} Round(s)</strong>
+                <strong style={{ color: 'var(--ink)' }}>{typeof includedRevisions === 'object' ? (includedRevisions as any).value : includedRevisions} Round(s)</strong>
               </div>
 
               <div style={{ height: '1px', backgroundColor: 'var(--line)', margin: '4px 0' }} />
@@ -1008,15 +1008,15 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           <div style={{ backgroundColor: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--line)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: 'var(--ink-soft)' }}>Deliverables</span>
-              <strong style={{ color: 'var(--ink)' }}>{proposalType === 'project' ? `${quantity}x Video Deliverable(s)` : `${contractFrequency} Retainer`}</strong>
+              <strong style={{ color: 'var(--ink)' }}>{proposalType === 'project' ? `${typeof quantity === 'object' ? (quantity as any).value : quantity}x Video Deliverable(s)` : `${typeof contractFrequency === 'object' ? (contractFrequency as any).value : contractFrequency} Retainer`}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: 'var(--ink-soft)' }}>Specs & Tier</span>
-              <strong style={{ color: 'var(--ink)' }}>{aspectRatio} • {resolution} • {packageTier.toUpperCase()}</strong>
+              <strong style={{ color: 'var(--ink)' }}>{typeof aspectRatio === 'object' ? (aspectRatio as any).value : aspectRatio} • {typeof resolution === 'object' ? (resolution as any).value : resolution} • {String(typeof packageTier === 'object' ? (packageTier as any).value : packageTier).toUpperCase()}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: 'var(--ink-soft)' }}>Revisions Included</span>
-              <strong style={{ color: 'var(--ink)' }}>{includedRevisions} Round(s)</strong>
+              <strong style={{ color: 'var(--ink)' }}>{typeof includedRevisions === 'object' ? (includedRevisions as any).value : includedRevisions} Round(s)</strong>
             </div>
           </div>
 
