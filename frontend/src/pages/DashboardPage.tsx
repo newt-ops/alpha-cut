@@ -733,8 +733,8 @@ export const DashboardPage: React.FC = () => {
                         onClick={() => toggleExpandProject(proj._id)}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <Badge variant={proj.status === 'proposal_sent' ? 'gold' : proj.status === 'delivered' ? 'maroon' : 'surface'}>
-                            {proj.status.replace('_', ' ').toUpperCase()}
+                          <Badge variant={proj.status === 'proposal_sent' ? 'gold' : proj.status === 'delivered' ? 'maroon' : proj.status === 'revision_requested' ? 'gold' : 'surface'}>
+                            {proj.status === 'revision_requested' ? 'REVISION IN PROGRESS' : proj.status.replace('_', ' ').toUpperCase()}
                           </Badge>
                           <div>
                             <h3 className="font-display" style={{ fontSize: '18px', color: 'var(--ink)', margin: 0 }}>
@@ -835,6 +835,35 @@ export const DashboardPage: React.FC = () => {
                                 )}
                               </div>
 
+                              {/* Revision Notes Alert Banner */}
+                              {proj.status === 'revision_requested' && (
+                                <div
+                                  style={{
+                                    padding: isMobile ? '12px 14px' : '16px 20px',
+                                    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1.5px solid var(--accent-gold)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '6px',
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                      🔄 REVISION IN PROGRESS BY EDITORS
+                                    </span>
+                                  </div>
+                                  {proj.revisionNotes && (
+                                    <p style={{ fontSize: '13px', color: 'var(--ink)', margin: 0, lineHeight: 1.4 }}>
+                                      <strong>Your Revision Notes:</strong> "{proj.revisionNotes}"
+                                    </p>
+                                  )}
+                                  <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
+                                    Amir & Aymen are editing your video. You will receive an instant alert on Telegram/Dashboard when the updated render is ready.
+                                  </span>
+                                </div>
+                              )}
+
                               {/* Render Delivery Link / Revisions */}
                               {(proj.deliverableUrl || proj.deliveryLink) ? (
                                 <div
@@ -852,7 +881,7 @@ export const DashboardPage: React.FC = () => {
                                 >
                                   <div>
                                     <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 800, display: 'block', marginBottom: '4px' }}>
-                                      DELIVERED HIGH-BITRATE VIDEO RENDER:
+                                      {proj.status === 'revision_requested' ? 'PREVIOUS RENDER VERSION (UNDER REVISION):' : 'DELIVERED HIGH-BITRATE VIDEO RENDER:'}
                                     </span>
                                     <a
                                       href={proj.deliverableUrl || proj.deliveryLink}
@@ -874,7 +903,7 @@ export const DashboardPage: React.FC = () => {
                                       }}
                                     >
                                       <IconEye size={14} color="var(--accent-gold)" />
-                                      <span>View Video Render Link</span>
+                                      <span>View {proj.status === 'revision_requested' ? 'Previous Render Link' : 'Video Render Link'}</span>
                                     </a>
                                   </div>
 
@@ -885,17 +914,19 @@ export const DashboardPage: React.FC = () => {
                                       </Button>
                                     </a>
 
-                                    <Button
-                                      variant="secondary"
-                                      size="small"
-                                      fullWidth={isMobile}
-                                      onClick={() => {
-                                        setSelectedProject(proj);
-                                        setRevisionModalOpen(true);
-                                      }}
-                                    >
-                                      Request Revision
-                                    </Button>
+                                    {proj.status === 'delivered' && (
+                                      <Button
+                                        variant="secondary"
+                                        size="small"
+                                        fullWidth={isMobile}
+                                        onClick={() => {
+                                          setSelectedProject(proj);
+                                          setRevisionModalOpen(true);
+                                        }}
+                                      >
+                                        Request Revision
+                                      </Button>
+                                    )}
 
                                     {proj.status === 'delivered' && (
                                       <Button

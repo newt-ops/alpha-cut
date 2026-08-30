@@ -48,7 +48,7 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
 
   const isProposal = project.status === 'proposal_sent';
   const isDelivered = project.status === 'delivered';
-  const isCompleted = project.status === 'completed';
+  const isRevisionRequested = project.status === 'revision_requested';
 
   return (
     <div
@@ -60,6 +60,7 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
         flexDirection: 'column',
         gap: '10px',
         boxSizing: 'border-box',
+        border: isRevisionRequested ? '1px solid rgba(245, 158, 11, 0.4)' : 'none',
       }}
     >
       {/* Header Row: Project Style & Status */}
@@ -100,10 +101,12 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
               ? 'var(--tg-theme-link-color, var(--tg-link, #64b5ef))'
               : isDelivered
               ? 'var(--tg-theme-button-color, var(--tg-button, #5288c1))'
+              : isRevisionRequested
+              ? '#f59e0b'
               : isCompleted
               ? '#34c759'
               : 'var(--tg-theme-hint-color, var(--tg-hint, #708499))',
-            backgroundColor: 'rgba(120, 120, 128, 0.12)',
+            backgroundColor: isRevisionRequested ? 'rgba(245, 158, 11, 0.15)' : 'rgba(120, 120, 128, 0.12)',
             padding: '3px 8px',
             borderRadius: '6px',
           }}
@@ -113,6 +116,30 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
       </div>
 
       <div style={{ height: '1px', backgroundColor: 'rgba(120, 120, 128, 0.15)' }} />
+
+      {/* Revision Requested Active Alert Box */}
+      {isRevisionRequested && (
+        <div
+          style={{
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            borderRadius: '8px',
+            padding: '10px 12px',
+          }}
+        >
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#f59e0b', display: 'block', marginBottom: '2px' }}>
+            🔄 Revision in Progress
+          </span>
+          {project.revisionNotes && (
+            <p style={{ fontSize: '12px', color: 'var(--tg-theme-text-color, #ffffff)', margin: '2px 0 4px 0', lineHeight: 1.3 }}>
+              "{project.revisionNotes}"
+            </p>
+          )}
+          <span style={{ fontSize: '11px', color: 'var(--tg-theme-hint-color, #708499)' }}>
+            Our editors (Amir & Aymen) are editing your video. A new render link will be uploaded upon completion.
+          </span>
+        </div>
+      )}
 
       {/* Grid Specs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
@@ -154,7 +181,7 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
               wordBreak: 'break-all',
             }}
           >
-            <span>Open Deliverable Video</span>
+            <span>{isRevisionRequested ? 'View Previous Render Version ↗' : 'Open Deliverable Video ↗'}</span>
             <IconChevronRight size={14} />
           </a>
         </div>
