@@ -2141,23 +2141,10 @@ export const AdminPage: React.FC = () => {
                       <Button
                         variant={rev.featured ? 'primary' : 'secondary'}
                         size="small"
-                        onClick={async () => {
-                          try {
-                            const isCurrentlyFeatured = rev.featured;
-                            const res = await apiFetch(`/api/ratings/${rev._id}/feature`, {
-                              method: 'PUT',
-                              body: JSON.stringify({ featured: !isCurrentlyFeatured }),
-                            });
-                            if (res.success) {
-                              toast({
-                                message: !isCurrentlyFeatured ? 'Review featured on homepage!' : 'Review unfeatured.',
-                                type: 'success',
-                              });
-                              fetchAdminData();
-                            }
-                          } catch (err: any) {
-                            toast({ message: err.message || 'Failed to toggle feature status', type: 'error' });
-                          }
+                        onClick={() => {
+                          setSelectedRatingForFeature(rev);
+                          setFeatureClientTitle(rev.clientTitle || '');
+                          setFeaturedModalOpen(true);
                         }}
                       >
                         {rev.featured ? 'Featured ✓' : 'Feature Review'}
@@ -2608,6 +2595,70 @@ export const AdminPage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Feature Testimonial Modal with Bio / Client Title Input */}
+      <Modal
+        isOpen={featuredModalOpen}
+        onClose={() => setFeaturedModalOpen(false)}
+        title={selectedRatingForFeature?.featured ? 'Edit Featured Testimonial & Client Bio' : 'Feature Testimonial on Homepage'}
+      >
+        {selectedRatingForFeature && (
+          <form onSubmit={handleToggleFeaturedRating} style={{ display: 'grid', gap: '16px' }}>
+            <div style={{ backgroundColor: 'var(--bg)', padding: '14px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <StarRating rating={selectedRatingForFeature.stars} size={16} />
+                <strong style={{ fontSize: '13px', color: 'var(--ink)' }}>
+                  {selectedRatingForFeature.clientName || selectedRatingForFeature.clientEmail || 'Client Testimonial'}
+                </strong>
+              </div>
+              <p style={{ fontSize: '13px', fontStyle: 'italic', margin: 0, color: 'var(--ink-soft)' }}>
+                "{selectedRatingForFeature.review}"
+              </p>
+            </div>
+
+            <Input
+              label="Client Bio / Role / Title (Displays under client name on public homepage)"
+              placeholder="e.g. Founder @ TechCorp • YouTube Creator (250k Subs) • E-Commerce Brand Director"
+              value={featureClientTitle}
+              onChange={(e) => setFeatureClientTitle(e.target.value)}
+              required
+            />
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
+              {selectedRatingForFeature.featured && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={async () => {
+                    try {
+                      setSubmittingFeature(true);
+                      const res = await apiFetch(`/api/ratings/${selectedRatingForFeature._id}/feature`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ featured: false }),
+                      });
+                      if (res.success) {
+                        toast({ message: 'Review unfeatured from homepage.', type: 'info' });
+                        setFeaturedModalOpen(false);
+                        fetchAdminData();
+                      }
+                    } catch (err: any) {
+                      toast({ message: err.message || 'Failed to unfeature', type: 'error' });
+                    } finally {
+                      setSubmittingFeature(false);
+                    }
+                  }}
+                >
+                  Unfeature Review
+                </Button>
+              )}
+
+              <Button type="submit" variant="primary" isLoading={submittingFeature}>
+                {selectedRatingForFeature.featured ? 'Update Featured Bio' : 'Feature Testimonial ⭐'}
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </AdminLayout>
   );

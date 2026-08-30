@@ -1351,12 +1351,39 @@ export const DashboardPage: React.FC = () => {
                     {/* EXPANDABLE BODY CONTENT */}
                     {isExpanded && (
                       <div style={{ padding: isMobile ? '16px 12px' : '24px 28px', backgroundColor: 'var(--bg)', display: 'grid', gap: isMobile ? '14px' : '20px' }}>
-                        {/* Milestone Stepper */}
+                        {/* Milestone Stepper or Declined Notice */}
                         <div style={{ padding: isMobile ? '12px 10px' : '20px', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', overflowX: 'auto' }}>
-                          <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 700, display: 'block', marginBottom: '10px', letterSpacing: '0.06em' }}>
-                            PRODUCTION MILESTONE PROGRESS:
-                          </span>
-                          <Stepper steps={stepperSteps} currentStep={getStepIndex(proj.status)} />
+                          {proj.status === 'declined' ? (
+                            <div
+                              style={{
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                borderRadius: 'var(--radius-md)',
+                                padding: '14px 18px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                color: '#ef4444',
+                              }}
+                            >
+                              <span style={{ fontSize: '20px' }}>⛔</span>
+                              <div>
+                                <span style={{ fontSize: '14px', fontWeight: 800, display: 'block' }}>
+                                  Proposal Declined
+                                </span>
+                                <span style={{ fontSize: '12.5px', color: 'var(--ink-soft)' }}>
+                                  You declined this project proposal offer. Contact our editors on Telegram if you wish to adjust the project scope or terms.
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 700, display: 'block', marginBottom: '10px', letterSpacing: '0.06em' }}>
+                                PRODUCTION MILESTONE PROGRESS:
+                              </span>
+                              <Stepper steps={stepperSteps} currentStep={getStepIndex(proj.status)} />
+                            </>
+                          )}
                         </div>
 
                         {/* Specs Summary Grid */}
