@@ -205,6 +205,8 @@ export const TelegramMiniAppPage: React.FC = () => {
       });
       triggerHapticNotification('success');
       toast({ message: 'Rating submitted! Thank you.', type: 'success' });
+      setShowRatingModal(false);
+      setRatingProject(null);
       refetchProjects();
     } catch (err: any) {
       triggerHapticNotification('error');

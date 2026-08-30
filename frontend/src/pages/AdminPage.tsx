@@ -2141,10 +2141,23 @@ export const AdminPage: React.FC = () => {
                       <Button
                         variant={rev.featured ? 'primary' : 'secondary'}
                         size="small"
-                        onClick={() => {
-                          setSelectedRatingForFeature(rev);
-                          setFeatureClientTitle(rev.clientTitle || '');
-                          setFeaturedModalOpen(true);
+                        onClick={async () => {
+                          try {
+                            const isCurrentlyFeatured = rev.featured;
+                            const res = await apiFetch(`/api/ratings/${rev._id}/feature`, {
+                              method: 'PUT',
+                              body: JSON.stringify({ featured: !isCurrentlyFeatured }),
+                            });
+                            if (res.success) {
+                              toast({
+                                message: !isCurrentlyFeatured ? 'Review featured on homepage!' : 'Review unfeatured.',
+                                type: 'success',
+                              });
+                              fetchAdminData();
+                            }
+                          } catch (err: any) {
+                            toast({ message: err.message || 'Failed to toggle feature status', type: 'error' });
+                          }
                         }}
                       >
                         {rev.featured ? 'Featured ✓' : 'Feature Review'}
