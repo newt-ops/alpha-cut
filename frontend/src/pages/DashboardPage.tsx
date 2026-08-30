@@ -1603,22 +1603,26 @@ export const DashboardPage: React.FC = () => {
 
       {/* PROFILE TAB */}
       {activeTab === 'profile' && (
-        <div style={{ maxWidth: '680px', margin: '0 auto', display: 'grid', gap: '28px' }}>
+        <div style={{ maxWidth: '520px', width: '100%', margin: '0 auto', display: 'grid', gap: '20px', boxSizing: 'border-box' }}>
           {/* Main Account Settings Card */}
           <div
             style={{
               backgroundColor: 'var(--surface)',
-              padding: '36px 32px',
+              padding: isMobile ? '20px 16px' : '28px 24px',
               borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--line)',
               boxShadow: 'var(--shadow-sm)',
+              boxSizing: 'border-box',
+              width: '100%',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
-                <Badge variant="gold">PROFILE & SECURITY</Badge>
-                <h3 className="font-display" style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--ink)' }}>
-                  Account Settings
+                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 700, display: 'block', letterSpacing: '0.06em' }}>
+                  ACCOUNT PROFILE
+                </span>
+                <h3 className="font-display" style={{ fontSize: isMobile ? '20px' : '22px', fontWeight: 700, marginTop: '2px', color: 'var(--ink)' }}>
+                  Profile Settings
                 </h3>
               </div>
               <Badge variant="gold">CLIENT WORKSPACE</Badge>
@@ -1631,11 +1635,11 @@ export const DashboardPage: React.FC = () => {
                 flexDirection: isMobile ? 'column' : 'row',
                 alignItems: 'center',
                 justifyContent: isMobile ? 'center' : 'flex-start',
-                gap: isMobile ? '16px' : '24px',
-                marginBottom: '28px',
-                padding: isMobile ? '20px 16px' : '20px',
+                gap: isMobile ? '14px' : '20px',
+                marginBottom: '24px',
+                padding: isMobile ? '16px 12px' : '18px 20px',
                 backgroundColor: 'var(--bg)',
-                borderRadius: '16px',
+                borderRadius: '14px',
                 border: '1px solid var(--line)',
                 width: '100%',
                 boxSizing: 'border-box',
@@ -1646,8 +1650,8 @@ export const DashboardPage: React.FC = () => {
                   src={avatarUrl}
                   alt={profileName}
                   style={{
-                    width: '80px',
-                    height: '80px',
+                    width: '72px',
+                    height: '72px',
                     borderRadius: '50%',
                     objectFit: 'cover',
                     border: '2px solid var(--accent-gold)',
@@ -1658,16 +1662,16 @@ export const DashboardPage: React.FC = () => {
               ) : (
                 <div
                   style={{
-                    width: '80px',
-                    height: '80px',
+                    width: '72px',
+                    height: '72px',
                     borderRadius: '50%',
                     backgroundColor: 'var(--accent-gold)',
                     color: '#170B06',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontWeight: 800,
-                    fontSize: '32px',
+                    fontWeight: 700,
+                    fontSize: '28px',
                     flexShrink: 0,
                   }}
                 >
@@ -1675,45 +1679,47 @@ export const DashboardPage: React.FC = () => {
                 </div>
               )}
               <div style={{ flex: 1, width: '100%' }}>
-                <Dropzone onFileSelect={handleAvatarUpload} label="Upload Profile Photo" sublabel="Supports JPG, PNG (Max 5MB)" compact={isMobile} />
+                <Dropzone onFileSelect={handleAvatarUpload} label="Upload Profile Photo" sublabel="Supports JPG, PNG (Max 5MB)" compact />
                 {uploadingAvatar && (
-                  <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 700, textAlign: isMobile ? 'center' : 'left' }}>
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 600, textAlign: isMobile ? 'center' : 'left' }}>
                     Uploading photo to Cloudinary: {avatarProgress}%
                   </div>
                 )}
               </div>
             </div>
 
-            <form onSubmit={handleSaveProfile} style={{ display: 'grid', gap: '20px' }}>
+            <form onSubmit={handleSaveProfile} style={{ display: 'grid', gap: '16px' }}>
               <Input label="Full Name" value={profileName} onChange={(e) => setProfileName(e.target.value)} required />
-              <Input label="Email Address" value={user?.email || ''} disabled helperText="Email is managed via your primary login provider." />
-              <Input label="Current Password" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} placeholder="Required only if updating password" />
+              <Input label="Email Address" value={user?.email || ''} disabled helperText="Managed via primary login provider." />
+              <Input label="Current Password" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} placeholder="Required only if changing password" />
               <Input label="New Password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Minimum 8 characters" />
               
-              <div style={{ marginTop: '8px' }}>
-                <Button type="submit" variant="primary" fullWidth size="large" isLoading={savingProfile}>
+              <div style={{ marginTop: '4px' }}>
+                <Button type="submit" variant="primary" fullWidth size="medium" isLoading={savingProfile}>
                   Save Profile Changes
                 </Button>
               </div>
             </form>
           </div>
 
-          {/* Telegram Account Integration Card */}
+          {/* Telegram Integration Card */}
           <div
             style={{
               backgroundColor: 'var(--surface)',
-              padding: '28px 32px',
+              padding: isMobile ? '20px 16px' : '24px',
               borderRadius: 'var(--radius-lg)',
-              border: user?.telegramChatId ? '2px solid var(--accent-gold)' : '1px solid var(--line)',
+              border: user?.telegramChatId ? '1.5px solid var(--accent-gold)' : '1px solid var(--line)',
               boxShadow: user?.telegramChatId ? '0 10px 30px -10px rgba(201, 160, 107, 0.2)' : 'var(--shadow-sm)',
+              boxSizing: 'border-box',
+              width: '100%',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <div>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 700, display: 'block', letterSpacing: '0.06em' }}>
-                  TELEGRAM REAL-TIME ALERTS:
+                <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 700, display: 'block', letterSpacing: '0.06em' }}>
+                  TELEGRAM REAL-TIME ALERTS
                 </span>
-                <h4 className="font-display" style={{ fontSize: '20px', fontWeight: 800, marginTop: '2px', color: 'var(--ink)' }}>
+                <h4 className="font-display" style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 700, marginTop: '2px', color: 'var(--ink)' }}>
                   Telegram Bot Integration
                 </h4>
               </div>
@@ -1723,9 +1729,9 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {user?.telegramChatId ? (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginTop: '16px', padding: '16px 20px', backgroundColor: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginTop: '14px', padding: '14px 16px', backgroundColor: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--line)' }}>
                 <div>
-                  <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ink)', display: 'block' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ink)', display: 'block' }}>
                     Linked Telegram Account
                   </span>
                   <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
@@ -1737,9 +1743,9 @@ export const DashboardPage: React.FC = () => {
                 </Button>
               </div>
             ) : (
-              <div style={{ marginTop: '12px' }}>
-                <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '16px' }}>
-                  Connect your Telegram account to receive instant notifications whenever proposal offers, editing deliverables, and render updates are ready.
+              <div style={{ marginTop: '10px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '14px' }}>
+                  Connect your Telegram account to receive instant alerts when proposal offers, video deliverables, and renders are ready.
                 </p>
                 <Button variant="primary" size="small" iconRight={IconExternalLink} onClick={() => window.location.href = '/telegram-link'}>
                   Connect Telegram Account
