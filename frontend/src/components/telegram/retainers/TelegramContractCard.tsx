@@ -4,9 +4,11 @@ import { IconZap } from '@icons/icons';
 
 interface TelegramContractCardProps {
   contract: Contract;
+  onAcceptContract?: (contract: Contract) => void;
 }
 
-export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ contract }) => {
+export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ contract, onAcceptContract }) => {
+  const isProposed = contract?.status === 'proposed';
   const isActive = (contract?.status || 'active') === 'active';
 
   return (
@@ -39,13 +41,17 @@ export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ cont
           style={{
             fontSize: '12px',
             fontWeight: 600,
-            color: isActive ? '#34c759' : 'var(--tg-theme-hint-color, var(--tg-hint, #708499))',
+            color: isProposed
+              ? 'var(--tg-theme-link-color, var(--tg-link, #64b5ef))'
+              : isActive
+              ? '#34c759'
+              : 'var(--tg-theme-hint-color, var(--tg-hint, #708499))',
             backgroundColor: 'rgba(120, 120, 128, 0.12)',
             padding: '3px 8px',
             borderRadius: '6px',
           }}
         >
-          {isActive ? 'Active' : 'Inactive'}
+          {isProposed ? 'Proposal Offered' : isActive ? 'Active' : contract.status}
         </span>
       </div>
 
@@ -77,6 +83,28 @@ export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ cont
         <p style={{ fontSize: '12px', color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))', lineHeight: 1.4, margin: '4px 0 0 0' }}>
           {contract.notes}
         </p>
+      )}
+
+      {/* Action Button for Proposed Retainers */}
+      {isProposed && onAcceptContract && (
+        <button
+          type="button"
+          onClick={() => onAcceptContract(contract)}
+          style={{
+            width: '100%',
+            height: '42px',
+            borderRadius: '10px',
+            border: 'none',
+            backgroundColor: 'var(--tg-theme-button-color, var(--tg-button, #5288c1))',
+            color: 'var(--tg-theme-button-text-color, var(--tg-button-text, #ffffff))',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginTop: '6px',
+          }}
+        >
+          Accept Retainer Proposal ({contract.monthlyPrice} {contract.currency}/mo)
+        </button>
       )}
     </div>
   );
