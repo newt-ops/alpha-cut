@@ -15,7 +15,7 @@ import {
   RatingModal,
 } from '@components/telegram';
 import { Project } from '../types';
-import { triggerHaptic, triggerHapticNotification } from '../utils/telegramSdk';
+import { triggerHaptic, triggerHapticNotification, triggerHapticSelection } from '../utils/telegramSdk';
 import { IconRefreshCw, IconFilm, IconZap } from '@icons/icons';
 
 const checkIsTelegramEnvironment = (): boolean => {
