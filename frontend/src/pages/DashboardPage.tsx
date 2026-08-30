@@ -445,6 +445,20 @@ export const DashboardPage: React.FC = () => {
     } catch (err) {}
   };
 
+  const totalSpentUSD = (projects || [])
+    .filter((p) => p && (p.status === 'completed' || p.status === 'in_progress' || p.status === 'delivered'))
+    .reduce((sum, p) => sum + (p.currency === 'USD' ? (p.price || 0) : 0), 0)
+    + (contracts || [])
+    .filter((c) => c && c.status !== 'declined')
+    .reduce((sum, c) => sum + (c.currency === 'USD' ? (c.monthlyPrice || 0) : 0), 0);
+
+  const totalSpentETB = (projects || [])
+    .filter((p) => p && (p.status === 'completed' || p.status === 'in_progress' || p.status === 'delivered'))
+    .reduce((sum, p) => sum + (p.currency === 'ETB' ? (p.price || 0) : 0), 0)
+    + (contracts || [])
+    .filter((c) => c && c.status !== 'declined')
+    .reduce((sum, c) => sum + (c.currency === 'ETB' ? (c.monthlyPrice || 0) : 0), 0);
+
   return (
     <ClientLayout
       activeTab={activeTab}
@@ -503,19 +517,19 @@ export const DashboardPage: React.FC = () => {
               style={{
                 backgroundColor: 'var(--surface)',
                 borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--line)',
+                border: '1px solid var(--accent-gold)',
                 padding: '20px 24px',
                 boxShadow: 'var(--shadow-sm)',
               }}
             >
-              <span className="font-mono" style={{ fontSize: '11px', color: '#10B981', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                DELIVERED RENDERS
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
+                TOTAL INVESTMENT
               </span>
-              <span className="font-display" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--ink)' }}>
-                {projects.filter((p) => p.status === 'delivered' || p.status === 'completed').length}
+              <span className="font-display" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ink)' }}>
+                {totalSpentUSD > 0 ? `$${totalSpentUSD.toLocaleString()} USD` : `${totalSpentETB.toLocaleString()} ETB`}
               </span>
               <span style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
-                Ready & approved exports
+                {totalSpentUSD > 0 && totalSpentETB > 0 ? `+ ${totalSpentETB.toLocaleString()} ETB spent` : 'Total spent with Alpha Cut'}
               </span>
             </div>
 
@@ -1228,22 +1242,60 @@ export const DashboardPage: React.FC = () => {
       {/* ALL PROJECTS TAB */}
       {activeTab === 'projects' && (
         <div style={{ display: 'grid', gap: '24px' }}>
-          <div>
-            <h2 className="font-display" style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ink)' }}>
-              All Projects & Historical Edits ({projects.length})
-            </h2>
-            <p style={{ fontSize: '14.5px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-              Complete archive of your video editing orders, proposals, and delivered renders.
-            </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h2 className="font-display" style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ink)' }}>
+                My Projects ({projects.length})
+              </h2>
+              <p style={{ fontSize: '14.5px', color: 'var(--ink-soft)', marginTop: '4px' }}>
+                Complete archive of your video editing orders, proposals, and delivered renders.
+              </p>
+            </div>
+
+            {/* Project Filter Tabs */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {[
+                { id: 'all', label: `All Projects (${projects.length})` },
+                { id: 'active', label: `Active Edits (${projects.filter((p) => p.status !== 'completed' && p.status !== 'declined').length})` },
+                { id: 'completed', label: `Completed Orders (${projects.filter((p) => p.status === 'completed' || p.status === 'declined').length})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setProjectFilterTab(tab.id)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '100px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    backgroundColor: projectFilterTab === tab.id ? 'var(--accent-gold)' : 'var(--surface)',
+                    color: projectFilterTab === tab.id ? '#170B06' : 'var(--ink-soft)',
+                    border: `1px solid ${projectFilterTab === tab.id ? 'var(--accent-gold)' : 'var(--line)'}`,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {projects.length === 0 ? (
+          {projects.filter((p) => {
+            if (projectFilterTab === 'active') return p.status !== 'completed' && p.status !== 'declined';
+            if (projectFilterTab === 'completed') return p.status === 'completed' || p.status === 'declined';
+            return true;
+          }).length === 0 ? (
             <div style={{ backgroundColor: 'var(--surface)', padding: '48px 32px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
-              <p style={{ color: 'var(--ink-soft)', fontSize: '15px', margin: 0 }}>No project history found on record.</p>
+              <p style={{ color: 'var(--ink-soft)', fontSize: '15px', margin: 0 }}>No projects matching this filter tab.</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gap: '16px' }}>
-              {projects.map((proj) => {
+              {projects.filter((p) => {
+                if (projectFilterTab === 'active') return p.status !== 'completed' && p.status !== 'declined';
+                if (projectFilterTab === 'completed') return p.status === 'completed' || p.status === 'declined';
+                return true;
+              }).map((proj) => {
                 const isExpanded = !!expandedProjectIds[proj._id];
 
                 return (
@@ -1398,17 +1450,19 @@ export const DashboardPage: React.FC = () => {
                                 </Button>
                               </a>
 
-                              <Button
-                                variant="secondary"
-                                size="small"
-                                fullWidth={isMobile}
-                                onClick={() => {
-                                  setSelectedProject(proj);
-                                  setRevisionModalOpen(true);
-                                }}
-                              >
-                                Request Revision
-                              </Button>
+                              {proj.status === 'delivered' && (
+                                <Button
+                                  variant="secondary"
+                                  size="small"
+                                  fullWidth={isMobile}
+                                  onClick={() => {
+                                    setSelectedProject(proj);
+                                    setRevisionModalOpen(true);
+                                  }}
+                                >
+                                  Request Revision
+                                </Button>
+                              )}
 
                               {proj.status === 'delivered' && (
                                 <Button
