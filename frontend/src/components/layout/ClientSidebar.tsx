@@ -145,8 +145,8 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
 
       {/* Footer link to public site */}
       <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
-        <Link
-          to="/"
+        <a
+          href="/"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -161,8 +161,8 @@ export const ClientSidebar: React.FC<ClientSidebarProps> = ({
           }}
         >
           <IconExternalLink size={16} />
-          {!collapsed && <span>Exit to Studio Site</span>}
-        </Link>
+          {!collapsed && <span>Exit to Main Site</span>}
+        </a>
       </div>
     </aside>
   );

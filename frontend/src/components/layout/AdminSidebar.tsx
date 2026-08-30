@@ -139,8 +139,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
       {/* Exit to Public Site Footer */}
       <div style={{ paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
-        <Link
-          to="/"
+        <a
+          href="/"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -156,7 +156,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         >
           <IconExternalLink size={16} />
           {!collapsed && <span>Exit to Public Site</span>}
-        </Link>
+        </a>
       </div>
     </aside>
   );
