@@ -47,7 +47,7 @@ export const createProposalSchema = z.object({
     clientEmail: z.string().email('Invalid client email address'),
     editingStyle: z.string().min(1, 'Editing style is required'),
     contentLength: z.enum(['short', 'long']),
-    packageTier: z.enum(['basic', 'professional', 'premium']),
+    packageTier: z.enum(['basic', 'professional', 'premium', 'custom']),
     currency: z.enum(['USD', 'ETB']),
     price: z.number().positive('Price must be greater than 0'),
     referenceBrief: z.string().optional(),
@@ -56,7 +56,7 @@ export const createProposalSchema = z.object({
 });
 export const createContractSchema = z.object({
     clientEmail: z.string().email('Invalid client email address'),
-    packageTier: z.enum(['basic', 'professional', 'premium']),
+    packageTier: z.enum(['basic', 'professional', 'premium', 'custom']),
     contentLength: z.enum(['short', 'long']).optional(),
     frequency: z.string().min(1, 'Contract frequency is required'),
     currency: z.enum(['USD', 'ETB']).optional(),

@@ -76,7 +76,7 @@ const contractSchema = new Schema({
     },
     packageTier: {
         type: String,
-        enum: ['basic', 'professional', 'premium'],
+        enum: ['basic', 'professional', 'premium', 'custom'],
         required: true,
     },
     contentLength: {

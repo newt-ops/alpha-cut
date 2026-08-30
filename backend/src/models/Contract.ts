@@ -24,7 +24,7 @@ export interface IContract extends Document {
   validUntil?: Date | null;
   clientResponsibilities?: string;
 
-  packageTier: 'basic' | 'professional' | 'premium';
+  packageTier: 'basic' | 'professional' | 'premium' | 'custom';
   contentLength: 'short' | 'long';
   frequency: ContractFrequency;
   currency: 'USD' | 'ETB';
@@ -126,7 +126,7 @@ const contractSchema = new Schema<IContract>(
 
     packageTier: {
       type: String,
-      enum: ['basic', 'professional', 'premium'],
+      enum: ['basic', 'professional', 'premium', 'custom'],
       required: true,
     },
     contentLength: {
