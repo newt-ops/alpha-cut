@@ -103,19 +103,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
     return {
       clients: clients.filter(
-        (c) => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
+        (c) => String(c?.name || '').toLowerCase().includes(q) || String(c?.email || '').toLowerCase().includes(q)
       ).slice(0, 4),
       projects: projects.filter(
         (p) =>
-          p.clientName?.toLowerCase().includes(q) ||
-          p.clientEmail?.toLowerCase().includes(q) ||
-          p.editingStyle?.toLowerCase().includes(q)
+          String(p?.clientName || '').toLowerCase().includes(q) ||
+          String(p?.clientEmail || '').toLowerCase().includes(q) ||
+          String(p?.editingStyle || '').toLowerCase().includes(q)
       ).slice(0, 4),
       contracts: contracts.filter(
         (c) =>
-          c.clientName?.toLowerCase().includes(q) ||
-          c.clientEmail?.toLowerCase().includes(q) ||
-          c.packageTier?.toLowerCase().includes(q)
+          String(c?.clientName || '').toLowerCase().includes(q) ||
+          String(c?.clientEmail || '').toLowerCase().includes(q) ||
+          String(c?.packageTier || '').toLowerCase().includes(q)
       ).slice(0, 4),
     };
   }, [searchQuery, clients, projects, contracts]);

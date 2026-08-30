@@ -82,12 +82,20 @@ export const AdminPage: React.FC = () => {
     );
   };
 
-  const getClientTelegramHref = (clientIdentifier?: string) => {
+  const getClientTelegramHref = (clientIdentifier?: any) => {
     if (!clientIdentifier) return 'https://t.me/AlphaCutCoBot';
+    const idStr = typeof clientIdentifier === 'string'
+      ? clientIdentifier
+      : typeof clientIdentifier === 'object' && clientIdentifier !== null
+        ? String(clientIdentifier._id || clientIdentifier.email || '')
+        : String(clientIdentifier);
+
+    if (!idStr) return 'https://t.me/AlphaCutCoBot';
+
     const found = clients.find(
       (cl) =>
-        cl._id === clientIdentifier ||
-        (cl.email && cl.email.toLowerCase() === clientIdentifier.toLowerCase())
+        cl._id === idStr ||
+        (cl.email && typeof cl.email === 'string' && cl.email.toLowerCase() === idStr.toLowerCase())
     );
     if (found?.telegramChatId) {
       return `tg://user?id=${found.telegramChatId}`;
