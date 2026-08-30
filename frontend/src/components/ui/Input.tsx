@@ -64,10 +64,10 @@ export const Input: React.FC<InputProps> = ({
           onBlur={() => setIsFocused(false)}
           style={{
             width: '100%',
-            height: '40px',
+            height: '46px',
             backgroundColor: 'transparent',
             color: 'var(--ink)',
-            fontSize: '13px',
+            fontSize: '14px',
             outline: 'none',
             border: 'none',
           }}

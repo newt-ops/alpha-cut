@@ -11,7 +11,6 @@
 
 html {
   font-family: var(--font-body);
-  font-size: 14px;
   background-color: var(--bg);
   color: var(--ink);
   transition: background-color var(--transition-smooth), color var(--transition-smooth);
@@ -29,9 +28,6 @@ body {
   background-color: var(--bg);
   color: var(--ink);
   overflow-x: hidden;
-  font-size: 13.5px;
-  line-height: 1.5;
-  font-weight: 400;
 }
 
 #root {
@@ -288,11 +284,37 @@ a {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  /* Prevent iOS Safari auto-zooming on inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Modal Card Mobile Padding */
+  .modal-card-responsive {
+    padding: 20px 16px !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+  }
+
+  /* Home Page Section Spacing & Mobile Touch Target Optimization */
+  .home-page-container {
+    gap: 54px !important;
+  }
+
+  .home-page-container section {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
 }
 
 @media (max-width: 380px) {
   .hero-title-responsive {
     font-size: 24px !important;
+  }
+
+  .responsive-stats-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 

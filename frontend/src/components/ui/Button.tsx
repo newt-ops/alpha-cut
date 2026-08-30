@@ -51,9 +51,9 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const sizeStyles: Record<string, React.CSSProperties> = {
-    small: { padding: '6px 14px', fontSize: '12px' },
-    medium: { padding: '9px 18px', fontSize: '13.5px' },
-    large: { padding: '11px 22px', fontSize: '14.5px' },
+    small: { padding: '8px 16px', fontSize: '13px' },
+    medium: { padding: '12px 24px', fontSize: '15px' },
+    large: { padding: '14px 28px', fontSize: '16px' },
   };
 
   const variantStyles: Record<string, React.CSSProperties> = {
