@@ -1023,7 +1023,6 @@ export const AdminPage: React.FC = () => {
             setIsCreatingProposal(false);
             fetchAdminData();
           }}
-          exchangeRate={exchangeRate}
         />
       </AdminLayout>
     );
