@@ -6,6 +6,7 @@ import { IconCheck, IconStar, IconFileText, IconFilm, IconChevronRight } from '@
 interface TelegramProjectCardProps {
   project: Project;
   onAcceptProposal?: (project: Project) => void;
+  onDeclineProposal?: (project: Project) => void;
   onRequestRevision?: (project: Project) => void;
   onConfirmDelivery?: (project: Project) => void;
   onRateProject?: (project: Project) => void;
@@ -23,6 +24,8 @@ const formatStatusText = (status: string) => {
       return 'Revision in Progress';
     case 'completed':
       return 'Completed';
+    case 'declined':
+      return 'Proposal Declined';
     default:
       return status.replace(/_/g, ' ');
   }
@@ -31,6 +34,7 @@ const formatStatusText = (status: string) => {
 export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
   project,
   onAcceptProposal,
+  onDeclineProposal,
   onRequestRevision,
   onConfirmDelivery,
   onRateProject,
@@ -199,27 +203,53 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
       {/* Native Telegram Action Buttons */}
       {(isProposal || isDelivered || (isCompleted && onRateProject)) && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-          {isProposal && onAcceptProposal && (
-            <button
-              type="button"
-              onClick={() => {
-                triggerHaptic('medium');
-                onAcceptProposal(project);
-              }}
-              style={{
-                width: '100%',
-                height: '42px',
-                borderRadius: '10px',
-                border: 'none',
-                backgroundColor: 'var(--tg-theme-button-color, var(--tg-button, #5288c1))',
-                color: 'var(--tg-theme-button-text-color, var(--tg-button-text, #ffffff))',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              Accept Proposal ({project.price} {project.currency})
-            </button>
+          {isProposal && (
+            <>
+              {onDeclineProposal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic('medium');
+                    onDeclineProposal(project);
+                  }}
+                  style={{
+                    flex: 1,
+                    height: '42px',
+                    borderRadius: '10px',
+                    border: '1px solid rgba(229, 62, 62, 0.4)',
+                    backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                    color: '#ff6b6b',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Decline
+                </button>
+              )}
+              {onAcceptProposal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic('medium');
+                    onAcceptProposal(project);
+                  }}
+                  style={{
+                    flex: 2,
+                    height: '42px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: 'var(--tg-theme-button-color, var(--tg-button, #5288c1))',
+                    color: 'var(--tg-theme-button-text-color, var(--tg-button-text, #ffffff))',
+                    fontSize: '13.5px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Accept ({project.price} {project.currency})
+                </button>
+              )}
+            </>
           )}
 
           {isDelivered && (

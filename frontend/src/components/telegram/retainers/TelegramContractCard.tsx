@@ -5,9 +5,10 @@ import { IconZap } from '@icons/icons';
 interface TelegramContractCardProps {
   contract: Contract;
   onAcceptContract?: (contract: Contract) => void;
+  onDeclineContract?: (contract: Contract) => void;
 }
 
-export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ contract, onAcceptContract }) => {
+export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ contract, onAcceptContract, onDeclineContract }) => {
   const isProposed = contract?.status === 'proposed';
   const isActive = (contract?.status || 'active') === 'active';
 
@@ -85,26 +86,48 @@ export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ cont
         </p>
       )}
 
-      {/* Action Button for Proposed Retainers */}
-      {isProposed && onAcceptContract && (
-        <button
-          type="button"
-          onClick={() => onAcceptContract(contract)}
-          style={{
-            width: '100%',
-            height: '42px',
-            borderRadius: '10px',
-            border: 'none',
-            backgroundColor: 'var(--tg-theme-button-color, var(--tg-button, #5288c1))',
-            color: 'var(--tg-theme-button-text-color, var(--tg-button-text, #ffffff))',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            marginTop: '6px',
-          }}
-        >
-          Accept Retainer Proposal ({contract.monthlyPrice} {contract.currency}/mo)
-        </button>
+      {/* Action Buttons for Proposed Retainers */}
+      {isProposed && (
+        <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+          {onDeclineContract && (
+            <button
+              type="button"
+              onClick={() => onDeclineContract(contract)}
+              style={{
+                flex: 1,
+                height: '42px',
+                borderRadius: '10px',
+                border: '1px solid rgba(229, 62, 62, 0.4)',
+                backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                color: '#ff6b6b',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Decline
+            </button>
+          )}
+          {onAcceptContract && (
+            <button
+              type="button"
+              onClick={() => onAcceptContract(contract)}
+              style={{
+                flex: 2,
+                height: '42px',
+                borderRadius: '10px',
+                border: 'none',
+                backgroundColor: 'var(--tg-theme-button-color, var(--tg-button, #5288c1))',
+                color: 'var(--tg-theme-button-text-color, var(--tg-button-text, #ffffff))',
+                fontSize: '13.5px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Accept ({contract.monthlyPrice} {contract.currency}/mo)
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

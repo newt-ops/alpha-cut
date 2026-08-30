@@ -115,6 +115,21 @@ export const TelegramMiniAppPage: React.FC = () => {
     }
   };
 
+  const handleDeclineProposal = async (project: Project) => {
+    try {
+      triggerHaptic('medium');
+      await tgFetch(`/api/projects/${project._id}/decline`, {
+        method: 'POST',
+      });
+      triggerHapticNotification('success');
+      toast({ message: 'Proposal declined.', type: 'info' });
+      refetchProjects();
+    } catch (err: any) {
+      triggerHapticNotification('error');
+      toast({ message: err.message || 'Failed to decline proposal', type: 'error' });
+    }
+  };
+
   const handleConfirmDelivery = async (project: Project) => {
     try {
       triggerHaptic('heavy');
@@ -142,6 +157,21 @@ export const TelegramMiniAppPage: React.FC = () => {
     } catch (err: any) {
       triggerHapticNotification('error');
       toast({ message: err.message || 'Failed to accept retainer proposal', type: 'error' });
+    }
+  };
+
+  const handleDeclineContract = async (contract: any) => {
+    try {
+      triggerHaptic('medium');
+      await tgFetch(`/api/contracts/${contract._id}/decline`, {
+        method: 'POST',
+      });
+      triggerHapticNotification('success');
+      toast({ message: 'Retainer proposal declined.', type: 'info' });
+      refetchContracts();
+    } catch (err: any) {
+      triggerHapticNotification('error');
+      toast({ message: err.message || 'Failed to decline retainer proposal', type: 'error' });
     }
   };
 
@@ -281,6 +311,7 @@ export const TelegramMiniAppPage: React.FC = () => {
                   key={project._id}
                   project={project}
                   onAcceptProposal={handleAcceptProposal}
+                  onDeclineProposal={handleDeclineProposal}
                   onRequestRevision={(p) => {
                     setRevisionProject(p);
                     setShowRevisionModal(true);
@@ -335,7 +366,12 @@ export const TelegramMiniAppPage: React.FC = () => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {contracts.map((contract) => (
-                <TelegramContractCard key={contract._id} contract={contract} onAcceptContract={handleAcceptContract} />
+                <TelegramContractCard
+                  key={contract._id}
+                  contract={contract}
+                  onAcceptContract={handleAcceptContract}
+                  onDeclineContract={handleDeclineContract}
+                />
               ))}
             </div>
           )}
