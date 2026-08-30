@@ -6,6 +6,7 @@ export interface DropzoneProps {
   label?: string;
   sublabel?: string;
   className?: string;
+  compact?: boolean;
 }
 
 export const Dropzone: React.FC<DropzoneProps> = ({
@@ -13,6 +14,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
   label = 'Drag & drop media files or brief here',
   sublabel = 'Supports MP4, MOV, PDF, PNG, JPG (up to 100MB)',
   className = '',
+  compact = false,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -51,7 +53,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
       onDrop={handleDrop}
       style={{
         width: '100%',
-        padding: '32px 24px',
+        padding: compact ? '18px 16px' : '32px 24px',
         border: `2px dashed ${isDragOver ? 'var(--accent-gold)' : 'var(--line)'}`,
         borderRadius: 'var(--radius-lg)',
         backgroundColor: isDragOver ? 'rgba(201, 160, 107, 0.06)' : 'var(--surface)',

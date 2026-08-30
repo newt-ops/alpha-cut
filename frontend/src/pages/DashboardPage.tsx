@@ -1625,12 +1625,35 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* Profile Avatar Upload Section */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '28px', padding: '20px', backgroundColor: 'var(--bg)', borderRadius: '16px', border: '1px solid var(--line)' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                alignItems: 'center',
+                justifyContent: isMobile ? 'center' : 'flex-start',
+                gap: isMobile ? '16px' : '24px',
+                marginBottom: '28px',
+                padding: isMobile ? '20px 16px' : '20px',
+                backgroundColor: 'var(--bg)',
+                borderRadius: '16px',
+                border: '1px solid var(--line)',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
+            >
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
                   alt={profileName}
-                  style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-gold)', boxShadow: '0 4px 16px rgba(201, 160, 107, 0.3)' }}
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '2px solid var(--accent-gold)',
+                    boxShadow: '0 4px 16px rgba(201, 160, 107, 0.3)',
+                    flexShrink: 0,
+                  }}
                 />
               ) : (
                 <div
@@ -1645,15 +1668,16 @@ export const DashboardPage: React.FC = () => {
                     justifyContent: 'center',
                     fontWeight: 800,
                     fontSize: '32px',
+                    flexShrink: 0,
                   }}
                 >
                   {profileName ? profileName.charAt(0).toUpperCase() : 'C'}
                 </div>
               )}
-              <div style={{ flex: 1 }}>
-                <Dropzone onFileSelect={handleAvatarUpload} label="Upload Profile Photo" sublabel="Supports JPG, PNG (Max 5MB)" />
+              <div style={{ flex: 1, width: '100%' }}>
+                <Dropzone onFileSelect={handleAvatarUpload} label="Upload Profile Photo" sublabel="Supports JPG, PNG (Max 5MB)" compact={isMobile} />
                 {uploadingAvatar && (
-                  <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 700 }}>
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--accent-gold)', fontWeight: 700, textAlign: isMobile ? 'center' : 'left' }}>
                     Uploading photo to Cloudinary: {avatarProgress}%
                   </div>
                 )}
