@@ -3,7 +3,6 @@ import { Badge } from '@components/ui/Badge';
 import { Button } from '@components/ui/Button';
 import { Input, Textarea } from '@components/ui/Input';
 import { Select } from '@components/ui/Select';
-import { EDITING_STYLES, EditingStyleItem } from '../../data/editingStyles';
 import { Modal } from '@components/ui/Modal';
 import {
   IconSearch,
@@ -73,16 +72,12 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   const [paymentTermsOption, setPaymentTermsOption] = useState('50% upfront, 50% on delivery');
   const [customPaymentTerms, setCustomPaymentTerms] = useState('');
 
-  // Included & Excluded Services
+  // Included Services
   const [includedServices, setIncludedServices] = useState<string[]>([
     'Clean Cuts & Trimming',
     'Animated Captions & Kinetic Typography',
     'Sound Design & Audio SFX',
     'Color Correction & Grading',
-  ]);
-  const [excludedServices, setExcludedServices] = useState<string[]>([
-    'Original Filming & Camera Capture',
-    'Voiceover Voice Acting',
   ]);
   const [includedRevisions, setIncludedRevisions] = useState('2');
   const [paymentStructure, setPaymentStructure] = useState<'upfront_100' | 'deposit_50_50' | 'monthly_upfront'>('upfront_100');
@@ -99,14 +94,13 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   );
 
   // Common Fields
-  const [packageTier, setPackageTier] = useState<'basic' | 'professional' | 'premium'>('professional');
+  const [packageTier, setPackageTier] = useState<'basic' | 'professional' | 'premium' | 'custom'>('professional');
   const [contentLength, setContentLength] = useState<'short' | 'long'>('short');
   const [currency, setCurrency] = useState<'ETB' | 'USD'>('ETB');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   // One-Off Project Fields
-  const [editingStyle, setEditingStyle] = useState(EDITING_STYLES[0].name);
   const [price, setPrice] = useState('9000');
   const [referenceBrief, setReferenceBrief] = useState('');
   const [deadline, setDeadline] = useState(() => {
@@ -116,7 +110,6 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
   });
 
   // Retainer Contract Fields
-  const [contractEditingStyle, setContractEditingStyle] = useState('Flexible / Multiple Styles');
   const [contractFrequency, setContractFrequency] = useState('weekly-2');
   const [contractStartDate, setContractStartDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [contractDurationMonths, setContractDurationMonths] = useState('1');
@@ -141,19 +134,20 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
     };
   }, [apiFetch]);
 
-  // Auto-update proposal document title when switching mode or editing style
+  // Auto-update proposal document title when switching mode or tier
   useEffect(() => {
+    const tierLabel = packageTier === 'custom' ? 'Custom Package' : `${packageTier.toUpperCase()} Tier`;
     if (proposalType === 'project') {
-      setProposalTitle(`${quantity}x ${editingStyle} Package`);
+      setProposalTitle(`${quantity}x Video Package — ${tierLabel}`);
     } else {
-      const styleName = contractEditingStyle !== 'Flexible / Multiple Styles' ? ` (${contractEditingStyle})` : '';
-      setProposalTitle(`Monthly Retainer — ${packageTier.toUpperCase()}${styleName}`);
+      setProposalTitle(`Monthly Retainer Proposal — ${tierLabel}`);
     }
-  }, [proposalType, editingStyle, quantity, packageTier, contractFrequency, contractEditingStyle]);
+  }, [proposalType, quantity, packageTier]);
 
   // Dynamic Pricing Engine derived from PackageConfig settings & Contract Duration Discount
   useEffect(() => {
-    // 1. Find matching PackageConfig from server settings
+    if (packageTier === 'custom') return; // Preserves manual pricing when Custom Package is selected
+
     const matchConfig = packageConfigs.find(
       (c) => c.tier === packageTier && c.length === contentLength && c.currency === currency
     );
@@ -175,7 +169,6 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
         default: videosPerMonth = 8;
       }
 
-      // Compute Contract Duration Discount (3mo -> 5%, 6mo -> 10%, 12mo -> 15%)
       let discountFactor = 1.0;
       if (contractDurationMonths === '3') discountFactor = 0.95;
       if (contractDurationMonths === '6') discountFactor = 0.90;
@@ -215,20 +208,6 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
     }
   };
 
-  const toggleExclusion = (exclusion: string) => {
-    if (excludedServices.includes(exclusion)) {
-      setExcludedServices(excludedServices.filter((s) => s !== exclusion));
-    } else {
-      setExcludedServices([...excludedServices, exclusion]);
-    }
-  };
-
-  // Find active editing style sample for live preview
-  const activeStyleName = proposalType === 'project' ? editingStyle : contractEditingStyle;
-  const activeStyleSample: EditingStyleItem | undefined = EDITING_STYLES.find(
-    (s) => s.name.toLowerCase() === activeStyleName.toLowerCase()
-  );
-
   const effectivePaymentTerms =
     paymentTermsOption === 'Custom' ? customPaymentTerms || 'Custom Payment Terms' : paymentTermsOption;
 
@@ -251,7 +230,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
         resolution,
         targetPlatform,
         includedServices,
-        excludedServices,
+        excludedServices: [],
         includedRevisions: Number(includedRevisions),
         paymentStructure,
         paymentTerms: effectivePaymentTerms,
@@ -274,7 +253,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           method: 'POST',
           body: JSON.stringify({
             ...commonProposalData,
-            editingStyle,
+            editingStyle: 'As Instructed by Client',
             quantity: Number(quantity),
             price: Number(price),
             referenceBrief,
@@ -296,7 +275,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
           method: 'POST',
           body: JSON.stringify({
             ...commonProposalData,
-            editingStyle: contractEditingStyle,
+            editingStyle: 'As Instructed by Client',
             frequency: contractFrequency,
             monthlyPrice: Number(contractMonthlyPrice),
             startDate: contractStartDate,
@@ -435,24 +414,16 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
             gap: '24px',
           }}
         >
-          {/* SECTION 1: PROPOSAL TITLE & RECIPIENT */}
+          {/* SECTION 1: RECIPIENT CLIENT PARTNER */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 800 }}>
-                01. PROPOSAL TITLE & RECIPIENT
+                01. RECIPIENT CLIENT PARTNER
               </span>
               {selectedClient && <Badge variant="gold">CLIENT VERIFIED ✓</Badge>}
             </div>
 
             <div style={{ display: 'grid', gap: '14px', marginBottom: '16px' }}>
-              <Input
-                label="Official Proposal Document Title"
-                placeholder="e.g. Short-Form Video Editing Package"
-                value={proposalTitle}
-                onChange={(e) => setProposalTitle(e.target.value)}
-                required
-              />
-
               {!selectedClient ? (
                 <div>
                   <Input
@@ -587,12 +558,13 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               02. DELIVERABLE SCOPE & SPECS
             </span>
 
-            {/* Tier Selector Pills */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '16px' }}>
+            {/* Tier Selector Pills including Custom Package */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '16px' }}>
               {[
-                { id: 'basic' as const, name: 'Basic Edit Tier', desc: 'Essential cuts & polish' },
+                { id: 'basic' as const, name: 'Basic Tier', desc: 'Essential cuts & polish' },
                 { id: 'professional' as const, name: 'Professional Tier', desc: 'SFX & motion graphics' },
                 { id: 'premium' as const, name: 'Premium Tier', desc: 'Custom 2D/3D & hooks' },
+                { id: 'custom' as const, name: 'Custom Package', desc: 'Bespoke client scope & rate' },
               ].map((t) => (
                 <div
                   key={t.id}
@@ -619,46 +591,27 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
             {/* Inputs Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '16px' }}>
               {proposalType === 'project' ? (
-                <>
-                  <Input
-                    label="Number of Video Deliverables"
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="e.g. 10"
-                    required
-                  />
-                  <Select
-                    label="Editing Style"
-                    options={EDITING_STYLES.map((s) => ({ label: s.name, value: s.name }))}
-                    value={editingStyle}
-                    onChange={(v) => setEditingStyle(v)}
-                  />
-                </>
+                <Input
+                  label="Number of Video Deliverables"
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  placeholder="e.g. 10"
+                  required
+                />
               ) : (
-                <>
-                  <Select
-                    label="Monthly Delivery Frequency"
-                    options={[
-                      { label: '1 Video / Week (4 Videos / Mo)', value: 'weekly-1' },
-                      { label: '2 Videos / Week (8 Videos / Mo — Recommended)', value: 'weekly-2' },
-                      { label: '3-4 Videos / Week (14 Videos / Mo)', value: 'weekly-3-4' },
-                      { label: '1 Daily Video (30 Videos / Mo)', value: 'daily-1' },
-                      { label: '2 Daily Videos (60 Videos / Mo)', value: 'daily-2' },
-                    ]}
-                    value={contractFrequency}
-                    onChange={(v) => setContractFrequency(v)}
-                  />
-                  <Select
-                    label="Editing Style (Optional)"
-                    options={[
-                      { label: 'Flexible / Multiple Styles', value: 'Flexible / Multiple Styles' },
-                      ...EDITING_STYLES.map((s) => ({ label: s.name, value: s.name })),
-                    ]}
-                    value={contractEditingStyle}
-                    onChange={(v) => setContractEditingStyle(v)}
-                  />
-                </>
+                <Select
+                  label="Monthly Delivery Frequency"
+                  options={[
+                    { label: '1 Video / Week (4 Videos / Mo)', value: 'weekly-1' },
+                    { label: '2 Videos / Week (8 Videos / Mo — Recommended)', value: 'weekly-2' },
+                    { label: '3-4 Videos / Week (14 Videos / Mo)', value: 'weekly-3-4' },
+                    { label: '1 Daily Video (30 Videos / Mo)', value: 'daily-1' },
+                    { label: '2 Daily Videos (60 Videos / Mo)', value: 'daily-2' },
+                  ]}
+                  value={contractFrequency}
+                  onChange={(v) => setContractFrequency(v)}
+                />
               )}
 
               <Select
@@ -710,7 +663,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
             </div>
 
             {/* Included Services Checklist */}
-            <div style={{ marginBottom: '14px' }}>
+            <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ink)', marginBottom: '8px' }}>
                 Included Services Checklist
               </label>
@@ -734,41 +687,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
                         color: isChecked ? 'var(--ink)' : 'var(--ink-soft)',
                       }}
                     >
-                      <input type="checkbox" checked={isChecked} readOnly style={{ accentColor: 'var(--accent-gold)' }} />
                       <span>{srv}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Excluded Services Checklist */}
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '8px' }}>
-                What's NOT Included (Exclusions Boundary)
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-                {AVAILABLE_EXCLUSIONS.map((ex) => {
-                  const isChecked = excludedServices.includes(ex);
-                  return (
-                    <div
-                      key={ex}
-                      onClick={() => toggleExclusion(ex)}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--line)',
-                        backgroundColor: 'transparent',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        color: 'var(--ink-soft)',
-                      }}
-                    >
-                      <input type="checkbox" checked={isChecked} readOnly />
-                      <span>{ex}</span>
                     </div>
                   );
                 })}
@@ -776,7 +695,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
             </div>
           </div>
 
-          <div style={{ height: '1px', backgroundColor: 'var(--line)' }} />
+        <div style={{ height: '1px', backgroundColor: 'var(--line)' }} />
 
           {/* SECTION 3: FINANCIAL TERMS & TIMELINE */}
           <div>
@@ -955,31 +874,6 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               </span>
             </div>
 
-            {/* Editing Style Visual Preview Box */}
-            {activeStyleSample && (
-              <div
-                style={{
-                  backgroundColor: 'var(--bg)',
-                  borderRadius: '12px',
-                  border: '1px solid var(--accent-gold-soft)',
-                  padding: '12px 14px',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <span className="font-mono" style={{ fontSize: '10.5px', color: 'var(--accent-gold)', fontWeight: 800 }}>
-                    STYLE PREVIEW
-                  </span>
-                  <Badge variant="gold">{activeStyleSample.category}</Badge>
-                </div>
-                <strong style={{ fontSize: '13.5px', color: 'var(--ink)', display: 'block' }}>
-                  {activeStyleSample.name}
-                </strong>
-                <p style={{ fontSize: '11.5px', color: 'var(--ink-soft)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
-                  {activeStyleSample.description}
-                </p>
-              </div>
-            )}
-
             {/* Scope Summary */}
             <div
               style={{
@@ -996,7 +890,7 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--ink-soft)' }}>Deliverables</span>
                 <strong style={{ color: 'var(--ink)' }}>
-                  {proposalType === 'project' ? `${quantity}x ${editingStyle}` : `${contractFrequency} Retainer`}
+                  {proposalType === 'project' ? `${quantity}x Video Deliverable(s)` : `${contractFrequency} Retainer`}
                 </strong>
               </div>
 
@@ -1111,19 +1005,10 @@ export const CreateProposalStudio: React.FC<CreateProposalStudioProps> = ({
             </span>
           </div>
 
-          {activeStyleSample && (
-            <div style={{ backgroundColor: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--accent-gold-soft)', padding: '12px 14px' }}>
-              <strong style={{ fontSize: '13.5px', color: 'var(--ink)', display: 'block' }}>{activeStyleSample.name}</strong>
-              <p style={{ fontSize: '11.5px', color: 'var(--ink-soft)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
-                {activeStyleSample.description}
-              </p>
-            </div>
-          )}
-
           <div style={{ backgroundColor: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--line)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: 'var(--ink-soft)' }}>Deliverables</span>
-              <strong style={{ color: 'var(--ink)' }}>{proposalType === 'project' ? `${quantity}x ${editingStyle}` : `${contractFrequency} Retainer`}</strong>
+              <strong style={{ color: 'var(--ink)' }}>{proposalType === 'project' ? `${quantity}x Video Deliverable(s)` : `${contractFrequency} Retainer`}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: 'var(--ink-soft)' }}>Specs & Tier</span>
