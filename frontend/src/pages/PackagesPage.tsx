@@ -15,6 +15,14 @@ export const PackagesPage: React.FC = () => {
   const [selectedTierId, setSelectedTierId] = useState('professional');
   const [tiers, setTiers] = useState<any[]>(PACKAGES_DATA.shortForm.tiers);
   const [exchangeRate, setExchangeRate] = useState({ usdToEtb: 128.5, etbToUsd: 0.00778 });
+  const [pricingDotIndex, setPricingDotIndex] = useState(0);
+
+  const handleCarouselScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const cardWidth = container.firstElementChild?.clientWidth || 280;
+    const newIndex = Math.round(container.scrollLeft / (cardWidth + 16));
+    setPricingDotIndex(newIndex);
+  };
 
   useEffect(() => {
     const fetchLiveData = async () => {
@@ -109,159 +117,176 @@ export const PackagesPage: React.FC = () => {
       </div>
 
       {/* 3-TIER PRICING CARDS */}
-      <div className="responsive-grid-3" style={{ gap: '24px', marginBottom: '64px', alignItems: 'stretch' }}>
-        {tiers.map((tier, idx) => {
-          const isSelected = selectedTierId === tier.id;
-          const isPopular = tier.isPopular;
+      <div className="mobile-swipe-carousel-wrapper">
+        <div
+          className="mobile-swipe-carousel responsive-grid-3"
+          onScroll={handleCarouselScroll}
+          style={{ gap: '24px', marginBottom: '16px', alignItems: 'stretch' }}
+        >
+          {tiers.map((tier, idx) => {
+            const isSelected = selectedTierId === tier.id;
+            const isPopular = tier.isPopular;
 
-          return (
-            <motion.div
-              key={tier.id}
-              whileHover={{ y: -8, scale: 1.01 }}
-              transition={{ duration: 0.25 }}
-              onClick={() => setSelectedTierId(tier.id)}
-              style={{
-                backgroundColor: 'var(--surface)',
-                borderRadius: '24px',
-                border: isSelected ? '2px solid var(--accent-gold)' : isPopular ? '2px solid var(--accent-gold)' : '1px solid var(--line)',
-                padding: '36px 30px 30px 30px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                position: 'relative',
-                boxShadow: isSelected
-                  ? '0 0 0 4px rgba(201, 160, 107, 0.25), 0 20px 40px -15px rgba(201, 160, 107, 0.35)'
-                  : 'var(--shadow-sm)',
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-              }}
-            >
-              {isPopular && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '-15px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    backgroundColor: 'var(--accent-gold)',
-                    color: '#170B06',
-                    padding: '5px 18px',
-                    borderRadius: '100px',
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    letterSpacing: '0.08em',
-                    fontFamily: 'var(--font-mono)',
-                    textTransform: 'uppercase',
-                    boxShadow: '0 4px 16px rgba(201, 160, 107, 0.5)',
-                    border: '2px solid var(--surface)',
-                    zIndex: 10,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  <IconSparkles size={13} color="#170B06" />
-                  ★ MOST POPULAR TIER
+            return (
+              <motion.div
+                key={tier.id}
+                whileHover={{ y: -8, scale: 1.01 }}
+                transition={{ duration: 0.25 }}
+                onClick={() => setSelectedTierId(tier.id)}
+                className="mobile-swipe-card"
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: '24px',
+                  border: isSelected ? '2px solid var(--accent-gold)' : isPopular ? '2px solid var(--accent-gold)' : '1px solid var(--line)',
+                  padding: '36px 26px 28px 26px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  position: 'relative',
+                  boxShadow: isSelected
+                    ? '0 0 0 4px rgba(201, 160, 107, 0.25), 0 20px 40px -15px rgba(201, 160, 107, 0.35)'
+                    : 'var(--shadow-sm)',
+                  cursor: 'pointer',
+                  transition: 'all var(--transition-fast)',
+                }}
+              >
+                {isPopular && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '-15px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      backgroundColor: 'var(--accent-gold)',
+                      color: '#170B06',
+                      padding: '5px 18px',
+                      borderRadius: '100px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      letterSpacing: '0.08em',
+                      fontFamily: 'var(--font-mono)',
+                      textTransform: 'uppercase',
+                      boxShadow: '0 4px 16px rgba(201, 160, 107, 0.5)',
+                      border: '2px solid var(--surface)',
+                      zIndex: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <IconSparkles size={13} color="#170B06" />
+                    ★ MOST POPULAR TIER
+                  </div>
+                )}
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <span className="font-mono" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', letterSpacing: '0.1em' }}>
+                      0{idx + 1} / {tier.id.toUpperCase()}
+                    </span>
+                    <Badge variant={isSelected ? 'gold' : 'surface'} size="small">
+                      {isSelected ? 'SELECTED' : tier.id === 'basic' ? 'ESSENTIAL' : tier.id === 'professional' ? 'HIGH GROWTH' : 'ENTERPRISE'}
+                    </Badge>
+                  </div>
+
+                  <h3 className="font-display" style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ink)', marginBottom: '6px' }}>
+                    {tier.name}
+                  </h3>
+                  <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '24px', minHeight: '40px' }}>
+                    {tier.tagline}
+                  </p>
+
+                  {/* Rate Display Box */}
+                  <div
+                    style={{
+                      backgroundColor: 'var(--bg)',
+                      padding: '20px 22px',
+                      borderRadius: '16px',
+                      border: '1px solid var(--line)',
+                      marginBottom: '28px',
+                      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.03)',
+                    }}
+                  >
+                    <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
+                      PER VIDEO RATE ({formatTab === 'short' ? '9:16 SHORT' : '16:9 LONG'}):
+                    </span>
+                    {currency === 'ETB' ? (
+                      <div>
+                        <span className="font-display" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-gold)', lineHeight: 1.1, display: 'block' }}>
+                          {tier.rateRangeETB} ETB
+                        </span>
+                        <span style={{ fontSize: '13px', color: 'var(--ink-soft)', fontWeight: 600, display: 'block', marginTop: '4px' }}>
+                          (~${tier.minRateUSD} – ${tier.maxRateUSD} USD / edit)
+                        </span>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="font-display" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-gold)', lineHeight: 1.1, display: 'block' }}>
+                          ${tier.minRateUSD} – ${tier.maxRateUSD} USD
+                        </span>
+                        <span style={{ fontSize: '13px', color: 'var(--ink-soft)', fontWeight: 600, display: 'block', marginTop: '4px' }}>
+                          ({tier.rateRangeETB} ETB / edit)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Features checklist (2-Column Grid on Mobile!) */}
+                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: '22px', marginBottom: '28px' }}>
+                    <span className="font-mono" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-gold)', letterSpacing: '0.06em', display: 'block', marginBottom: '14px' }}>
+                      INCLUDED TECHNIQUES & DELIVERABLES:
+                    </span>
+                    <ul className="pricing-features-grid-mobile" style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {tier.features.map((feat: any, i: number) => {
+                        const isIncluded = feat.included !== false;
+                        return (
+                          <li key={i} style={{ fontSize: '13.5px', display: 'flex', alignItems: 'flex-start', gap: '10px', color: isIncluded ? 'var(--ink)' : 'var(--ink-soft)', opacity: isIncluded ? 1 : 0.45 }}>
+                            <div
+                              style={{
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                backgroundColor: isIncluded ? 'rgba(201, 160, 107, 0.15)' : 'transparent',
+                                border: `1px solid ${isIncluded ? 'var(--accent-gold)' : 'var(--line)'}`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                marginTop: '1px',
+                              }}
+                            >
+                              <IconCheck size={12} color={isIncluded ? 'var(--accent-gold)' : 'var(--ink-soft)'} />
+                            </div>
+                            <span>
+                              <strong>{feat.name}</strong> {feat.note ? <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>({feat.note})</span> : ''}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 </div>
-              )}
 
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <span className="font-mono" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', letterSpacing: '0.1em' }}>
-                    0{idx + 1} / {tier.id.toUpperCase()}
-                  </span>
-                  <Badge variant={isSelected ? 'gold' : 'surface'} size="small">
-                    {isSelected ? 'SELECTED' : tier.id === 'basic' ? 'ESSENTIAL' : tier.id === 'professional' ? 'HIGH GROWTH' : 'ENTERPRISE'}
-                  </Badge>
+                <div>
+                  <Button variant={isSelected ? 'primary' : 'secondary'} fullWidth size="large">
+                    {isSelected ? '✓ Selected Tier' : `Select ${tier.name}`}
+                  </Button>
                 </div>
+              </motion.div>
+            );
+          })}
+        </div>
 
-                <h3 className="font-display" style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ink)', marginBottom: '6px' }}>
-                  {tier.name}
-                </h3>
-                <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '24px', minHeight: '40px' }}>
-                  {tier.tagline}
-                </p>
-
-                {/* Rate Display Box */}
-                <div
-                  style={{
-                    backgroundColor: 'var(--bg)',
-                    padding: '20px 22px',
-                    borderRadius: '16px',
-                    border: '1px solid var(--line)',
-                    marginBottom: '28px',
-                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.03)',
-                  }}
-                >
-                  <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                    PER VIDEO RATE ({formatTab === 'short' ? '9:16 SHORT' : '16:9 LONG'}):
-                  </span>
-                  {currency === 'ETB' ? (
-                    <div>
-                      <span className="font-display" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-gold)', lineHeight: 1.1, display: 'block' }}>
-                        {tier.rateRangeETB} ETB
-                      </span>
-                      <span style={{ fontSize: '13px', color: 'var(--ink-soft)', fontWeight: 600, display: 'block', marginTop: '4px' }}>
-                        (~${tier.minRateUSD} – ${tier.maxRateUSD} USD / edit)
-                      </span>
-                    </div>
-                  ) : (
-                    <div>
-                      <span className="font-display" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-gold)', lineHeight: 1.1, display: 'block' }}>
-                        ${tier.minRateUSD} – ${tier.maxRateUSD} USD
-                      </span>
-                      <span style={{ fontSize: '13px', color: 'var(--ink-soft)', fontWeight: 600, display: 'block', marginTop: '4px' }}>
-                        ({tier.rateRangeETB} ETB / edit)
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Features checklist */}
-                <div style={{ borderTop: '1px solid var(--line)', paddingTop: '22px', marginBottom: '28px' }}>
-                  <span className="font-mono" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-gold)', letterSpacing: '0.06em', display: 'block', marginBottom: '14px' }}>
-                    INCLUDED TECHNIQUES & DELIVERABLES:
-                  </span>
-                  <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {tier.features.map((feat: any, i: number) => {
-                      const isIncluded = feat.included !== false;
-                      return (
-                        <li key={i} style={{ fontSize: '13.5px', display: 'flex', alignItems: 'flex-start', gap: '10px', color: isIncluded ? 'var(--ink)' : 'var(--ink-soft)', opacity: isIncluded ? 1 : 0.45 }}>
-                          <div
-                            style={{
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '50%',
-                              backgroundColor: isIncluded ? 'rgba(201, 160, 107, 0.15)' : 'transparent',
-                              border: `1px solid ${isIncluded ? 'var(--accent-gold)' : 'var(--line)'}`,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                              marginTop: '1px',
-                            }}
-                          >
-                            <IconCheck size={12} color={isIncluded ? 'var(--accent-gold)' : 'var(--ink-soft)'} />
-                          </div>
-                          <span>
-                            <strong>{feat.name}</strong> {feat.note ? <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>({feat.note})</span> : ''}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              </div>
-
-              <div>
-                <Button variant={isSelected ? 'primary' : 'secondary'} fullWidth size="large">
-                  {isSelected ? '✓ Selected Tier' : `Select ${tier.name}`}
-                </Button>
-              </div>
-            </motion.div>
-          );
-        })}
+        {/* Mobile Dot Indicators */}
+        <div className="carousel-dots" style={{ marginBottom: '44px' }}>
+          {tiers.map((_, idx) => (
+            <span
+              key={idx}
+              className={`carousel-dot ${pricingDotIndex === idx ? 'active' : ''}`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* INTERACTIVE MONTHLY BUDGET CALCULATOR */}

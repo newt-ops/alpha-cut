@@ -17,6 +17,17 @@ export const HomePage: React.FC = () => {
   const [packageTiers, setPackageTiers] = useState<any[]>(PACKAGES_DATA.shortForm.tiers);
   const [portfolioList, setPortfolioList] = useState<any[]>(PORTFOLIO_ITEMS);
 
+  const [featureDotIndex, setFeatureDotIndex] = useState(0);
+  const [pricingDotIndex, setPricingDotIndex] = useState(0);
+  const [reviewsDotIndex, setReviewsDotIndex] = useState(0);
+
+  const handleCarouselScroll = (e: React.UIEvent<HTMLDivElement>, setIndex: (i: number) => void) => {
+    const container = e.currentTarget;
+    const cardWidth = container.firstElementChild?.clientWidth || 280;
+    const newIndex = Math.round(container.scrollLeft / (cardWidth + 16));
+    setIndex(newIndex);
+  };
+
   useEffect(() => {
     const fetchLiveData = async () => {
       try {
@@ -173,79 +184,96 @@ export const HomePage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '28px' }}>
-          {[
-            {
-              icon: IconZap,
-              title: '48-Hour Fast Delivery',
-              badge: 'LIGHTNING SPEED',
-              description: 'Never miss your posting schedule. Get studio-grade cutdowns rendered and ready to publish in 48 hours.',
-            },
-            {
-              icon: IconSparkles,
-              title: '+84% Retention Engineering',
-              badge: 'ALGORITHM-READY',
-              description: 'We craft kinetic hooks in the first 3 seconds with sound design and pattern interrupts engineered to boost watch time.',
-            },
-            {
-              icon: IconShield,
-              title: 'Dedicated Client Portal',
-              badge: 'ZERO FRICTION',
-              description: 'Track live progress, upload raw camera files, manage revisions, and download final MP4 renders in one dashboard.',
-            },
-            {
-              icon: IconFilm,
-              title: 'Mastered SFX & Color Grading',
-              badge: 'STUDIO QUALITY',
-              description: 'Pro audio levelling, dynamic sound effects (whooshes, risers, pops), and cinematic color correction included.',
-            },
-          ].map((item, index) => {
-            const IconComp = item.icon;
-            return (
-              <motion.div
-                key={index}
-                whileHover={{ y: -6 }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  backgroundColor: 'var(--bg)',
-                  padding: '28px 24px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--line)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <div
-                      style={{
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '12px',
-                        backgroundColor: 'rgba(201, 160, 107, 0.15)',
-                        border: '1px solid var(--accent-gold)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'var(--accent-gold)',
-                      }}
-                    >
-                      <IconComp size={22} color="var(--accent-gold)" />
+        <div className="mobile-swipe-carousel-wrapper">
+          <div
+            className="mobile-swipe-carousel responsive-grid-2"
+            onScroll={(e) => handleCarouselScroll(e, setFeatureDotIndex)}
+            style={{ gap: '28px' }}
+          >
+            {[
+              {
+                icon: IconZap,
+                title: '48-Hour Fast Delivery',
+                badge: 'LIGHTNING SPEED',
+                description: 'Never miss your posting schedule. Get studio-grade cutdowns rendered and ready to publish in 48 hours.',
+              },
+              {
+                icon: IconSparkles,
+                title: '+84% Retention Engineering',
+                badge: 'ALGORITHM-READY',
+                description: 'We craft kinetic hooks in the first 3 seconds with sound design and pattern interrupts engineered to boost watch time.',
+              },
+              {
+                icon: IconShield,
+                title: 'Dedicated Client Portal',
+                badge: 'ZERO FRICTION',
+                description: 'Track live progress, upload raw camera files, manage revisions, and download final MP4 renders in one dashboard.',
+              },
+              {
+                icon: IconFilm,
+                title: 'Mastered SFX & Color Grading',
+                badge: 'STUDIO QUALITY',
+                description: 'Pro audio levelling, dynamic sound effects (whooshes, risers, pops), and cinematic color correction included.',
+              },
+            ].map((item, index) => {
+              const IconComp = item.icon;
+              return (
+                <motion.div
+                  key={index}
+                  whileHover={{ y: -6 }}
+                  transition={{ duration: 0.2 }}
+                  className="mobile-swipe-card"
+                  style={{
+                    backgroundColor: 'var(--bg)',
+                    padding: '28px 24px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--line)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <div
+                        style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '12px',
+                          backgroundColor: 'rgba(201, 160, 107, 0.15)',
+                          border: '1px solid var(--accent-gold)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--accent-gold)',
+                        }}
+                      >
+                        <IconComp size={22} color="var(--accent-gold)" />
+                      </div>
+                      <Badge variant="gold" size="small">{item.badge}</Badge>
                     </div>
-                    <Badge variant="gold" size="small">{item.badge}</Badge>
-                  </div>
 
-                  <h3 className="font-display" style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ink)', marginBottom: '8px' }}>
-                    {item.title}
-                  </h3>
-                  <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', lineHeight: 1.6 }}>
-                    {item.description}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
+                    <h3 className="font-display" style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ink)', marginBottom: '8px' }}>
+                      {item.title}
+                    </h3>
+                    <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', lineHeight: 1.6 }}>
+                      {item.description}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Mobile Dot Indicators */}
+          <div className="carousel-dots">
+            {[0, 1, 2, 3].map((idx) => (
+              <span
+                key={idx}
+                className={`carousel-dot ${featureDotIndex === idx ? 'active' : ''}`}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -261,154 +289,171 @@ export const HomePage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: '32px', alignItems: 'stretch' }}>
-          {packageTiers.map((tier, idx) => {
-            const isPopular = tier.isPopular;
-            return (
-              <motion.div
-                key={tier.id}
-                whileHover={{ y: -8, scale: 1.01 }}
-                transition={{ duration: 0.25 }}
-                style={{
-                  backgroundColor: 'var(--surface)',
-                  borderRadius: '24px',
-                  border: isPopular ? '2px solid var(--accent-gold)' : '1px solid var(--line)',
-                  padding: '36px 30px 30px 30px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  position: 'relative',
-                  boxShadow: isPopular ? '0 25px 50px -12px rgba(201, 160, 107, 0.35)' : 'var(--shadow-sm)',
-                  transition: 'background-color var(--transition-smooth), border-color var(--transition-smooth)',
-                }}
-              >
-                {/* Asymmetric Metallic Gold Crown Banner for Popular Tier */}
-                {isPopular && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '-15px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      backgroundColor: 'var(--accent-gold)',
-                      color: 'var(--signal-ink)',
-                      padding: '5px 18px',
-                      borderRadius: '100px',
-                      fontSize: '11px',
-                      fontWeight: 800,
-                      letterSpacing: '0.08em',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      boxShadow: '0 4px 16px rgba(201, 160, 107, 0.5)',
-                      border: '2px solid var(--surface)',
-                      zIndex: 10,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <IconSparkles size={13} color="var(--signal-ink)" />
-                    ★ MOST POPULAR TIER
-                  </div>
-                )}
+        <div className="mobile-swipe-carousel-wrapper">
+          <div
+            className="mobile-swipe-carousel responsive-grid-3"
+            onScroll={(e) => handleCarouselScroll(e, setPricingDotIndex)}
+            style={{ gap: '32px', alignItems: 'stretch' }}
+          >
+            {packageTiers.map((tier, idx) => {
+              const isPopular = tier.isPopular;
+              return (
+                <motion.div
+                  key={tier.id}
+                  whileHover={{ y: -8, scale: 1.01 }}
+                  transition={{ duration: 0.25 }}
+                  className="mobile-swipe-card"
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    borderRadius: '24px',
+                    border: isPopular ? '2px solid var(--accent-gold)' : '1px solid var(--line)',
+                    padding: '36px 26px 28px 26px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    position: 'relative',
+                    boxShadow: isPopular ? '0 25px 50px -12px rgba(201, 160, 107, 0.35)' : 'var(--shadow-sm)',
+                    transition: 'background-color var(--transition-smooth), border-color var(--transition-smooth)',
+                  }}
+                >
+                  {/* Asymmetric Metallic Gold Crown Banner for Popular Tier */}
+                  {isPopular && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '-15px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        backgroundColor: 'var(--accent-gold)',
+                        color: 'var(--signal-ink)',
+                        padding: '5px 18px',
+                        borderRadius: '100px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        letterSpacing: '0.08em',
+                        fontFamily: 'var(--font-mono)',
+                        textTransform: 'uppercase',
+                        boxShadow: '0 4px 16px rgba(201, 160, 107, 0.5)',
+                        border: '2px solid var(--surface)',
+                        zIndex: 10,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <IconSparkles size={13} color="var(--signal-ink)" />
+                      ★ MOST POPULAR TIER
+                    </div>
+                  )}
 
-                <div>
-                  {/* Chamber Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <span className="font-mono" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', letterSpacing: '0.1em' }}>
-                      0{idx + 1} / {tier.id.toUpperCase()}
-                    </span>
-                    <Badge variant={isPopular ? 'gold' : 'surface'} size="small">
-                      {tier.id === 'basic' ? 'ESSENTIAL' : tier.id === 'professional' ? 'HIGH GROWTH' : 'ENTERPRISE'}
-                    </Badge>
-                  </div>
+                  <div>
+                    {/* Chamber Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                      <span className="font-mono" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', letterSpacing: '0.1em' }}>
+                        0{idx + 1} / {tier.id.toUpperCase()}
+                      </span>
+                      <Badge variant={isPopular ? 'gold' : 'surface'} size="small">
+                        {tier.id === 'basic' ? 'ESSENTIAL' : tier.id === 'professional' ? 'HIGH GROWTH' : 'ENTERPRISE'}
+                      </Badge>
+                    </div>
 
-                  <h3 className="font-display" style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ink)', marginBottom: '6px' }}>
-                    {tier.name}
-                  </h3>
-                  <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '24px', minHeight: '40px' }}>
-                    {tier.tagline}
-                  </p>
+                    <h3 className="font-display" style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ink)', marginBottom: '6px' }}>
+                      {tier.name}
+                    </h3>
+                    <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '24px', minHeight: '40px' }}>
+                      {tier.tagline}
+                    </p>
 
-                  {/* Futuristic Floating Rate Box */}
-                  <div
-                    style={{
-                      backgroundColor: 'var(--bg)',
-                      padding: '20px 22px',
-                      borderRadius: '16px',
-                      border: '1px solid var(--line)',
-                      marginBottom: '28px',
-                      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.03)',
-                    }}
-                  >
-                    <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                      ESTIMATED RATE PER EDIT
-                    </span>
-                    <span className="font-display" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-gold)', lineHeight: 1.1, display: 'block' }}>
-                      {tier.rateRangeETB} ETB
-                    </span>
-                    <span style={{ fontSize: '13px', color: 'var(--ink-soft)', fontWeight: 600, display: 'block', marginTop: '6px' }}>
-                      (${tier.minRateUSD} – ${tier.maxRateUSD} USD / video)
-                    </span>
-                  </div>
+                    {/* Futuristic Floating Rate Box */}
+                    <div
+                      style={{
+                        backgroundColor: 'var(--bg)',
+                        padding: '20px 22px',
+                        borderRadius: '16px',
+                        border: '1px solid var(--line)',
+                        marginBottom: '28px',
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.03)',
+                      }}
+                    >
+                      <span className="font-mono" style={{ fontSize: '11px', color: 'var(--ink-soft)', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
+                        ESTIMATED RATE PER EDIT
+                      </span>
+                      <span className="font-display" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-gold)', lineHeight: 1.1, display: 'block' }}>
+                        {tier.rateRangeETB} ETB
+                      </span>
+                      <span style={{ fontSize: '13px', color: 'var(--ink-soft)', fontWeight: 600, display: 'block', marginTop: '6px' }}>
+                        (${tier.minRateUSD} – ${tier.maxRateUSD} USD / video)
+                      </span>
+                    </div>
 
-                  {/* Feature Checklist */}
-                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: '22px', marginBottom: '28px' }}>
-                    <span className="font-mono" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-gold)', letterSpacing: '0.06em', display: 'block', marginBottom: '14px' }}>
-                      WHAT'S INCLUDED IN THIS CHAMBER:
-                    </span>
-                    <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {tier.features.map((feat: any, i: number) => {
-                        const isIncluded = feat.included !== false;
-                        return (
-                          <li
-                            key={i}
-                            style={{
-                              fontSize: '13.5px',
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              gap: '10px',
-                              color: isIncluded ? 'var(--ink)' : 'var(--ink-soft)',
-                              opacity: isIncluded ? 1 : 0.45,
-                            }}
-                          >
-                            <div
+                    {/* Feature Checklist (2-Column Grid on Mobile!) */}
+                    <div style={{ borderTop: '1px solid var(--line)', paddingTop: '22px', marginBottom: '28px' }}>
+                      <span className="font-mono" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-gold)', letterSpacing: '0.06em', display: 'block', marginBottom: '14px' }}>
+                        WHAT'S INCLUDED IN THIS CHAMBER:
+                      </span>
+                      <ul className="pricing-features-grid-mobile" style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {tier.features.map((feat: any, i: number) => {
+                          const isIncluded = feat.included !== false;
+                          return (
+                            <li
+                              key={i}
                               style={{
-                                width: '20px',
-                                height: '20px',
-                                borderRadius: '50%',
-                                backgroundColor: isIncluded ? 'rgba(201, 160, 107, 0.15)' : 'transparent',
-                                border: `1px solid ${isIncluded ? 'var(--accent-gold)' : 'var(--line)'}`,
+                                fontSize: '13.5px',
                                 display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0,
-                                marginTop: '1px',
+                                alignItems: 'flex-start',
+                                gap: '10px',
+                                color: isIncluded ? 'var(--ink)' : 'var(--ink-soft)',
+                                opacity: isIncluded ? 1 : 0.45,
                               }}
                             >
-                              <IconCheck size={12} color={isIncluded ? 'var(--accent-gold)' : 'var(--ink-soft)'} />
-                            </div>
-                            <span>
-                              <strong>{feat.name}</strong> {feat.note ? <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>({feat.note})</span> : ''}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                              <div
+                                style={{
+                                  width: '20px',
+                                  height: '20px',
+                                  borderRadius: '50%',
+                                  backgroundColor: isIncluded ? 'rgba(201, 160, 107, 0.15)' : 'transparent',
+                                  border: `1px solid ${isIncluded ? 'var(--accent-gold)' : 'var(--line)'}`,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0,
+                                  marginTop: '1px',
+                                }}
+                              >
+                                <IconCheck size={12} color={isIncluded ? 'var(--accent-gold)' : 'var(--ink-soft)'} />
+                              </div>
+                              <span>
+                                <strong>{feat.name}</strong> {feat.note ? <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>({feat.note})</span> : ''}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <Link to="/packages">
-                    <Button variant={isPopular ? 'primary' : 'secondary'} fullWidth size="large">
-                      Select {tier.name} Tier
-                    </Button>
-                  </Link>
-                </div>
-              </motion.div>
-            );
-          })}
+                  <div>
+                    <Link to="/packages">
+                      <Button variant={isPopular ? 'primary' : 'secondary'} fullWidth size="large">
+                        Select {tier.name} Tier
+                      </Button>
+                    </Link>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Mobile Dot Indicators */}
+          <div className="carousel-dots">
+            {packageTiers.map((_, idx) => (
+              <span
+                key={idx}
+                className={`carousel-dot ${pricingDotIndex === idx ? 'active' : ''}`}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -438,170 +483,187 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Featured Testimonials Spotlight Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '28px' }}>
-          {(featuredReviews.length > 0
-            ? featuredReviews.slice(0, 3)
-            : [
-                {
-                  _id: 'sample-1',
-                  clientName: 'Alex Rivers',
-                  clientTitle: 'Founder @ AI Studio',
-                  clientAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=96&q=75',
-                  review: 'Alpha Cut completely transformed our YouTube Shorts strategy. Watch time retention jumped by +84% on our very first edited video clip!',
-                  stars: 5,
-                  editingStyle: 'Viral Animation Breakdown',
-                },
-                {
-                  _id: 'sample-2',
-                  clientName: 'Marcus Vance',
-                  clientTitle: 'Tech Content Creator (850K Subs)',
-                  clientAvatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=96&q=75',
-                  review: 'The turn-around time and kinetic typography quality are unmatched. The retention hooks keep viewers watching past 30 seconds consistently.',
-                  stars: 5,
-                  editingStyle: 'Cinematic Short-Film',
-                },
-                {
-                  _id: 'sample-3',
-                  clientName: 'Elena Rostova',
-                  clientTitle: 'Head of Growth @ SaaSify',
-                  clientAvatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=96&q=75',
-                  review: 'Managing deliverables through the client portal is seamless. They deliver studio-grade edits that convert viewers into paying subscribers.',
-                  stars: 5,
-                  editingStyle: 'SaaS & App Animation',
-                },
-              ]
-          ).map((rev: any) => {
-            const stars = rev.stars || rev.rating || 5;
-            const reviewText = rev.review || rev.comment || '';
-            const initial = (rev.clientName || 'C').charAt(0).toUpperCase();
+        <div className="mobile-swipe-carousel-wrapper">
+          <div
+            className="mobile-swipe-carousel responsive-grid-3"
+            onScroll={(e) => handleCarouselScroll(e, setReviewsDotIndex)}
+            style={{ gap: '28px' }}
+          >
+            {(featuredReviews.length > 0
+              ? featuredReviews.slice(0, 3)
+              : [
+                  {
+                    _id: 'sample-1',
+                    clientName: 'Alex Rivers',
+                    clientTitle: 'Founder @ AI Studio',
+                    clientAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=96&q=75',
+                    review: 'Alpha Cut completely transformed our YouTube Shorts strategy. Watch time retention jumped by +84% on our very first edited video clip!',
+                    stars: 5,
+                    editingStyle: 'Viral Animation Breakdown',
+                  },
+                  {
+                    _id: 'sample-2',
+                    clientName: 'Marcus Vance',
+                    clientTitle: 'Tech Content Creator (850K Subs)',
+                    clientAvatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=96&q=75',
+                    review: 'The turn-around time and kinetic typography quality are unmatched. The retention hooks keep viewers watching past 30 seconds consistently.',
+                    stars: 5,
+                    editingStyle: 'Cinematic Short-Film',
+                  },
+                  {
+                    _id: 'sample-3',
+                    clientName: 'Elena Rostova',
+                    clientTitle: 'Head of Growth @ SaaSify',
+                    clientAvatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=96&q=75',
+                    review: 'Managing deliverables through the client portal is seamless. They deliver studio-grade edits that convert viewers into paying subscribers.',
+                    stars: 5,
+                    editingStyle: 'SaaS & App Animation',
+                  },
+                ]
+            ).map((rev: any) => {
+              const stars = rev.stars || rev.rating || 5;
+              const reviewText = rev.review || rev.comment || '';
+              const initial = (rev.clientName || 'C').charAt(0).toUpperCase();
 
-            return (
-              <motion.div
-                key={rev._id}
-                whileHover={{ y: -8 }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  position: 'relative',
-                  backgroundColor: 'var(--bg)',
-                  padding: '32px 26px 26px 26px',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid rgba(201, 160, 107, 0.3)',
-                  boxShadow: 'var(--shadow-sm)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Decorative Quotation Watermark Background */}
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '-10px',
-                    right: '16px',
-                    fontSize: '110px',
-                    fontFamily: 'serif',
-                    lineHeight: 1,
-                    color: 'var(--accent-gold)',
-                    opacity: 0.12,
-                    pointerEvents: 'none',
-                    userSelect: 'none',
-                  }}
-                >
-                  “
-                </span>
-
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  {/* Rating Stars & Style Badge */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <StarRating rating={stars} size={16} />
-                    {rev.editingStyle && (
-                      <Badge variant="gold" size="small">
-                        {rev.editingStyle}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Review Quote Body */}
-                  <p
-                    style={{
-                      fontSize: '14.5px',
-                      color: 'var(--ink)',
-                      lineHeight: 1.6,
-                      fontStyle: 'italic',
-                      marginBottom: '24px',
-                    }}
-                  >
-                    "{reviewText}"
-                  </p>
-                </div>
-
-                {/* Client Profile Footer with Avatar, Name, Title & Verified Badge */}
-                <div
+              return (
+                <motion.div
+                  key={rev._id}
+                  whileHover={{ y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="mobile-swipe-card"
                   style={{
                     position: 'relative',
-                    zIndex: 1,
+                    backgroundColor: 'var(--bg)',
+                    padding: '32px 26px 26px 26px',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid rgba(201, 160, 107, 0.3)',
+                    boxShadow: 'var(--shadow-sm)',
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    paddingTop: '16px',
-                    borderTop: '1px solid var(--line)',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    overflow: 'hidden',
                   }}
                 >
-                  {rev.clientAvatarUrl ? (
-                    <img
-                      src={rev.clientAvatarUrl}
-                      alt={rev.clientName || 'Client Avatar'}
-                      width="46"
-                      height="46"
-                      loading="lazy"
-                      decoding="async"
+                  {/* Decorative Quotation Watermark Background */}
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '-10px',
+                      right: '16px',
+                      fontSize: '110px',
+                      fontFamily: 'serif',
+                      lineHeight: 1,
+                      color: 'var(--accent-gold)',
+                      opacity: 0.12,
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                    }}
+                  >
+                    “
+                  </span>
+
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    {/* Rating Stars & Style Badge */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <StarRating rating={stars} size={16} />
+                      {rev.editingStyle && (
+                        <Badge variant="gold" size="small">
+                          {rev.editingStyle}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Review Quote Body */}
+                    <p
                       style={{
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: '2px solid var(--accent-gold)',
-                        boxShadow: '0 4px 12px rgba(201, 160, 107, 0.3)',
-                        flexShrink: 0,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '50%',
-                        backgroundColor: 'var(--accent-gold)',
-                        color: 'var(--signal-ink)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 800,
-                        fontSize: '18px',
-                        boxShadow: '0 4px 12px rgba(201, 160, 107, 0.3)',
-                        flexShrink: 0,
+                        fontSize: '14.5px',
+                        color: 'var(--ink)',
+                        lineHeight: 1.6,
+                        fontStyle: 'italic',
+                        marginBottom: '24px',
                       }}
                     >
-                      {initial}
-                    </div>
-                  )}
-
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span className="font-display" style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink)' }}>
-                        {rev.clientName || 'Verified Client'}
-                      </span>
-                      <IconCheck size={14} color="var(--accent-gold)" />
-                    </div>
-                    <span style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
-                      {rev.clientTitle || 'Creator / Brand Client'}
-                    </span>
+                      "{reviewText}"
+                    </p>
                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
+
+                  {/* Client Profile Footer with Avatar, Name, Title & Verified Badge */}
+                  <div
+                    style={{
+                      position: 'relative',
+                      zIndex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '14px',
+                      paddingTop: '16px',
+                      borderTop: '1px solid var(--line)',
+                    }}
+                  >
+                    {rev.clientAvatarUrl ? (
+                      <img
+                        src={rev.clientAvatarUrl}
+                        alt={rev.clientName || 'Client Avatar'}
+                        width="46"
+                        height="46"
+                        loading="lazy"
+                        decoding="async"
+                        style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '2px solid var(--accent-gold)',
+                          boxShadow: '0 4px 12px rgba(201, 160, 107, 0.3)',
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--accent-gold)',
+                          color: 'var(--signal-ink)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 800,
+                          fontSize: '18px',
+                          boxShadow: '0 4px 12px rgba(201, 160, 107, 0.3)',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {initial}
+                      </div>
+                    )}
+
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="font-display" style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink)' }}>
+                          {rev.clientName || 'Verified Client'}
+                        </span>
+                        <IconCheck size={14} color="var(--accent-gold)" />
+                      </div>
+                      <span style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginTop: '2px' }}>
+                        {rev.clientTitle || 'Creator / Brand Client'}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Mobile Dot Indicators */}
+          <div className="carousel-dots">
+            {[0, 1, 2].map((idx) => (
+              <span
+                key={idx}
+                className={`carousel-dot ${reviewsDotIndex === idx ? 'active' : ''}`}
+              />
+            ))}
+          </div>
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '40px' }}>
