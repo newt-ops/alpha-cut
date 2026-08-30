@@ -117,6 +117,24 @@ export class ErrorBoundary extends Component<Props, State> {
               >
                 Reload Telegram Workspace
               </button>
+
+              {this.state.error?.message && (
+                <div
+                  style={{
+                    marginTop: '16px',
+                    padding: '8px 10px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontFamily: 'monospace',
+                    color: 'var(--tg-theme-hint-color, #708499)',
+                    wordBreak: 'break-all',
+                    textAlign: 'left',
+                  }}
+                >
+                  Error: {this.state.error.message}
+                </div>
+              )}
             </div>
           </div>
         );

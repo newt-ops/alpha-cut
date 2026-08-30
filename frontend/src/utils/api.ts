@@ -10,10 +10,13 @@ export const getApiUrl = (endpoint: string): string => {
 export const customFetch = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
   const url = getApiUrl(endpoint);
   const token = localStorage.getItem('token');
+  const initData = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp?.initData : '';
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
     ...((options.headers as Record<string, string>) || {}),
   };
 

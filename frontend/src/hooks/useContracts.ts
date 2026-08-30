@@ -2,13 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customFetch } from '../utils/api';
 import { Contract } from '../types';
 
-export const useContractsQuery = () => {
+export const useContractsQuery = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['contracts'],
     queryFn: async () => {
       const res = await customFetch('/api/contracts');
       return (res.contracts || []) as Contract[];
     },
+    enabled,
+    retry: 1,
   });
 };
 

@@ -2,13 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customFetch } from '../utils/api';
 import { Project } from '../types';
 
-export const useProjectsQuery = () => {
+export const useProjectsQuery = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
       const res = await customFetch('/api/projects');
       return (res.projects || []) as Project[];
     },
+    enabled,
+    retry: 1,
   });
 };
 

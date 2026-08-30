@@ -51,8 +51,8 @@ export const TelegramMiniAppPage: React.FC = () => {
     tgFetch,
   } = useTelegramAuth();
 
-  const { data: projects = [], refetch: refetchProjects, isLoading: projectsLoading } = useProjectsQuery();
-  const { data: contracts = [], refetch: refetchContracts, isLoading: contractsLoading } = useContractsQuery();
+  const { data: projects = [], refetch: refetchProjects, isLoading: projectsLoading } = useProjectsQuery(Boolean(user));
+  const { data: contracts = [], refetch: refetchContracts, isLoading: contractsLoading } = useContractsQuery(Boolean(user));
 
   const [refreshing, setRefreshing] = useState(false);
   const [activeNavTab, setActiveNavTab] = useState<'projects' | 'contracts' | 'profile'>('projects');
