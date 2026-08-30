@@ -11,6 +11,7 @@
 
 html {
   font-family: var(--font-body);
+  font-size: 14px;
   background-color: var(--bg);
   color: var(--ink);
   transition: background-color var(--transition-smooth), color var(--transition-smooth);
@@ -28,6 +29,9 @@ body {
   background-color: var(--bg);
   color: var(--ink);
   overflow-x: hidden;
+  font-size: 13.5px;
+  line-height: 1.5;
+  font-weight: 400;
 }
 
 #root {
