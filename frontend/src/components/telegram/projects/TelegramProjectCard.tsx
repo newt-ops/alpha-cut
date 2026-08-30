@@ -345,7 +345,7 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
             </>
           )}
 
-          {isCompleted && onRateProject && (
+          {isCompleted && !project.rated && onRateProject && (
             <button
               type="button"
               onClick={() => {
@@ -371,6 +371,29 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
               <IconStar size={16} />
               <span>Submit Review</span>
             </button>
+          )}
+
+          {isCompleted && project.rated && (
+            <div
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                backgroundColor: 'rgba(52, 199, 89, 0.12)',
+                borderRadius: '8px',
+                border: '1px solid rgba(52, 199, 89, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                color: '#34c759',
+                fontSize: '12px',
+                fontWeight: 600,
+                boxSizing: 'border-box',
+              }}
+            >
+              <IconStar size={15} fill="#34c759" color="#34c759" />
+              <span>Review Submitted ✓</span>
+            </div>
           )}
         </div>
       )}
