@@ -12,6 +12,17 @@ interface TelegramProjectCardProps {
   onRateProject?: (project: Project) => void;
 }
 
+const safeFormatDate = (dateVal: any, options?: Intl.DateTimeFormatOptions, fallback = 'TBD') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return d.toLocaleDateString(undefined, options || { month: 'short', day: 'numeric' });
+  } catch (e) {
+    return fallback;
+  }
+};
+
 const formatStatusText = (status: string) => {
   switch (status) {
     case 'proposal_sent':
@@ -157,7 +168,7 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
             Deadline
           </span>
           <span style={{ color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
-            {new Date(project.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            {safeFormatDate(project?.deadline, { month: 'short', day: 'numeric' })}
           </span>
         </div>
       </div>

@@ -8,6 +8,17 @@ interface TelegramContractCardProps {
   onDeclineContract?: (contract: Contract) => void;
 }
 
+const safeFormatDate = (dateVal: any, fallback = 'Active') => {
+  if (!dateVal) return fallback;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return fallback;
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch (e) {
+    return fallback;
+  }
+};
+
 export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ contract, onAcceptContract, onDeclineContract }) => {
   const isProposed = contract?.status === 'proposed';
   const isActive = (contract?.status || 'active') === 'active';
@@ -74,7 +85,7 @@ export const TelegramContractCard: React.FC<TelegramContractCardProps> = ({ cont
             Start Date
           </span>
           <span style={{ color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>
-            {contract?.startDate ? new Date(contract.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Active'}
+            {safeFormatDate(contract?.startDate)}
           </span>
         </div>
       </div>
