@@ -60,6 +60,7 @@ export const TelegramProjectCard: React.FC<TelegramProjectCardProps> = ({
   const isProposal = project.status === 'proposal_sent';
   const isDelivered = project.status === 'delivered';
   const isRevisionRequested = project.status === 'revision_requested';
+  const isCompleted = project.status === 'completed';
 
   return (
     <div
