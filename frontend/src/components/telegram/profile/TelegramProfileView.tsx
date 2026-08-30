@@ -44,15 +44,25 @@ export const TelegramProfileView: React.FC<TelegramProfileViewProps> = ({
   const completedProjectsCount = (projects || []).filter((p) => p && p.status === 'completed').length;
   const safeContractsCount = (contracts || []).length;
 
-  const totalSpentUSD = (projects || [])
+  const projectsSpentUSD = (projects || [])
     .filter((p) => p && (p.status === 'completed' || p.status === 'in_progress' || p.status === 'delivered'))
-    .concat((contracts || []).filter((c) => c && c.status !== 'declined'))
-    .reduce((sum, item: any) => sum + (item.currency === 'USD' ? (item.price || item.monthlyPrice || 0) : 0), 0);
+    .reduce((sum, p) => sum + (p.currency === 'USD' ? (p.price || 0) : 0), 0);
 
-  const totalSpentETB = (projects || [])
+  const contractsSpentUSD = (contracts || [])
+    .filter((c) => c && c.status !== 'declined')
+    .reduce((sum, c) => sum + (c.currency === 'USD' ? (c.monthlyPrice || 0) : 0), 0);
+
+  const totalSpentUSD = projectsSpentUSD + contractsSpentUSD;
+
+  const projectsSpentETB = (projects || [])
     .filter((p) => p && (p.status === 'completed' || p.status === 'in_progress' || p.status === 'delivered'))
-    .concat((contracts || []).filter((c) => c && c.status !== 'declined'))
-    .reduce((sum, item: any) => sum + (item.currency === 'ETB' ? (item.price || item.monthlyPrice || 0) : 0), 0);
+    .reduce((sum, p) => sum + (p.currency === 'ETB' ? (p.price || 0) : 0), 0);
+
+  const contractsSpentETB = (contracts || [])
+    .filter((c) => c && c.status !== 'declined')
+    .reduce((sum, c) => sum + (c.currency === 'ETB' ? (c.monthlyPrice || 0) : 0), 0);
+
+  const totalSpentETB = projectsSpentETB + contractsSpentETB;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
