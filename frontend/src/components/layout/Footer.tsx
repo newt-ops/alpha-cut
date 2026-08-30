@@ -180,7 +180,7 @@ export const Footer: React.FC = () => {
               <IconInstagram size={18} /> @alphacut.ae
             </a>
             <a
-              href="https://t.me/Alphacut_co"
+              href="https://t.me/alpha_cut_bot"
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -195,7 +195,7 @@ export const Footer: React.FC = () => {
               onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
               onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-soft)')}
             >
-              <IconTelegram size={18} /> @Alphacut_co
+              <IconTelegram size={18} /> @alpha_cut_bot
             </a>
           </div>
         </div>

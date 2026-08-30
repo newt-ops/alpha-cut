@@ -83,14 +83,14 @@ export const AdminPage: React.FC = () => {
   };
 
   const getClientTelegramHref = (clientIdentifier?: any) => {
-    if (!clientIdentifier) return 'https://t.me/AlphaCutCoBot';
+    if (!clientIdentifier) return 'https://t.me/alpha_cut_bot';
     const idStr = typeof clientIdentifier === 'string'
       ? clientIdentifier
       : typeof clientIdentifier === 'object' && clientIdentifier !== null
         ? String(clientIdentifier._id || clientIdentifier.email || '')
         : String(clientIdentifier);
 
-    if (!idStr) return 'https://t.me/AlphaCutCoBot';
+    if (!idStr) return 'https://t.me/alpha_cut_bot';
 
     const found = clients.find(
       (cl) =>
@@ -100,7 +100,7 @@ export const AdminPage: React.FC = () => {
     if (found?.telegramChatId) {
       return `tg://user?id=${found.telegramChatId}`;
     }
-    return 'https://t.me/AlphaCutCoBot';
+    return 'https://t.me/alpha_cut_bot';
   };
 
   const handleOpenProposalModal = () => {

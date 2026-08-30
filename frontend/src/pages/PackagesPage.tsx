@@ -346,7 +346,7 @@ export const PackagesPage: React.FC = () => {
             </p>
 
             <div style={{ marginTop: '28px' }}>
-              <a href="https://t.me/Alphacut_co" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <a href="https://t.me/alpha_cut_bot" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
                 <Button variant="primary" fullWidth size="large" iconRight={IconArrowRight}>
                   Request Official Proposal
                 </Button>
