@@ -5,3 +5,5 @@ export * from './projects/RevisionModal';
 export * from './retainers/TelegramContractCard';
 export * from './profile/TelegramProfileView';
 export * from './profile/RatingModal';
+export * from './common/TelegramModal';
+export * from './common/TelegramStarRating';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Project } from '../../../types';
-import { Modal } from '@components/ui/Modal';
+import { TelegramModal } from '../common/TelegramModal';
 import { triggerHaptic } from '../../../utils/telegramSdk';
 
 interface RevisionModalProps {
@@ -36,7 +36,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Request Edit Revision">
+    <TelegramModal isOpen={isOpen} onClose={onClose} title="Request Edit Revision">
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
         <p style={{ fontSize: '13px', color: 'var(--tg-theme-hint-color, #708499)', margin: 0 }}>
           Describe the exact timestamps and changes you want revised for{' '}
@@ -45,7 +45,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({
         <textarea
           value={revisionNotes}
           onChange={(e) => setRevisionNotes(e.target.value)}
-          placeholder="e.g. At 0:14 change caption highlight to gold, add sound effect at 0:28..."
+          placeholder="e.g. At 0:14 change caption highlight color, add sound effect at 0:28..."
           rows={4}
           required
           style={{
@@ -66,7 +66,7 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({
           disabled={submitting}
           style={{
             width: '100%',
-            height: '42px',
+            height: '44px',
             borderRadius: '10px',
             border: 'none',
             backgroundColor: 'var(--tg-theme-button-color, #5288c1)',
@@ -79,6 +79,6 @@ export const RevisionModal: React.FC<RevisionModalProps> = ({
           {submitting ? 'Submitting...' : 'Submit Revision Request'}
         </button>
       </form>
-    </Modal>
+    </TelegramModal>
   );
 };

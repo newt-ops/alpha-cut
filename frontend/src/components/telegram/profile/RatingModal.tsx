@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Project } from '../../../types';
-import { Modal } from '@components/ui/Modal';
-import { StarRating } from '@components/ui/StarRating';
+import { TelegramModal } from '../common/TelegramModal';
+import { TelegramStarRating } from '../common/TelegramStarRating';
 import { triggerHaptic } from '../../../utils/telegramSdk';
 
 interface RatingModalProps {
@@ -38,7 +38,7 @@ export const RatingModal: React.FC<RatingModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Review Video Editing Service">
+    <TelegramModal isOpen={isOpen} onClose={onClose} title="Review Video Editing Service">
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
         <p style={{ fontSize: '13px', color: 'var(--tg-theme-hint-color, #708499)', margin: 0 }}>
           Rate your experience with{' '}
@@ -46,7 +46,7 @@ export const RatingModal: React.FC<RatingModalProps> = ({
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
-          <StarRating
+          <TelegramStarRating
             rating={ratingStars}
             interactive
             onChange={(val) => {
@@ -81,7 +81,7 @@ export const RatingModal: React.FC<RatingModalProps> = ({
           disabled={submitting}
           style={{
             width: '100%',
-            height: '42px',
+            height: '44px',
             borderRadius: '10px',
             border: 'none',
             backgroundColor: 'var(--tg-theme-button-color, #5288c1)',
@@ -94,6 +94,6 @@ export const RatingModal: React.FC<RatingModalProps> = ({
           {submitting ? 'Submitting...' : 'Submit Review'}
         </button>
       </form>
-    </Modal>
+    </TelegramModal>
   );
 };

@@ -1,6 +1,4 @@
 import React from 'react';
-import { Button } from '@components/ui/Button';
-import { Badge } from '@components/ui/Badge';
 import { MINI_APP_URL } from '../../../utils/telegramSdk';
 import { IconExternalLink, IconZap } from '@icons/icons';
 
@@ -12,22 +10,23 @@ export const TelegramRedirectNotice: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'var(--bg)',
-        color: 'var(--ink)',
+        backgroundColor: '#17212b',
+        color: '#ffffff',
         padding: '24px 16px',
         boxSizing: 'border-box',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       }}
     >
       <div
         style={{
           maxWidth: '440px',
           width: '100%',
-          backgroundColor: 'var(--surface)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--line)',
-          padding: '36px 28px',
+          backgroundColor: '#232e3c',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '36px 24px',
           textAlign: 'center',
-          boxShadow: 'var(--shadow)',
+          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.35)',
         }}
       >
         <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
@@ -40,44 +39,88 @@ export const TelegramRedirectNotice: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#24A1DE',
+              color: '#64b5ef',
             }}
           >
             <IconZap size={32} />
           </div>
         </div>
 
-        <Badge variant="gold" size="small">TELEGRAM MINI APP</Badge>
+        <span
+          style={{
+            fontSize: '11px',
+            fontWeight: 700,
+            color: '#64b5ef',
+            backgroundColor: 'rgba(100, 181, 239, 0.15)',
+            padding: '4px 10px',
+            borderRadius: '6px',
+            letterSpacing: '0.6px',
+            textTransform: 'uppercase',
+          }}
+        >
+          TELEGRAM MINI APP
+        </span>
 
-        <h1 className="font-display" style={{ fontSize: '24px', marginTop: '12px', marginBottom: '8px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, marginTop: '14px', marginBottom: '8px', color: '#ffffff' }}>
           Alpha Cut Control Panel
         </h1>
 
-        <p style={{ fontSize: '14px', color: 'var(--ink-soft)', lineHeight: 1.6, marginBottom: '28px' }}>
-          This application is designed to run inside Telegram. Open it directly from the <strong>Alpha Cut Bot</strong> to access your workspace.
+        <p style={{ fontSize: '13.5px', color: '#708499', lineHeight: 1.6, marginBottom: '28px' }}>
+          This interface is customized specifically for Telegram. Open it directly inside the <strong>Alpha Cut Bot (@alpha_cut_bot)</strong> to access your workspace.
         </p>
 
-        <div style={{ display: 'grid', gap: '12px' }}>
-          <a href={MINI_APP_URL} target="_blank" rel="noopener noreferrer">
-            <Button variant="telegram" fullWidth size="large" iconRight={IconExternalLink}>
-              Open in Telegram
-            </Button>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <a href={MINI_APP_URL} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+            <button
+              type="button"
+              style={{
+                width: '100%',
+                height: '46px',
+                borderRadius: '10px',
+                border: 'none',
+                backgroundColor: '#5288c1',
+                color: '#ffffff',
+                fontSize: '15px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
+            >
+              <span>Open in Telegram</span>
+              <IconExternalLink size={16} />
+            </button>
           </a>
 
-          <a href="https://alpha-cut.com/dashboard" target="_blank" rel="noopener noreferrer">
-            <Button variant="secondary" fullWidth size="medium">
-              Open Main Web Dashboard
-            </Button>
+          <a href="https://alpha-cut.com/dashboard" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+            <button
+              type="button"
+              style={{
+                width: '100%',
+                height: '44px',
+                borderRadius: '10px',
+                border: '1px solid rgba(120, 120, 128, 0.2)',
+                backgroundColor: 'transparent',
+                color: '#64b5ef',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              Open Web Dashboard
+            </button>
           </a>
         </div>
 
         <div
           style={{
-            marginTop: '28px',
-            paddingTop: '20px',
-            borderTop: '1px solid var(--line)',
+            marginTop: '24px',
+            paddingTop: '16px',
+            borderTop: '1px solid rgba(120, 120, 128, 0.15)',
             fontSize: '12px',
-            color: 'var(--ink-soft)',
+            color: '#708499',
           }}
         >
           Requires Telegram WebApp SDK context for identity verification.
