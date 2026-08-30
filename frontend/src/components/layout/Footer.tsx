@@ -59,11 +59,6 @@ export const Footer: React.FC = () => {
               </Link>
             </li>
             <li>
-              <Link to="/editing-styles" style={{ fontSize: '14px', color: 'var(--ink-soft)' }}>
-                Editing Styles
-              </Link>
-            </li>
-            <li>
               <Link to="/portfolio" style={{ fontSize: '14px', color: 'var(--ink-soft)' }}>
                 Portfolio
               </Link>

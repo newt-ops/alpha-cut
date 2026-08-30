@@ -176,7 +176,7 @@ export const AdminPage: React.FC = () => {
   const [clientSearchText, setClientSearchText] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [editingStyle, setEditingStyle] = useState(EDITING_STYLES[0].name);
+  const [editingStyle, setEditingStyle] = useState('As Instructed by Client');
   const [contentLength, setContentLength] = useState('short');
   const [packageTier, setPackageTier] = useState('professional');
   const [currency, setCurrency] = useState<'ETB' | 'USD'>('ETB');

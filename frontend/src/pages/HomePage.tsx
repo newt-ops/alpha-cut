@@ -6,13 +6,11 @@ import { Button } from '@components/ui/Button';
 import { StarRating } from '@components/ui/StarRating';
 
 import { BeforeAfterComparison } from '@components/home/BeforeAfterComparison';
-import { EDITING_STYLES } from '../data/editingStyles';
 import { PORTFOLIO_ITEMS } from '../data/portfolioItems';
 import { PACKAGES_DATA } from '../data/packagesData';
 import { IconArrowRight, IconSparkles, IconFilm, IconZap, IconShield, IconStar, IconCheck } from '@icons/icons';
 
 export const HomePage: React.FC = () => {
-  const featuredStyles = EDITING_STYLES.slice(0, 3);
   const [featuredReviews, setFeaturedReviews] = useState<any[]>([]);
   const [avgRating, setAvgRating] = useState('5.0');
   const [totalReviews, setTotalReviews] = useState(12);
@@ -153,77 +151,7 @@ export const HomePage: React.FC = () => {
         />
       </section>
 
-      {/* 3. FEATURED EDITING STYLES PREVIEW */}
-      <section>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <Badge variant="gold">Craft & Techniques</Badge>
-          <h2 className="font-display" style={{ fontSize: '36px', marginTop: '8px' }}>
-            Featured Editing Styles
-          </h2>
-          <p style={{ color: 'var(--ink-soft)', marginTop: '4px', fontSize: '15px' }}>
-            Proven visual frameworks built to hold viewer attention past the 3-second hook.
-          </p>
-        </div>
 
-        <div className="responsive-grid-3" style={{ gap: '24px' }}>
-          {featuredStyles.map((style) => (
-            <motion.div
-              key={style.id}
-              whileHover={{ y: -6 }}
-              transition={{ duration: 0.2 }}
-              style={{
-                backgroundColor: 'var(--surface)',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--line)',
-                padding: '28px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                boxShadow: 'var(--shadow-sm)',
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <Badge variant="gold" size="small">{style.category}</Badge>
-                  <span className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 700 }}>
-                    {style.format}
-                  </span>
-                </div>
-
-                <h3 className="font-display" style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', marginBottom: '10px' }}>
-                  {style.name}
-                </h3>
-                <p style={{ fontSize: '14px', color: 'var(--ink-soft)', lineHeight: 1.6, marginBottom: '20px' }}>
-                  {style.description}
-                </p>
-
-                {/* Key Feature Badges */}
-                <div style={{ borderTop: '1px solid var(--line)', paddingTop: '16px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {style.features?.slice(0, 3).map((feat: string, i: number) => (
-                    <span key={i} className="font-mono" style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '100px', backgroundColor: 'var(--bg)', border: '1px solid var(--line)', color: 'var(--ink-soft)' }}>
-                      • {feat}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <Link to="/editing-styles">
-                <Button variant="ghost" fullWidth iconRight={IconArrowRight}>
-                  Explore Style Details
-                </Button>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: '36px' }}>
-          <Link to="/editing-styles">
-            <Button variant="secondary" iconRight={IconArrowRight}>
-              View All Editing Styles
-            </Button>
-          </Link>
-        </div>
-      </section>
 
       {/* 3.5 WHY WORK WITH US / AGENCY ADVANTAGES */}
       <section

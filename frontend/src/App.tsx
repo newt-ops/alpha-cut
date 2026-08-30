@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { trackPageView } from './utils/analytics';
 import { ThemeProvider } from '@context/ThemeContext';
@@ -167,7 +167,7 @@ const AppRoutes: React.FC = () => {
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/editing-styles" element={<EditingStylesPage />} />
+              <Route path="/editing-styles" element={<Navigate to="/portfolio" replace />} />
               <Route path="/portfolio" element={<PortfolioPage />} />
               <Route path="/packages" element={<PackagesPage />} />
               <Route path="/about" element={<AboutPage />} />
