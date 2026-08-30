@@ -2416,23 +2416,48 @@ export const AdminPage: React.FC = () => {
                 PROJECT LIFECYCLE STAGE
               </span>
               <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
-                <Stepper
-                  currentStep={
-                    selectedProjectForDetail.status === 'completed'
-                      ? 3
-                      : selectedProjectForDetail.status === 'delivered'
-                      ? 2
-                      : selectedProjectForDetail.status === 'in_progress' || selectedProjectForDetail.status === 'revision_requested'
-                      ? 1
-                      : 0
-                  }
-                  steps={[
-                    { label: 'Proposal Sent' },
-                    { label: 'In Progress' },
-                    { label: 'Render Delivered' },
-                    { label: 'Completed' },
-                  ]}
-                />
+                {selectedProjectForDetail.status === 'declined' ? (
+                  <div
+                    style={{
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      color: '#ef4444',
+                    }}
+                  >
+                    <span style={{ fontSize: '18px' }}>⛔</span>
+                    <div>
+                      <span style={{ fontSize: '13px', fontWeight: 700, display: 'block' }}>
+                        Proposal Declined by Client
+                      </span>
+                      <span style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
+                        This project proposal was declined and is no longer active.
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <Stepper
+                    currentStep={
+                      selectedProjectForDetail.status === 'completed'
+                        ? 3
+                        : selectedProjectForDetail.status === 'delivered'
+                        ? 2
+                        : selectedProjectForDetail.status === 'in_progress' || selectedProjectForDetail.status === 'revision_requested'
+                        ? 1
+                        : 0
+                    }
+                    steps={[
+                      { label: 'Proposal Sent' },
+                      { label: 'In Progress' },
+                      { label: 'Render Delivered' },
+                      { label: 'Completed' },
+                    ]}
+                  />
+                )}
               </div>
             </div>
 

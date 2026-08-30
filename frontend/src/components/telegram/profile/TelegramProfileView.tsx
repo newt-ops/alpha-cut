@@ -44,6 +44,16 @@ export const TelegramProfileView: React.FC<TelegramProfileViewProps> = ({
   const completedProjectsCount = (projects || []).filter((p) => p && p.status === 'completed').length;
   const safeContractsCount = (contracts || []).length;
 
+  const totalSpentUSD = (projects || [])
+    .filter((p) => p && (p.status === 'completed' || p.status === 'in_progress' || p.status === 'delivered'))
+    .concat((contracts || []).filter((c) => c && c.status !== 'declined'))
+    .reduce((sum, item: any) => sum + (item.currency === 'USD' ? (item.price || item.monthlyPrice || 0) : 0), 0);
+
+  const totalSpentETB = (projects || [])
+    .filter((p) => p && (p.status === 'completed' || p.status === 'in_progress' || p.status === 'delivered'))
+    .concat((contracts || []).filter((c) => c && c.status !== 'declined'))
+    .reduce((sum, item: any) => sum + (item.currency === 'ETB' ? (item.price || item.monthlyPrice || 0) : 0), 0);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Profile Header Row */}
@@ -168,6 +178,62 @@ export const TelegramProfileView: React.FC<TelegramProfileViewProps> = ({
           >
             <span style={{ color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>Completed Edits</span>
             <strong style={{ color: '#34c759' }}>{completedProjectsCount}</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Section 2: Investment & Spending Analytics */}
+      <div>
+        <div
+          style={{
+            fontSize: '12px',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            color: 'var(--tg-theme-hint-color, var(--tg-hint, #708499))',
+            marginBottom: '6px',
+            paddingLeft: '8px',
+            letterSpacing: '0.4px',
+          }}
+        >
+          TOTAL INVESTMENT WITH ALPHA CUT
+        </div>
+
+        <div
+          style={{
+            backgroundColor: 'var(--tg-theme-secondary-bg-color, var(--tg-secondary-bg, #232e3c))',
+            borderRadius: '12px',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '12px 16px',
+              borderBottom: '1px solid rgba(120, 120, 128, 0.15)',
+              fontSize: '14px',
+            }}
+          >
+            <span style={{ color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>Total USD Spent</span>
+            <strong style={{ color: '#34c759', fontSize: '15px' }}>
+              ${totalSpentUSD.toLocaleString()} USD
+            </strong>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '12px 16px',
+              fontSize: '14px',
+            }}
+          >
+            <span style={{ color: 'var(--tg-theme-text-color, var(--tg-text, #ffffff))' }}>Total ETB Spent</span>
+            <strong style={{ color: 'var(--tg-theme-link-color, var(--tg-link, #64b5ef))', fontSize: '15px' }}>
+              {totalSpentETB.toLocaleString()} ETB
+            </strong>
           </div>
         </div>
       </div>

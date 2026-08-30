@@ -56,6 +56,7 @@ export const TelegramMiniAppPage: React.FC = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [activeNavTab, setActiveNavTab] = useState<'projects' | 'contracts' | 'profile'>('projects');
+  const [projectFilter, setProjectFilter] = useState<'active' | 'completed'>('active');
 
   // Modal States
   const [showRevisionModal, setShowRevisionModal] = useState(false);
@@ -270,18 +271,59 @@ export const TelegramMiniAppPage: React.FC = () => {
 
       {/* Tab Content: Projects */}
       {activeNavTab === 'projects' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* iOS / Telegram Segmented Control */}
           <div
             style={{
-              fontSize: '12px',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              color: 'var(--tg-theme-hint-color, #708499)',
-              paddingLeft: '4px',
-              letterSpacing: '0.4px',
+              backgroundColor: 'var(--tg-theme-secondary-bg-color, #232e3c)',
+              borderRadius: '10px',
+              padding: '3px',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '4px',
             }}
           >
-            VIDEO PROJECTS ({projects.length})
+            <button
+              type="button"
+              onClick={() => {
+                triggerHapticSelection();
+                setProjectFilter('active');
+              }}
+              style={{
+                height: '34px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: projectFilter === 'active' ? 'var(--tg-theme-button-color, #5288c1)' : 'transparent',
+                color: projectFilter === 'active' ? 'var(--tg-theme-button-text-color, #ffffff)' : 'var(--tg-theme-hint-color, #708499)',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              Active ({projects.filter((p) => p.status !== 'completed' && p.status !== 'declined').length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHapticSelection();
+                setProjectFilter('completed');
+              }}
+              style={{
+                height: '34px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: projectFilter === 'completed' ? 'var(--tg-theme-button-color, #5288c1)' : 'transparent',
+                color: projectFilter === 'completed' ? 'var(--tg-theme-button-text-color, #ffffff)' : 'var(--tg-theme-hint-color, #708499)',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              Completed ({projects.filter((p) => p.status === 'completed' || p.status === 'declined').length})
+            </button>
           </div>
 
           {projectsLoading ? (
@@ -289,44 +331,57 @@ export const TelegramMiniAppPage: React.FC = () => {
               <Skeleton height="120px" style={{ borderRadius: '12px' }} />
               <Skeleton height="120px" style={{ borderRadius: '12px' }} />
             </div>
-          ) : projects.length === 0 ? (
-            <div
-              style={{
-                backgroundColor: 'var(--tg-theme-secondary-bg-color, #232e3c)',
-                padding: '32px 20px',
-                borderRadius: '12px',
-                textAlign: 'center',
-              }}
-            >
-              <IconFilm size={32} color="var(--tg-theme-hint-color, #708499)" style={{ margin: '0 auto 12px' }} />
-              <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: 'var(--tg-theme-text-color, #ffffff)' }}>
-                No Active Projects
-              </h3>
-              <p style={{ color: 'var(--tg-theme-hint-color, #708499)', fontSize: '13px', margin: 0 }}>
-                When your proposal offers or video edits are sent, they will appear right here.
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {projects.map((project) => (
-                <TelegramProjectCard
-                  key={project._id}
-                  project={project}
-                  onAcceptProposal={handleAcceptProposal}
-                  onDeclineProposal={handleDeclineProposal}
-                  onRequestRevision={(p) => {
-                    setRevisionProject(p);
-                    setShowRevisionModal(true);
+          ) : (() => {
+            const displayedProjects = projects.filter((p) => {
+              if (projectFilter === 'active') return p.status !== 'completed' && p.status !== 'declined';
+              return p.status === 'completed' || p.status === 'declined';
+            });
+
+            if (displayedProjects.length === 0) {
+              return (
+                <div
+                  style={{
+                    backgroundColor: 'var(--tg-theme-secondary-bg-color, #232e3c)',
+                    padding: '32px 20px',
+                    borderRadius: '12px',
+                    textAlign: 'center',
                   }}
-                  onConfirmDelivery={handleConfirmDelivery}
-                  onRateProject={(p) => {
-                    setRatingProject(p);
-                    setShowRatingModal(true);
-                  }}
-                />
-              ))}
-            </div>
-          )}
+                >
+                  <IconFilm size={32} color="var(--tg-theme-hint-color, #708499)" style={{ margin: '0 auto 12px' }} />
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, margin: '0 0 6px 0', color: 'var(--tg-theme-text-color, #ffffff)' }}>
+                    {projectFilter === 'active' ? 'No Active Projects' : 'No Completed Projects'}
+                  </h3>
+                  <p style={{ color: 'var(--tg-theme-hint-color, #708499)', fontSize: '13px', margin: 0 }}>
+                    {projectFilter === 'active'
+                      ? 'When your proposal offers or video edits are in progress, they will appear here.'
+                      : 'Completed video edits and past orders will be archived here.'}
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {displayedProjects.map((project) => (
+                  <TelegramProjectCard
+                    key={project._id}
+                    project={project}
+                    onAcceptProposal={handleAcceptProposal}
+                    onDeclineProposal={handleDeclineProposal}
+                    onRequestRevision={(p) => {
+                      setRevisionProject(p);
+                      setShowRevisionModal(true);
+                    }}
+                    onConfirmDelivery={handleConfirmDelivery}
+                    onRateProject={(p) => {
+                      setRatingProject(p);
+                      setShowRatingModal(true);
+                    }}
+                  />
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
 
